@@ -1,0 +1,65 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# IDEs
+.vscode/
+.idea/
+.claude/
+.windsurfrules
+
+# Data files (large rasters and raw data)
+data/raw/*.tif
+data/raw/*.shp
+data/raw/*.shx
+data/raw/*.dbf
+data/raw/*.prj
+data/raw/*.cpg
+
+# Processed rasters (can be regenerated with scripts)
+data/processed/*.tif
+
+# Keep small processed data files and infrastructure
+!data/processed/*.csv
+!data/processed/*.json
+!data/processed/*.geojson
+!data/processed/*.png
+!data/processed/*.pdf
+!data/infrastructure/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+
+# Credentials
+service-account-key.json
+api/service-account-key.json
+
+
+#Ignore vscode AI rules
+.github\instructions\codacy.instructions.md
+
+# Sync conflict duplicate files (e.g. Google Drive, OneDrive)
+* (1).*
+*(1)
+*(1).*
+* - Copy.*
+* - Copia.*
+* (Conflict)*
+
+# IDE-specific AI directories
+.windsurf/
+

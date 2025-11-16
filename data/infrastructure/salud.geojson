@@ -1,0 +1,47 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -71.4448023,
+          -32.508037
+        ]
+      },
+      "properties": {
+        "osm_id": 4621485653,
+        "osm_type": "node",
+        "name": "Del Valle",
+        "amenity": "pharmacy",
+        "shop": "",
+        "building": "",
+        "addr_street": "Domingo Fernández Concha",
+        "addr_number": "303",
+        "category": "Salud"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -71.4361397,
+          -32.5061607
+        ]
+      },
+      "properties": {
+        "osm_id": 800818783,
+        "osm_type": "way",
+        "name": "CESFAM Papudo",
+        "amenity": "clinic",
+        "shop": "",
+        "building": "",
+        "addr_street": "",
+        "addr_number": "",
+        "category": "Salud"
+      }
+    }
+  ]
+}

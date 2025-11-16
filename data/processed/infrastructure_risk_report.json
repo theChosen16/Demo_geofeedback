@@ -1,0 +1,133 @@
+{
+  "timestamp": "2025-11-18T13:11:44.054781",
+  "total_facilities": 20,
+  "risk_distribution": {
+    "Medio": 20
+  },
+  "detailed_facilities": {
+    "Medio": [
+      {
+        "name": "Jardín Infantil Sueño Hermoso",
+        "category": "Educación"
+      },
+      {
+        "name": "Colegio Antonio Zanoletti",
+        "category": "Educación"
+      },
+      {
+        "name": "Jardín Infantil",
+        "category": "Educación"
+      },
+      {
+        "name": "Liceo Técnico Profesional Papudo",
+        "category": "Educación"
+      },
+      {
+        "name": "Escuela Básica Papudo",
+        "category": "Educación"
+      },
+      {
+        "name": "Del Valle",
+        "category": "Salud"
+      },
+      {
+        "name": "CESFAM Papudo",
+        "category": "Salud"
+      },
+      {
+        "name": "Bomberos de Papudo",
+        "category": "Emergencias"
+      },
+      {
+        "name": "Retén Papudo",
+        "category": "Emergencias"
+      },
+      {
+        "name": "Municipalidad de Papudo",
+        "category": "Gobierno"
+      },
+      {
+        "name": "Caleta Papudo",
+        "category": "Comercio"
+      },
+      {
+        "name": "Almacén El Liguano",
+        "category": "Comercio"
+      },
+      {
+        "name": "Miraflores",
+        "category": "Comercio"
+      },
+      {
+        "name": "Provipan",
+        "category": "Comercio"
+      },
+      {
+        "name": "Don Enzo",
+        "category": "Comercio"
+      },
+      {
+        "name": "Almacén Coñaripe",
+        "category": "Comercio"
+      },
+      {
+        "name": "Bazar Don Sergio",
+        "category": "Comercio"
+      },
+      {
+        "name": "Ecomarket",
+        "category": "Comercio"
+      },
+      {
+        "name": "Botillería Al Paso",
+        "category": "Comercio"
+      },
+      {
+        "name": "Sin nombre",
+        "category": "Comercio"
+      }
+    ]
+  },
+  "category_distribution": [
+    {
+      "category": "Comercio",
+      "total": 10,
+      "high_risk": 0,
+      "medium_risk": 10,
+      "low_risk": 0,
+      "no_risk": 0
+    },
+    {
+      "category": "Educación",
+      "total": 5,
+      "high_risk": 0,
+      "medium_risk": 5,
+      "low_risk": 0,
+      "no_risk": 0
+    },
+    {
+      "category": "Emergencias",
+      "total": 2,
+      "high_risk": 0,
+      "medium_risk": 2,
+      "low_risk": 0,
+      "no_risk": 0
+    },
+    {
+      "category": "Salud",
+      "total": 2,
+      "high_risk": 0,
+      "medium_risk": 2,
+      "low_risk": 0,
+      "no_risk": 0
+    },
+    {
+      "category": "Gobierno",
+      "total": 1,
+      "high_risk": 0,
+      "medium_risk": 1,
+      "low_risk": 0,
+      "no_risk": 0
+    }
+  ]
+}

@@ -1,0 +1,110 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -71.4349594,
+          -32.507347
+        ]
+      },
+      "properties": {
+        "osm_id": 3636092086,
+        "osm_type": "node",
+        "name": "Jardín Infantil Sueño Hermoso",
+        "amenity": "kindergarten",
+        "shop": "",
+        "building": "",
+        "addr_street": "El Maitén",
+        "addr_number": "",
+        "category": "Educación"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -71.4464793,
+          -32.5083295
+        ]
+      },
+      "properties": {
+        "osm_id": 5189559723,
+        "osm_type": "node",
+        "name": "Colegio Antonio Zanoletti",
+        "amenity": "school",
+        "shop": "",
+        "building": "",
+        "addr_street": "Chorrillos",
+        "addr_number": "",
+        "category": "Educación"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -71.4394156,
+          -32.5075344
+        ]
+      },
+      "properties": {
+        "osm_id": 351259046,
+        "osm_type": "way",
+        "name": "Jardín Infantil",
+        "amenity": "kindergarten",
+        "shop": "",
+        "building": "",
+        "addr_street": "Serrano",
+        "addr_number": "",
+        "category": "Educación"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -71.4460258,
+          -32.509138
+        ]
+      },
+      "properties": {
+        "osm_id": 556485250,
+        "osm_type": "way",
+        "name": "Liceo Técnico Profesional Papudo",
+        "amenity": "school",
+        "shop": "",
+        "building": "",
+        "addr_street": "Chorrillos",
+        "addr_number": "279",
+        "category": "Educación"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -71.4390991,
+          -32.5072186
+        ]
+      },
+      "properties": {
+        "osm_id": 628650638,
+        "osm_type": "way",
+        "name": "Escuela Básica Papudo",
+        "amenity": "school",
+        "shop": "",
+        "building": "",
+        "addr_street": "Serrano",
+        "addr_number": "750",
+        "category": "Educación"
+      }
+    }
+  ]
+}

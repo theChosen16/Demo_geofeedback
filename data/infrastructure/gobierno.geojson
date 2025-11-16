@@ -1,0 +1,26 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -71.4476619,
+          -32.5064406
+        ]
+      },
+      "properties": {
+        "osm_id": 633913476,
+        "osm_type": "way",
+        "name": "Municipalidad de Papudo",
+        "amenity": "townhall",
+        "shop": "",
+        "building": "yes",
+        "addr_street": "Chorrillos",
+        "addr_number": "9",
+        "category": "Gobierno"
+      }
+    }
+  ]
+}

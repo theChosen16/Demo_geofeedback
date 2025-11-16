@@ -1,0 +1,215 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -71.4499091,
+          -32.5057091
+        ]
+      },
+      "properties": {
+        "osm_id": 958857872,
+        "osm_type": "node",
+        "name": "Caleta Papudo",
+        "amenity": "",
+        "shop": "convenience",
+        "building": "",
+        "addr_street": "",
+        "addr_number": "",
+        "category": "Comercio"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -71.443276,
+          -32.5071291
+        ]
+      },
+      "properties": {
+        "osm_id": 1080455254,
+        "osm_type": "node",
+        "name": "Almacén El Liguano",
+        "amenity": "",
+        "shop": "convenience",
+        "building": "",
+        "addr_street": "Domingo Fernández Concha",
+        "addr_number": "",
+        "category": "Comercio"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -71.4468051,
+          -32.5072416
+        ]
+      },
+      "properties": {
+        "osm_id": 1080455259,
+        "osm_type": "node",
+        "name": "Miraflores",
+        "amenity": "",
+        "shop": "supermarket",
+        "building": "",
+        "addr_street": "",
+        "addr_number": "",
+        "category": "Comercio"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -71.4469526,
+          -32.5073818
+        ]
+      },
+      "properties": {
+        "osm_id": 2558052418,
+        "osm_type": "node",
+        "name": "Provipan",
+        "amenity": "",
+        "shop": "convenience",
+        "building": "",
+        "addr_street": "",
+        "addr_number": "",
+        "category": "Comercio"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -71.4391004,
+          -32.5064288
+        ]
+      },
+      "properties": {
+        "osm_id": 4621485649,
+        "osm_type": "node",
+        "name": "Don Enzo",
+        "amenity": "",
+        "shop": "convenience",
+        "building": "",
+        "addr_street": "",
+        "addr_number": "",
+        "category": "Comercio"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -71.4431421,
+          -32.5072926
+        ]
+      },
+      "properties": {
+        "osm_id": 4621485651,
+        "osm_type": "node",
+        "name": "Almacén Coñaripe",
+        "amenity": "",
+        "shop": "convenience",
+        "building": "",
+        "addr_street": "",
+        "addr_number": "",
+        "category": "Comercio"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -71.4457756,
+          -32.5085376
+        ]
+      },
+      "properties": {
+        "osm_id": 4621485656,
+        "osm_type": "node",
+        "name": "Bazar Don Sergio",
+        "amenity": "",
+        "shop": "convenience",
+        "building": "",
+        "addr_street": "Domingo Fernández Concha",
+        "addr_number": "",
+        "category": "Comercio"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -71.445035,
+          -32.5082285
+        ]
+      },
+      "properties": {
+        "osm_id": 5176918528,
+        "osm_type": "node",
+        "name": "Ecomarket",
+        "amenity": "",
+        "shop": "supermarket",
+        "building": "",
+        "addr_street": "Domingo Fernández Concha",
+        "addr_number": "271",
+        "category": "Comercio"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -71.4379643,
+          -32.5061398
+        ]
+      },
+      "properties": {
+        "osm_id": 5189559823,
+        "osm_type": "node",
+        "name": "Botillería Al Paso",
+        "amenity": "",
+        "shop": "supermarket",
+        "building": "",
+        "addr_street": "",
+        "addr_number": "",
+        "category": "Comercio"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -71.4365273,
+          -32.5036399
+        ]
+      },
+      "properties": {
+        "osm_id": 685016537,
+        "osm_type": "way",
+        "name": "Sin nombre",
+        "amenity": "",
+        "shop": "mall",
+        "building": "",
+        "addr_street": "",
+        "addr_number": "",
+        "category": "Comercio"
+      }
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -71.4402964,
+          -32.5059964
+        ]
+      },
+      "properties": {
+        "osm_id": 1080455251,
+        "osm_type": "node",
+        "name": "Bomberos de Papudo",
+        "amenity": "fire_station",
+        "shop": "",
+        "building": "",
+        "addr_street": "",
+        "addr_number": "",
+        "category": "Emergencias"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -71.4416589,
+          -32.5063131
+        ]
+      },
+      "properties": {
+        "osm_id": 1080455256,
+        "osm_type": "node",
+        "name": "Retén Papudo",
+        "amenity": "police",
+        "shop": "",
+        "building": "",
+        "addr_street": "Domingo Fernández Concha",
+        "addr_number": "610",
+        "category": "Emergencias"
+      }
+    }
+  ]
+}

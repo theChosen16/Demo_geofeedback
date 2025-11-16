@@ -1,0 +1,1531 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GeoFeedback Chile - Inteligencia Territorial</title>
+    <meta
+      name="description"
+      content="Plataforma open source de analisis geoespacial para Chile."
+    />
+    <link rel="canonical" href="https://geofeedback.cl/" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" href="/static/css/app.css">
+  </head>
+  <body>
+    <!-- Mobile Header (visible only on mobile) -->
+    <div class="mobile-header" style="display: flex; justify-content: space-between; align-items: center; padding: 0 1.25rem;">
+      <div class="logo">
+        <i class="fas fa-globe-americas"></i><span class="script-title">GeoFeedback</span>
+      </div>
+      <button
+        class="theme-switch-btn"
+        id="theme-toggle-mobile"
+        onclick="toggleTheme()"
+        style="width: 32px; height: 32px; font-size: 0.9rem;"
+        title="Toggle Theme"
+        data-en-title="Toggle Theme"
+      >
+        <i class="fas fa-moon theme-icon"></i>
+      </button>
+    </div>
+
+    <!-- Mobile Tab Navigation (visible only on mobile) -->
+    <nav class="mobile-tabs">
+      <button
+        class="mobile-tab active"
+        onclick="switchTab('inicio')"
+        data-tab="inicio"
+      >
+        <i class="fas fa-home"></i>
+        <span>Inicio</span>
+      </button>
+      <button class="mobile-tab" onclick="switchTab('demo')" data-tab="demo">
+        <i class="fas fa-map-marked-alt"></i>
+        <span>Demo</span>
+      </button>
+      <button
+        class="mobile-tab"
+        onclick="switchTab('servicios')"
+        data-tab="servicios"
+      >
+        <i class="fas fa-rocket"></i>
+        <span>Servicios</span>
+      </button>
+      <button
+        class="mobile-tab"
+        onclick="switchTab('contacto')"
+        data-tab="contacto"
+      >
+        <i class="fas fa-envelope"></i>
+        <span>Contacto</span>
+      </button>
+    </nav>
+    <nav class="navbar">
+      <div class="navbar-content">
+        <a href="#" class="logo"
+          ><i class="fas fa-globe-americas"></i>GeoFeedback</a
+        >
+        <!-- Mobile Actions (visible only on mobile) -->
+        <div class="navbar-mobile-actions">
+          <button
+            class="btn btn-secondary"
+            id="lang-toggle-mobile"
+            onclick="toggleLanguage()"
+            style="padding: 0.4rem 0.6rem; min-width: auto; font-size: 0.8rem; border-radius: 6px;"
+            title="Switch Language"
+          >
+            <span class="lang-icon">🇺🇸</span> <span class="lang-text" style="font-size: 0.75rem">EN</span>
+          </button>
+          <button
+            class="btn btn-secondary theme-switch-btn"
+            id="theme-toggle-mobile-nav"
+            onclick="toggleTheme()"
+            style="padding: 0.4rem; min-width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"
+            title="Toggle Theme"
+            data-en-title="Toggle Theme"
+          >
+            <i class="fas fa-moon theme-icon"></i>
+          </button>
+        </div>
+        <div class="nav-links">
+          <a href="#problema" data-en="Problem">Problema</a>
+          <a href="#solucion" data-en="Solution">Solucion</a>
+          <a href="#demo" data-en="Demo">Demo</a>
+          <a href="#servicios" data-en="Services">Servicios</a>
+          <a href="/api/docs" class="btn btn-primary"
+            ><i class="fas fa-code"></i> API</a
+          >
+          <button
+            class="btn btn-secondary"
+            id="lang-toggle"
+            onclick="toggleLanguage()"
+            style="padding: 0.5rem 0.75rem; min-width: auto;"
+            title="Switch Language"
+          >
+            <span class="lang-icon">🇺🇸</span> <span class="lang-text" style="font-size: 0.8rem">EN</span>
+          </button>
+          <button
+            class="btn btn-secondary theme-switch-btn"
+            id="theme-toggle"
+            onclick="toggleTheme()"
+            style="padding: 0.5rem; min-width: 36px; border-radius: 50%;"
+            title="Toggle Theme"
+            data-en-title="Toggle Theme"
+          >
+            <i class="fas fa-moon theme-icon"></i>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <section id="demo" class="demo-section" style="padding-top: 8rem">
+      <div class="demo-container">
+        <div class="section-header intro_text">
+          <h2 data-en="Interactive Demo">Demo Interactivo</h2>
+          <p data-en="Select location and approach to explore processed satellite data">
+            Selecciona ubicacion y enfoque para explorar datos satelitales procesados
+          </p>
+        </div>
+
+        <!-- Nota Informativa: Datos Tiempo Real -->
+        <div style="background: #fff3cd; color: #856404; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; border: 1px solid #ffeeba; display: flex; gap: 1rem; align-items: flex-start; max-width: 900px; margin-left: auto; margin-right: auto;">
+            <i class="fas fa-info-circle" style="margin-top: 0.25rem; font-size: 1.2rem;"></i>
+            <div style="text-align: left;">
+                <strong style="display: block; margin-bottom: 0.25rem;" data-en="Note on data frequency:">Nota sobre la frecuencia de datos:</strong>
+                <p style="margin: 0; font-size: 0.9rem; line-height: 1.5;" data-en-html="This demo uses the Google Earth Engine Research/Non-Commercial license. Images (Sentinel-2) have a 5-day frequency at the equator, but thanks to orbital overlap, at latitudes like Chile, this is reduced to <strong>2 to 3 days</strong>.<br/><i class='fas fa-exclamation-triangle' style='color: #d97706; margin-right: 4px;'></i> <strong>Due to GEE Free license and cloud filtering limits, the system queries up to 6 months of historical data; thus, analyzed images may not be contemporary with the current date.</strong><br/><i class='fas fa-check-circle' style='color: #2D5A4A; margin-right: 4px;'></i> <strong>'Real Time' (Live) monitoring is available exclusively in the Commercial Enterprise version.</strong>">
+                     Esta demostracion utiliza la licencia de investigacion/no comercial de Google Earth Engine. Las imagenes (Sentinel-2) tienen un tiempo de frecuencia de 5 dias en el ecuador, pero gracias al solapamiento de orbitas, en latitudes como Chile, esto se reduce a <strong>2 a 3 dias</strong>.
+                     <br/>
+                     <i class="fas fa-exclamation-triangle" style="color: #d97706; margin-right: 4px;"></i> <strong>Debido a límites de la licencia gratuita y filtrado de nubes, el sistema busca en un historial de hasta 6 meses; por lo tanto, las imágenes analizadas pueden no ser contemporáneas.</strong>
+                     <br/>
+                     <i class="fas fa-check-circle" style="color: #2D5A4A; margin-right: 4px;"></i> <strong>El monitoreo en 'Tiempo Real' (Live) esta disponible exclusivamente en la version Comercial Enterprise.</strong>
+                </p>
+                 <p style="margin-top: 0.5rem; font-size: 0.85rem; opacity: 0.9; border-top: 1px solid rgba(133, 100, 4, 0.2); padding-top: 0.5rem;" data-en-html="<strong>Methodology:</strong> Indices are calculated by processing spectral bands of non-visible light. The analysis area is determined geometrically (Area = &pi; &times; r&sup2;) covering the exact surface of the selected radius.">
+                    <strong>Metodologia:</strong> Los indices se calculan procesando bandas espectrales de luz no visible. El area de analisis se determina geometricamente (Area = &pi; &times; r&sup2;) cubriendo la superficie exacta del radio seleccionado.
+                </p>
+            </div>
+        </div>
+        <div class="demo-layout">
+          <div class="map-container" style="position: relative;">
+            <div id="demo-map">
+              <div class="map-placeholder" id="map-placeholder">
+                <i class="fas fa-map-marked-alt"></i>
+                <p>Cargando mapa...</p>
+              </div>
+            </div>
+            <div class="map-hint-overlay" id="map-hint">
+              <div class="map-hint-content">
+                <i class="fas fa-hand-pointer"></i>
+                <span data-en="Tap the map to select a location">Toca el mapa para seleccionar una ubicación</span>
+              </div>
+            </div>
+            <div class="map-controls">
+              <button
+                class="map-control-btn"
+                onclick="centerMap()"
+                title="Centrar en Chile"
+              >
+                <i class="fas fa-home"></i>
+              </button>
+              <button
+                class="map-control-btn"
+                onclick="toggleMapType()"
+                title="Cambiar vista"
+              >
+                <i class="fas fa-layer-group"></i>
+              </button>
+            </div>
+          </div>
+          <div class="sidebar">
+            <div class="panel">
+              <div class="status-bar">
+                <div class="status-item" data-en-html='<span class="status-dot" id="status-location"></span>Location'>
+                  <span class="status-dot" id="status-location"></span>Ubicacion
+                </div>
+                <div class="status-item" data-en-html='<span class="status-dot" id="status-approach"></span>Approach'>
+                  <span class="status-dot" id="status-approach"></span>Enfoque
+                </div>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel-header" data-en-html='<i class="fas fa-search"></i> Search Location'>
+                <i class="fas fa-search"></i> Buscar Ubicacion
+              </div>
+              <div class="search-wrapper">
+                <div id="autocomplete-container"></div>
+              </div>
+              <div class="location-badge" id="location-badge">
+                <h4 id="location-name">-</h4>
+                <p id="location-coords">-</p>
+              </div>
+              <div class="live-data" id="live-data">
+                <h4>
+                  <i class="fas fa-broadcast-tower"></i> Monitor en Vivo (Ejemplo)
+                </h4>
+                <div class="live-data-grid">
+                  <div class="live-data-item">
+                    <div class="live-data-label" data-en="Elevation">Elevacion</div>
+                    <div class="live-data-value" id="data-elevation">--</div>
+                  </div>
+                  <div class="live-data-item">
+                    <div class="live-data-label" data-en="Air Quality (AQI)">Calidad Aire (AQI)</div>
+                    <div class="live-data-value" id="data-aqi">--</div>
+                  </div>
+                  <div class="live-data-item">
+                    <div class="live-data-label" data-en="Solar Potential">Potencial Solar</div>
+                    <div class="live-data-value" id="data-solar">--</div>
+                  </div>
+                  <div class="live-data-item">
+                    <div class="live-data-label" data-en="Slope">Pendiente</div>
+                    <div class="live-data-value" id="data-slope">--</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel-header" data-en-html='<i class="fas fa-crosshairs"></i> Select Approach'>
+                <i class="fas fa-crosshairs"></i> Seleccionar Enfoque
+              </div>
+              <select
+                id="approach-select"
+                class="approach-select"
+                onchange="onApproachChange()"
+              >
+                <option value="" data-en="-- Choose an analysis approach --">-- Elige un enfoque de analisis --</option>
+                <optgroup label="Sectores Industriales" data-en-label="Industrial Sectors">
+                  <option value="mining" data-en="Sustainable Mining">Mineria Sostenible</option>
+                  <option value="agriculture" data-en="Smart Agribusiness">Agroindustria Inteligente</option>
+                  <option value="energy" data-en="Renewable Energy">Energias Renovables</option>
+                  <option value="real-estate" data-en="Real Estate Development">Desarrollo Inmobiliario</option>
+                </optgroup>
+                <optgroup label="Analisis General" data-en-label="General Analysis">
+                  <option value="fire-risk" data-en="Forest Fire Risk">Riesgo de Incendio Forestal</option>
+                  <option value="flood-risk" data-en="Flood Risk">Riesgo de Inundacion</option>
+                  <option value="water-management" data-en="Water Management">Gestion Hidrica</option>
+                  <option value="environmental" data-en="Environmental Quality">Calidad Ambiental</option>
+                  <option value="land-planning" data-en="Territorial Planning">
+                    Planificacion Territorial
+                  </option>
+                </optgroup>
+              </select>
+              <div class="indices-panel" id="indices-panel">
+                <div class="indices-title" data-en="Analysis indices and data:">Indices y datos del analisis:</div>
+                <div id="analysis-results" style="display: none"></div>
+                <div class="chart-container" style="display: none; margin-bottom: 1rem;">
+                  <canvas id="ndviChart"></canvas>
+                </div>
+                <div id="indices-list"></div>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel-header" data-en-html='<i class="fas fa-ruler-combined"></i> Analysis Radius'>
+                <i class="fas fa-ruler-combined"></i> Radio de Analisis
+              </div>
+              <select
+                id="radius-select"
+                class="approach-select"
+                onchange="onRadiusChange()"
+              >
+                <option value="" data-en="-- Select radius --">-- Selecciona el radio --</option>
+                <option value="2000" selected data-en="2 kilometers (~12.57 km²)">2 kilometros (~12.57 km²)</option>
+                <option value="5000" data-en="5 kilometers (~78.54 km²)">5 kilometros (~78.54 km²)</option>
+                <option value="10000" data-en="10 kilometers (~314.16 km²)">10 kilometros (~314.16 km²)</option>
+              </select>
+              <div
+                style="
+                  font-size: 0.75rem;
+                  color: var(--text-light);
+                  margin-top: 0.5rem;
+                "
+              >
+                <i class="fas fa-info-circle"></i> <span data-en="The radius defines the circular area around the point for analysis.">El radio define el area
+                circular alrededor del punto para el analisis.</span>
+              </div>
+            </div>
+            <div class="panel">
+              <button
+                class="btn btn-primary"
+                id="analyze-btn"
+                onclick="analyzeTerritory()"
+                disabled
+                data-en-html='<i class="fas fa-satellite-dish"></i> Start Analysis'
+              >
+                <i class="fas fa-satellite-dish"></i> Iniciar Analisis
+              </button>
+              <p
+                style="
+                  font-size: 0.8rem;
+                  color: var(--text-light);
+                  margin-top: 0.5rem;
+                  text-align: center;
+                "
+              >
+                <span data-en="Requires selected location and approach">Requiere ubicacion y enfoque seleccionados</span>
+              </p>
+            </div>
+            <div class="panel" id="history-panel" style="display: none;">
+              <div class="panel-header" data-en-html='<i class="fas fa-history"></i> Recent Analyses'>
+                <i class="fas fa-history"></i> Analisis Recientes
+              </div>
+              <div class="history-list" id="history-list"></div>
+            </div>
+          </div>
+        </div>
+        <div class="results-grid">
+          <div class="result-card" id="result-location">
+            <i class="fas fa-map-marker-alt result-icon"></i>
+            <div class="result-content">
+              <h4 data-en="Location">Ubicacion</h4>
+              <p data-en="Search or click on the map">Busca o haz clic en el mapa</p>
+            </div>
+          </div>
+          <div class="result-card" id="result-approach">
+            <i class="fas fa-crosshairs result-icon"></i>
+            <div class="result-content">
+              <h4 data-en="Approach">Enfoque</h4>
+              <p data-en="Select analysis type">Selecciona el tipo de analisis</p>
+            </div>
+          </div>
+          <div class="result-card">
+            <i class="fas fa-satellite result-icon"></i>
+            <div class="result-content">
+              <h4 data-en="Integrated APIs">APIs Integradas</h4>
+              <p>Elevation, Air Quality, Solar, Geocoding</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="team-section" id="equipo">
+      <div class="team-container">
+        <h2 class="section-title" data-en-html='<i class="fas fa-users"></i> Our Team'>
+          <i class="fas fa-users"></i> Nuestro Equipo
+        </h2>
+        <p class="section-subtitle" data-en="Meet the founders of GeoFeedback Chile">
+          Conoce a los fundadores de GeoFeedback Chile
+        </p>
+        <div class="team-grid">
+          <div class="team-card">
+            <div class="team-avatar"><i class="fas fa-user"></i></div>
+            <h3 class="team-name">Consuelo Sebastian Silva</h3>
+            <p class="team-role" data-en="Co-Founder">Co-Fundadora</p>
+            <a
+              href="https://www.linkedin.com/in/consuelo-sebastian-silva-b15407342/"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="team-linkedin"
+            >
+              <i class="fab fa-linkedin"></i> Ver LinkedIn
+            </a>
+          </div>
+          <div class="team-card">
+            <div class="team-avatar"><i class="fas fa-user"></i></div>
+            <h3 class="team-name">Alejandro Hernandez Aguirre</h3>
+            <p class="team-role" data-en="Co-Founder">Co-Fundador</p>
+            <a
+              href="https://www.linkedin.com/in/alejandro-hern%C3%A1ndez-aguirre-bb8967246/"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="team-linkedin"
+            >
+              <i class="fab fa-linkedin"></i> Ver LinkedIn
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="hero">
+      <!-- Animated space background: twinkling stars + crossing satellites -->
+      <canvas id="hero-space-canvas" aria-hidden="true"></canvas>
+      <div class="hero-content">
+        <div class="hero-text">
+          <h1 data-en-html="Democratizing <span>Territorial Intelligence</span>">Democratizando la <span>Inteligencia Territorial</span></h1>
+          <p data-en="Open source platform that transforms satellite data into risk maps and water management tools for Chile.">
+            Plataforma open source que transforma datos satelitales en mapas de
+            riesgo y herramientas de gestion hidrica para Chile.
+          </p>
+          <div class="hero-buttons">
+            <a href="#demo" class="btn btn-primary" data-en-html='<i class="fas fa-map-marked-alt"></i> Explore Demo'
+              ><i class="fas fa-map-marked-alt"></i> Explorar Demo</a
+            >
+            <a
+              href="https://github.com/theChosen16/Demo_geofeedback"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="btn btn-secondary"
+              ><i class="fab fa-github"></i> GitHub</a
+            >
+          </div>
+        </div>
+        <div class="hero-visual">
+          <div class="earth-atmosphere"></div>
+           <!-- [NEW] Optimized Stats Widget Position - Top Left to avoid any overlap -->
+          <div class="stats-widget" id="stats-widget" style="position: absolute; top: 12px; left: 12px; background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); padding: 0.8rem 1.5rem; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 100; display: flex; gap: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+              <div class="stat-item" style="text-align: center;">
+                  <span id="stat-visits" style="display: block; font-size: 1.5rem; font-weight: 800; color: #10b981; text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);">-</span>
+                  <span style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: 600; letter-spacing: 1px;" data-en="Visits">Visitas</span>
+              </div>
+              <div class="stat-divider" style="width: 1px; background: rgba(255,255,255,0.1); align-self: stretch;"></div>
+              <div class="stat-item" style="text-align: center;">
+                  <span id="stat-analyses" style="display: block; font-size: 1.5rem; font-weight: 800; color: #3b82f6; text-shadow: 0 0 10px rgba(59, 130, 246, 0.3);">-</span>
+                  <span style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: 600; letter-spacing: 1px;" data-en="Analyses">Análisis</span>
+              </div>
+          </div>
+
+          <!-- Professional 3D Sphere (CSS) -->
+           <div class="earth"></div>
+           <!-- Removed Cartoon SVG -->
+
+
+          <div class="earth-satellite-animation">
+            <!-- Stars Background -->
+            <div class="stars-container">
+              <div class="star"></div>
+              <div class="star"></div>
+              <div class="star"></div>
+              <div class="star"></div>
+              <div class="star"></div>
+              <div class="star"></div>
+              <div class="star"></div>
+              <div class="star"></div>
+            </div>
+
+            <!-- Orbit Path -->
+            <div class="orbit-path"></div>
+            <!-- Professional 3D Satellite -->
+            <div class="satellite-container">
+                <div class="satellite-body-group">
+                    <!-- Left Panel Group -->
+                    <div class="solar-panel-group panel-left-group">
+                        <div class="panel-face panel-front"></div>
+                        <div class="panel-face panel-back"></div>
+                    </div>
+                    
+                    <!-- Main Body Cube -->
+                    <div class="sat-cube">
+                        <div class="cube-face face-front"></div>
+                        <div class="cube-face face-back"></div>
+                        <div class="cube-face face-right"></div>
+                        <div class="cube-face face-left"></div>
+                        <div class="cube-face face-top"></div>
+                        <div class="cube-face face-bottom"></div>
+                    </div>
+
+                    <!-- Right Panel Group -->
+                    <div class="solar-panel-group panel-right-group">
+                         <div class="panel-face panel-front"></div>
+                         <div class="panel-face panel-back"></div>
+                    </div>
+                    
+                    <!-- Detailed 3D Satellite Components -->
+                    <div class="sat-antenna-rod"></div>
+                    <div class="sat-antenna"></div>
+                    <div class="sat-sensor"></div>
+                    <div class="sat-thruster"></div>
+                    
+                    <!-- Dynamic Scanning Laser Beam -->
+                    <div class="scanning-beam"></div>
+                </div>
+            </div>
+
+            <!-- Data Points on Earth -->
+            <div class="data-points">
+              <div class="data-point"></div>
+              <div class="data-point"></div>
+              <div class="data-point"></div>
+              <div class="data-point"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section id="problema" class="section section-dark">
+      <div class="container">
+        <div class="section-header">
+          <h2 data-en="The Problem">El Problema</h2>
+          <p data-en="Chile faces critical challenges in territorial management">Chile enfrenta desafios criticos en gestion territorial</p>
+        </div>
+        <div class="cards-grid">
+          <div class="card">
+            <i class="fas fa-balance-scale"></i>
+            <h3 data-en="Law 21.364">Ley 21.364</h3>
+            <p data-en="Municipalities must develop emergency plans and risk maps, but lack accessible tools.">
+              Municipios deben elaborar planes de emergencia y mapas de riesgo,
+              pero carecen de herramientas accesibles.
+            </p>
+          </div>
+          <div class="card">
+            <i class="fas fa-tint-slash"></i>
+            <h3 data-en="Mega-drought">Mega-sequia</h3>
+            <p data-en="15 years of water deficit. Farmers need data to optimize water use.">
+              15 años de deficit hidrico. Agricultores necesitan datos para
+              optimizar uso del agua.
+            </p>
+          </div>
+          <div class="card">
+            <i class="fas fa-dollar-sign"></i>
+            <h3 data-en="High Cost">Alto Costo</h3>
+            <p data-en="Professional geospatial studies are expensive for rural municipalities.">
+              Estudios geoespaciales profesionales son costosos para municipios
+              rurales.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section id="solucion" class="section section-light">
+      <div class="container">
+        <div class="section-header">
+          <h2 data-en="Our Solution">Nuestra Solucion</h2>
+          <p data-en="Territorial intelligence with Google Maps Platform + Google Earth Engine APIs">
+            Inteligencia territorial con APIs de Google Maps Platform + Google
+            Earth Engine
+          </p>
+        </div>
+
+        <!-- API Category: Satellite -->
+        <h3
+          class="solucion-category-title"
+          data-en-html='<i class="fas fa-satellite" style="color: var(--secondary)"></i> Satellite Analysis'
+        >
+          <i class="fas fa-satellite" style="color: var(--secondary)"></i>
+          Analisis Satelital
+        </h3>
+        <div class="cards-grid" style="margin-bottom: 2rem">
+          <div class="card card-light">
+            <i class="fab fa-google"></i>
+            <h3>Google Earth Engine</h3>
+            <p data-en="Sentinel-2 Processing (NDVI, NDWI, NDMI)">Procesamiento de Sentinel-2 (NDVI, NDWI, NDMI)</p>
+          </div>
+          <div class="card card-light">
+            <i class="fas fa-th"></i>
+            <h3>Map Tiles API</h3>
+            <p data-en="Custom map tiles and overlays">Tiles de mapas personalizados y overlays</p>
+          </div>
+        </div>
+
+        <!-- API Category: Location -->
+        <h3
+          class="solucion-category-title"
+          data-en-html='<i class="fas fa-location-dot" style="color: var(--secondary)"></i> Location and Places'
+        >
+          <i class="fas fa-location-dot" style="color: var(--secondary)"></i>
+          Ubicacion y Lugares
+        </h3>
+        <div class="cards-grid" style="margin-bottom: 2rem">
+          <div class="card card-light">
+            <i class="fas fa-location-arrow"></i>
+            <h3>Geocoding API</h3>
+            <p data-en="Address to coordinate conversion">Conversion direccion a coordenadas</p>
+          </div>
+          <div class="card card-light">
+            <i class="fas fa-location-crosshairs"></i>
+            <h3>Geolocation API</h3>
+            <p data-en="Real-time user location">Ubicacion del usuario en tiempo real</p>
+          </div>
+          <div class="card card-light">
+            <i class="fas fa-building"></i>
+            <h3>Places API (New)</h3>
+            <p data-en="Places and infrastructure search">Busqueda de lugares e infraestructura</p>
+          </div>
+          <div class="card card-light">
+            <i class="fas fa-check-circle"></i>
+            <h3>Address Validation</h3>
+            <p data-en="Postal address validation">Validacion de direcciones postales</p>
+          </div>
+        </div>
+
+        <!-- API Category: Analysis -->
+        <h3
+          class="solucion-category-title"
+          data-en-html='<i class="fas fa-chart-line" style="color: var(--secondary)"></i> Analysis APIs'
+        >
+          <i class="fas fa-chart-line" style="color: var(--secondary)"></i> APIs
+          de Analisis
+        </h3>
+        <div class="cards-grid" style="margin-bottom: 2rem">
+          <div class="card card-light">
+            <i class="fas fa-mountain"></i>
+            <h3>Elevation API</h3>
+            <p data-en="Real-time topographic data">Datos topograficos en tiempo real</p>
+          </div>
+          <div class="card card-light">
+            <i class="fas fa-wind"></i>
+            <h3>Air Quality API</h3>
+            <p data-en="Air quality at 500m resolution">Calidad del aire resolucion 500m</p>
+          </div>
+          <div class="card card-light">
+            <i class="fas fa-sun"></i>
+            <h3>Solar API</h3>
+            <p data-en="Rooftop photovoltaic potential">Potencial fotovoltaico de cubiertas</p>
+          </div>
+          <div class="card card-light">
+            <i class="fas fa-leaf"></i>
+            <h3>Pollen API</h3>
+            <p data-en="Pollen and allergen levels">Niveles de polen y alergenos</p>
+          </div>
+        </div>
+
+        <!-- API Category: Visualization -->
+        <h3
+          class="solucion-category-title"
+          data-en-html='<i class="fas fa-map" style="color: var(--secondary)"></i> Visualization'
+        >
+          <i class="fas fa-map" style="color: var(--secondary)"></i>
+          Visualizacion
+        </h3>
+        <div class="cards-grid">
+          <div class="card card-light">
+            <i class="fas fa-map-marked-alt"></i>
+            <h3>Maps JavaScript API</h3>
+            <p data-en="Interactive web maps">Mapas interactivos web</p>
+          </div>
+          <div class="card card-light">
+            <i class="fas fa-image"></i>
+            <h3>Maps Static API</h3>
+            <p data-en="Static maps for PDF reports">Mapas estaticos para reportes PDF</p>
+          </div>
+          <div class="card card-light">
+            <i class="fas fa-database"></i>
+            <h3>Maps Datasets API</h3>
+            <p data-en="Geospatial dataset management">Gestion de datasets geoespaciales</p>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section id="indices" class="section section-dark">
+      <div class="container">
+        <div class="section-header">
+          <h2 data-en="Sentinel-2 Satellite Indices">Indices Satelitales Sentinel-2</h2>
+          <p data-en="Understanding the data we analyze">Comprendiendo los datos que analizamos</p>
+        </div>
+        <div class="cards-grid">
+          <div class="card">
+            <i class="fas fa-leaf"></i>
+            <h3 data-en="NDVI - Vegetation Index">NDVI - Indice de Vegetacion</h3>
+            <p data-en-html="<strong>Formula:</strong> (NIR - Red) / (NIR + Red)"><strong>Formula:</strong> (NIR - Rojo) / (NIR + Rojo)</p>
+            <p><strong>Bandas:</strong> (B8 - B4) / (B8 + B4)</p>
+            <p><strong>Rango:</strong> -1 a +1</p>
+            <p data-en="Values > 0.3 indicate healthy vegetation. Used to monitor crop health and vegetation cover.">
+              Valores &gt; 0.3 indican vegetacion saludable. Usado para
+              monitorear salud de cultivos y cobertura vegetal.
+            </p>
+          </div>
+          <div class="card">
+            <i class="fas fa-water"></i>
+            <h3 data-en="NDWI - Water Index">NDWI - Indice de Agua</h3>
+            <p data-en-html="<strong>Formula:</strong> (Green - NIR) / (Green + NIR)"><strong>Formula:</strong> (Verde - NIR) / (Verde + NIR)</p>
+            <p><strong>Bandas:</strong> (B3 - B8) / (B3 + B8)</p>
+            <p><strong>Rango:</strong> -1 a +1</p>
+            <p data-en="Values > 0.3 indicate water presence. Detects water bodies, floods, and surface moisture.">
+              Valores &gt; 0.3 indican presencia de agua. Detecta cuerpos de
+              agua, inundaciones y humedad superficial.
+            </p>
+          </div>
+          <div class="card">
+            <i class="fas fa-tint"></i>
+            <h3 data-en="NDMI - Moisture Index">NDMI - Indice de Humedad</h3>
+            <p data-en-html="<strong>Formula:</strong> (NIR - SWIR) / (NIR + SWIR)"><strong>Formula:</strong> (NIR - SWIR) / (NIR + SWIR)</p>
+            <p><strong>Bandas:</strong> (B8 - B11) / (B8 + B11)</p>
+            <p><strong>Rango:</strong> -1 a +1</p>
+            <p data-en="Values > 0.2 indicate high moisture. Evaluates water stress in vegetation.">
+              Valores &gt; 0.2 indican alta humedad. Evalua estres hidrico en
+              vegetacion y contenido de agua en plantas.
+            </p>
+          </div>
+        </div>
+
+        <!-- Science Explainer Box with Animations -->
+        <div class="science-explainer" style="margin-top: 2rem">
+          <!-- Como funcionan los indices -->
+          <div
+            class="explainer-card"
+            style="
+              background: linear-gradient(
+                135deg,
+                rgba(45, 90, 74, 0.15) 0%,
+                rgba(0, 0, 0, 0.3) 100%
+              );
+              border-radius: 16px;
+              padding: 1.5rem;
+              margin-bottom: 1.5rem;
+              animation: fadeInUp 0.6s ease-out;
+            "
+          >
+            <h4
+              style="
+                color: var(--secondary);
+                margin-bottom: 1rem;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+              "
+              data-en-html='<i class="fas fa-lightbulb" style="animation: pulse 2s infinite"></i> How do these indices work?'
+            >
+              <i
+                class="fas fa-lightbulb"
+                style="animation: pulse 2s infinite"
+              ></i>
+              ¿Como funcionan estos indices?
+            </h4>
+            <p style="line-height: 1.8; font-size: 1rem; color: #e0e0e0" data-en-html='Imagine that every material on Earth has its own "light fingerprint". Plants, water, and soil reflect and absorb different colors in unique ways.<br /><br /><strong style="color: var(--secondary)">🌿 Healthy plants</strong> absorb red light for photosynthesis, but intensely reflect infrared light (invisible to us). It is as if plants "glow" in infrared when they are healthy.<br /><br /><strong style="color: #3b82f6">💧 Water</strong> absorbs almost all infrared light, but reflects some green light. That is why we can detect lakes, rivers and floods from space.<br /><br /><strong style="color: #06b6d4">💦 Moisture in plants</strong> absorbs a special type of infrared (SWIR). When plants are thirsty, this "signature" changes, allowing us to detect water stress before it is visible.'>
+              Imagina que cada material en la Tierra tiene su propia "huella
+              digital" de luz. Las plantas, el agua y el suelo reflejan y
+              absorben diferentes colores de forma unica.
+              <br /><br />
+              <strong style="color: var(--secondary)"
+                >🌿 Las plantas sanas</strong
+              >
+              absorben la luz roja para hacer fotosintesis, pero reflejan
+              intensamente la luz infrarroja (invisible para nosotros). Es como
+              si las plantas "brillaran" en infrarrojo cuando estan sanas.
+              <br /><br />
+              <strong style="color: #3b82f6">💧 El agua</strong> absorbe casi
+              toda la luz infrarroja, pero refleja algo de luz verde. Por eso
+              podemos detectar lagos, rios e inundaciones desde el espacio.
+              <br /><br />
+              <strong style="color: #06b6d4"
+                >💦 La humedad en las plantas</strong
+              >
+              absorbe un tipo especial de infrarrojo (SWIR). Cuando las plantas
+              tienen sed, esta "firma" cambia, permitiendonos detectar estres
+              hidrico antes de que sea visible.
+            </p>
+          </div>
+
+          <!-- Sentinel-2 Info -->
+          <div
+            class="explainer-card"
+            style="
+              background: linear-gradient(
+                135deg,
+                rgba(59, 130, 246, 0.1) 0%,
+                rgba(0, 0, 0, 0.3) 100%
+              );
+              border-radius: 16px;
+              padding: 1.5rem;
+              animation: fadeInUp 0.8s ease-out;
+            "
+          >
+            <h4
+              style="
+                color: #60a5fa;
+                margin-bottom: 1rem;
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+              "
+              data-en-html='<i class="fas fa-satellite" style="animation: float 3s ease-in-out infinite"></i> Sentinel-2: Our eyes in space'
+            >
+              <i
+                class="fas fa-satellite"
+                style="animation: float 3s ease-in-out infinite"
+              ></i>
+              Sentinel-2: Nuestros ojos en el espacio
+            </h4>
+            <div
+              style="
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 1rem;
+                margin-bottom: 1rem;
+              "
+            >
+              <div
+                style="
+                  background: rgba(0, 0, 0, 0.2);
+                  padding: 1rem;
+                  border-radius: 8px;
+                  text-align: center;
+                "
+              >
+                <div
+                  style="
+                    font-size: 1.8rem;
+                    color: var(--secondary);
+                    font-weight: bold;
+                  "
+                >
+                  🇪🇺
+                </div>
+                <div style="font-size: 0.85rem; color: #aaa" data-en-html='Operated by ESA<br />(European Space Agency)'>
+                  Operado por ESA<br />(Agencia Espacial Europea)
+                </div>
+              </div>
+              <div
+                style="
+                  background: rgba(0, 0, 0, 0.2);
+                  padding: 1rem;
+                  border-radius: 8px;
+                  text-align: center;
+                "
+              >
+                <div
+                  style="
+                    font-size: 1.8rem;
+                    color: var(--secondary);
+                    font-weight: bold;
+                  "
+                >
+                  €200M
+                </div>
+                <div style="font-size: 0.85rem; color: #aaa" data-en-html='Cost per satellite<br />+ €25M/year operation'>
+                  Costo por satelite<br />+ €25M/año operacion
+                </div>
+              </div>
+              <div
+                style="
+                  background: rgba(0, 0, 0, 0.2);
+                  padding: 1rem;
+                  border-radius: 8px;
+                  text-align: center;
+                "
+              >
+                <div
+                  style="
+                    font-size: 1.8rem;
+                    color: var(--secondary);
+                    font-weight: bold;
+                  "
+                  data-en="FREE"
+                >
+                  GRATIS
+                </div>
+                <div style="font-size: 0.85rem; color: #aaa" data-en-html='Open data<br />for the whole world'>
+                  Datos abiertos<br />para todo el mundo
+                </div>
+              </div>
+            </div>
+            <p style="font-size: 0.9rem; color: #9ca3af; line-height: 1.6" data-en-html='<i class="fas fa-info-circle"></i> Sentinel-2 captures 13 "colors" of light (spectral bands). For even more detailed analysis, ESA is developing <strong>CHIME</strong>, a hyperspectral satellite with over 200 bands that will function as a chemical laboratory in orbit.'>
+              <i class="fas fa-info-circle"></i>
+              Sentinel-2 captura 13 "colores" de luz (bandas espectrales). Para
+              analisis aun mas detallados, la ESA esta desarrollando
+              <strong>CHIME</strong>, un satelite hiperespectral con mas de 200
+              bandas que funcionara como un laboratorio quimico en orbita.
+            </p>
+          </div>
+        </div>
+
+        <style>
+          @keyframes fadeInUp {
+            from {
+              opacity: 0;
+              transform: translateY(20px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          @keyframes pulse {
+            0%,
+            100% {
+              opacity: 1;
+            }
+            50% {
+              opacity: 0.5;
+            }
+          }
+          @keyframes float {
+            0%,
+            100% {
+              transform: translateY(0px);
+            }
+            50% {
+              transform: translateY(-5px);
+            }
+          }
+        </style>
+      </div>
+    </section>
+    <section id="servicios" class="section section-dark">
+      <div class="container">
+        <div class="section-header">
+          <h2>
+            <i class="fas fa-rocket" style="color: var(--accent)"></i> <span data-en="Premium Services">Servicios
+            Premium</span>
+          </h2>
+          <p data-en="Professional territorial intelligence solutions for your organization">
+            Soluciones profesionales de inteligencia territorial para tu
+            organizacion
+          </p>
+        </div>
+
+        <!-- Planes de Suscripcion -->
+        <h3 style="color: white; margin-bottom: 1.5rem; font-size: 1.3rem" data-en-html='<i class="fas fa-tags" style="color: var(--secondary)"></i> Subscription Plans'>
+          <i class="fas fa-tags" style="color: var(--secondary)"></i> Planes de
+          Suscripcion
+        </h3>
+        <div class="cards-grid" style="margin-bottom: 3rem">
+          <div class="card" style="border: 2px solid rgba(255, 255, 255, 0.1)">
+            <div style="text-align: center">
+              <span
+                style="
+                  background: var(--secondary);
+                  color: white;
+                  padding: 0.25rem 0.75rem;
+                  border-radius: 20px;
+                  font-size: 0.8rem;
+                  font-weight: 600;
+                "
+                data-en="MONITORING"
+                >MONITOREO</span
+              >
+              <div style="font-size: 2rem; font-weight: 800; margin: 1rem 0">
+                $700.000<span style="font-size: 0.9rem; font-weight: 400" data-en=" CLP/mo">
+                  CLP/mes</span
+                >
+              </div>
+            </div>
+            <ul
+              style="
+                list-style: none;
+                padding: 0;
+                margin: 1rem 0;
+                color: rgba(255, 255, 255, 0.8);
+              "
+            >
+              <li style="padding: 0.5rem 0">
+                <i
+                  class="fas fa-check"
+                  style="color: var(--secondary); margin-right: 0.5rem"
+                ></i><strong data-en="GEE Commercial License">Licencia Comercial GEE</strong> <span data-en="included">incluida</span>
+              </li>
+              <li style="padding: 0.5rem 0">
+                <i
+                  class="fas fa-check"
+                  style="color: var(--secondary); margin-right: 0.5rem"
+                ></i><span data-en-html="Managed <strong>Google Cloud</strong> infrastructure">Infraestructura Google Cloud gestionada</span>
+              </li>
+              <li style="padding: 0.5rem 0">
+                <i
+                  class="fas fa-check"
+                  style="color: var(--secondary); margin-right: 0.5rem"
+                ></i><span data-en="Custom real-time dashboard">Dashboard en tiempo real personalizado</span>
+              </li>
+              <li style="padding: 0.5rem 0">
+                <i
+                  class="fas fa-check"
+                  style="color: var(--secondary); margin-right: 0.5rem"
+                ></i><span data-en="Email alerts">Alertas por email</span>
+              </li>
+              <li style="padding: 0.5rem 0">
+                <i
+                  class="fas fa-check"
+                  style="color: var(--secondary); margin-right: 0.5rem"
+                ></i><span data-en="Email support">Soporte por email</span>
+              </li>
+            </ul>
+            <a
+              href="#contacto"
+              class="btn btn-primary"
+              style="width: 100%; justify-content: center"
+              data-en="Start Now"
+              >Comenzar</a
+            >
+          </div>
+
+          <div
+            class="card"
+            style="
+              border: 2px solid var(--secondary);
+              transform: scale(1.05);
+              position: relative;
+            "
+          >
+            <div style="text-align: center">
+              <span
+                style="
+                  background: linear-gradient(
+                    135deg,
+                    var(--secondary),
+                    var(--accent)
+                  );
+                  color: white;
+                  padding: 0.25rem 0.75rem;
+                  border-radius: 20px;
+                  font-size: 0.8rem;
+                  font-weight: 600;
+                "
+                data-en="PROFESSIONAL"
+                >PROFESIONAL</span
+              >
+              <div style="font-size: 2rem; font-weight: 800; margin: 1rem 0">
+                $2.800.000<span style="font-size: 0.9rem; font-weight: 400" data-en=" CLP/mo">
+                  CLP/mes</span
+                >
+              </div>
+            </div>
+            <ul
+              style="
+                list-style: none;
+                padding: 0;
+                margin: 1rem 0;
+                color: rgba(255, 255, 255, 0.8);
+              "
+            >
+              <li style="padding: 0.5rem 0">
+                <i
+                  class="fas fa-check"
+                  style="color: var(--secondary); margin-right: 0.5rem"
+                ></i><strong data-en="All Monitoring Features">Todas las funciones de Monitoreo</strong>
+              </li>
+                <i
+                  class="fas fa-check"
+                  style="color: var(--secondary); margin-right: 0.5rem"
+                ></i><strong data-en="High Computing Capacity">Alta Capacidad de Cómputo</strong> (High-EECU)
+              </li>
+              <li style="padding: 0.5rem 0">
+                <i
+                  class="fas fa-check"
+                  style="color: var(--secondary); margin-right: 0.5rem"
+                ></i><strong data-en="Private Data Ingestion">Ingesta de Datos Privados</strong> (Drones/Satellite)
+              </li>
+              <li style="padding: 0.5rem 0">
+                <i
+                  class="fas fa-check"
+                  style="color: var(--secondary); margin-right: 0.5rem"
+                ></i><span data-en="Unlimited Full-Resolution export">Exportación Full-Resolution sin límites</span>
+              </li>
+              <li style="padding: 0.5rem 0">
+                <i
+                  class="fas fa-check"
+                  style="color: var(--secondary); margin-right: 0.5rem"
+                ></i><span data-en="API to integrate data into your systems">API para integrar data a tus sistemas</span>
+              </li>
+              <li style="padding: 0.5rem 0">
+                <i
+                  class="fas fa-check"
+                  style="color: var(--secondary); margin-right: 0.5rem"
+                ></i><span data-en="Real-time alerts (email + SMS)">Alertas en tiempo real (email + SMS)</span>
+              </li>
+              <li style="padding: 0.5rem 0">
+                <i
+                  class="fas fa-check"
+                  style="color: var(--secondary); margin-right: 0.5rem"
+                ></i><span data-en="Automatic reports">Reportes automaticos</span>
+              </li>
+              <li style="padding: 0.5rem 0">
+                <i
+                  class="fas fa-check"
+                  style="color: var(--secondary); margin-right: 0.5rem"
+                ></i><span data-en="Priority support">Soporte prioritario</span>
+              </li>
+            </ul>
+            <a
+              href="#contacto"
+              class="btn btn-primary"
+              style="width: 100%; justify-content: center"
+              data-en="Choose Plan"
+              >Elegir Plan</a
+            >
+          </div>
+
+          <div class="card" style="border: 2px solid rgba(255, 255, 255, 0.1)">
+            <div style="text-align: center">
+              <span
+                style="
+                  background: var(--primary-light);
+                  color: white;
+                  padding: 0.25rem 0.75rem;
+                  border-radius: 20px;
+                  font-size: 0.8rem;
+                  font-weight: 600;
+                "
+                data-en="ENGINEERING"
+                >INGENIERIA</span
+              >
+              <div style="font-size: 2rem; font-weight: 800; margin: 1rem 0" data-en="Contact Us">
+                Contactar
+              </div>
+            </div>
+            <ul
+              style="
+                list-style: none;
+                padding: 0;
+                margin: 1rem 0;
+                color: rgba(255, 255, 255, 0.8);
+              "
+            >
+              <li style="padding: 0.5rem 0">
+                <i
+                  class="fas fa-check"
+                  style="color: var(--secondary); margin-right: 0.5rem"
+                ></i><span data-en="Environmental Engineering Services">Servicios de Ingenieria Ambiental</span>
+              </li>
+              <li style="padding: 0.5rem 0">
+                <i
+                  class="fas fa-check"
+                  style="color: var(--secondary); margin-right: 0.5rem"
+                ></i><span data-en="Environmental Impact Studies (EIA/DIA)">Estudios de Impacto Ambiental (EIA/DIA)</span>
+              </li>
+              <li style="padding: 0.5rem 0">
+                <i
+                  class="fas fa-check"
+                  style="color: var(--secondary); margin-right: 0.5rem"
+                ></i><span data-en="Custom GIS Consulting">Consultoria GIS personalizada</span>
+              </li>
+              <li style="padding: 0.5rem 0">
+                <i
+                  class="fas fa-check"
+                  style="color: var(--secondary); margin-right: 0.5rem"
+                ></i><span data-en="Environmental compliance monitoring">Monitoreo de cumplimiento ambiental</span>
+              </li>
+              <li style="padding: 0.5rem 0">
+                <i
+                  class="fas fa-check"
+                  style="color: var(--secondary); margin-right: 0.5rem"
+                ></i><span data-en="Dedicated project manager">Gestor de proyecto dedicado</span>
+              </li>
+            </ul>
+            <a
+              href="#contacto"
+              class="btn btn-secondary"
+              style="width: 100%; justify-content: center"
+              data-en="Contact"
+              >Contactar</a
+            >
+          </div>
+        </div>
+
+        <!-- Why GEE Section -->
+        <div style="background: rgba(255,255,255,0.05); padding: 2rem; border-radius: 16px; margin-bottom: 3rem; border-left: 4px solid var(--secondary);">
+            <h4 style="color: white; margin-bottom: 1rem;" data-en-html='<i class="fas fa-info-circle"></i> Why GeoFeedback + Google Earth Engine?'><i class="fas fa-info-circle"></i> ¿Por qué GeoFeedback + Google Earth Engine?</h4>
+            <p style="color: rgba(255,255,255,0.8); margin-bottom: 1rem;" data-en-html="Google Earth Engine (GEE) is free only for research. <strong>For commercial use, it requires expensive Enterprise licenses.</strong>">
+                Google Earth Engine (GEE) es gratuito solo para investigación. <strong>Para uso comercial requiere licencias Enterprise costosas.</strong>
+            </p>
+            <p style="color: rgba(255,255,255,0.8); margin-bottom: 1rem;" data-en="GeoFeedback removes that barrier. By subscribing, you get legal and direct access to the power of GEE for your business, without complex contracts or your own infrastructure. We manage the Earth Engine Compute Units (EECU) and storage for you.">
+                GeoFeedback elimina esa barrera. Al suscribirte, obtienes acceso legal y directo a la potencia de GEE para tu negocio, sin contratos complejos ni infraestructura propia. Nosotros gestionamos las Earth Engine Compute Units (EECU) y el almacenamiento por ti.
+            </p>
+            <p style="color: rgba(255,255,255,0.8); font-size: 0.9rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
+                <span data-en="Our prices (Monitoring 700k and Professional 2.8M) are based on the official cost of Google's commercial license (500k and 2M) plus 40% for management and infrastructure.">Nuestros precios (Básico 700k y Profesional 2.8M) se basan en el costo oficial de la licencia comercial de Google (500k y 2M) más un 40% por gestión e infraestructura.</span>
+                <br>
+                <a href="https://cloud.google.com/earth-engine/pricing?hl=es_419" target="_blank" style="color: var(--secondary); text-decoration: underline; margin-top: 0.5rem; display: inline-block;" data-en-html='<i class="fas fa-external-link-alt"></i> See Official Google Earth Engine Pricing'>
+                    <i class="fas fa-external-link-alt"></i> Ver Precios Oficiales de Google Earth Engine
+                </a>
+            </p>
+        </div>
+
+        <!-- Servicios Profesionales -->
+        <h3 style="color: white; margin-bottom: 1.5rem; font-size: 1.3rem" data-en-html='<i class="fas fa-leaf" style="color: var(--secondary)"></i> <span data-en="Environmental Engineering Services">Environmental Engineering Services</span>'>
+          <i class="fas fa-leaf" style="color: var(--secondary)"></i> <span data-en="Environmental Engineering Services">Servicios de Ingenieria Ambiental</span>
+        </h3>
+        <div class="cards-grid" style="margin-bottom: 3rem">
+          <div class="card">
+            <i class="fas fa-file-alt"></i>
+            <h3 data-en="Environmental Impact Assessment">Evaluacion de Impacto Ambiental</h3>
+            <p data-en="Baseline studies with satellite imagery. Vegetation, water resources, and land use analysis for EIA and DIA.">
+              Estudios de linea base con imagenes satelitales. Analisis de
+              vegetacion, recursos hidricos y uso de suelo para EIA y DIA.
+            </p>
+          </div>
+          <div class="card">
+            <i class="fas fa-clipboard-check"></i>
+            <h3 data-en="Compliance Monitoring">Monitoreo de Cumplimiento</h3>
+            <p data-en="Follow-up on RCA and SEIA regulations. Early detection of non-compliance through temporal analysis of indices.">
+              Seguimiento de RCA y normativas SEIA. Deteccion temprana de
+              incumplimientos mediante analisis temporal de indices.
+            </p>
+          </div>
+          <div class="card">
+            <i class="fas fa-exclamation-triangle"></i>
+            <h3 data-en="Natural Risk Management">Gestion de Riesgos Naturales</h3>
+            <p data-en="Water risk, forest fire, and landslide maps. Predictive models with topographic and climatic data.">
+              Mapas de riesgo hidrico, incendios forestales y deslizamientos.
+              Modelos predictivos con datos topograficos y climaticos.
+            </p>
+          </div>
+          <div class="card">
+            <i class="fas fa-project-diagram"></i>
+            <h3 data-en="Custom GIS Consulting">Consultoria GIS Personalizada</h3>
+            <p data-en="Development of tailored geospatial solutions. Dashboards, automated reports, and integrations with existing systems.">
+              Desarrollo de soluciones geoespaciales a medida. Dashboards,
+              reportes automatizados e integraciones con sistemas existentes.
+            </p>
+          </div>
+        </div>
+
+        <!-- Dashboard Demo -->
+        <h3 style="color: white; margin-bottom: 1.5rem; font-size: 1.3rem" data-en-html='<i class="fas fa-server" style="color: var(--secondary)"></i> Dashboard Example: Powered by Google Earth Engine™'>
+          <i class="fas fa-server" style="color: var(--secondary)"></i>
+          Ejemplo de Dashboard: Potenciado por Google Earth Engine™
+        </h3>
+        <p style="color: rgba(255,255,255,0.7); margin-bottom: 1.5rem; max-width: 800px;" data-en="We process petabytes of satellite data in seconds using Google cloud infrastructure. Access massive computing capacity without managing your own servers.">
+            Procesamos petabytes de datos satelitales en segundos utilizando la infraestructura en la nube de Google. 
+            Accede a capacidad de cómputo masiva sin gestionar servidores propios.
+        </p>
+        <div class="dashboard-demo-card">
+          <div class="dashboard-demo-grid">
+            <div
+              class="dashboard-stat-box"
+              style="background: rgba(16, 185, 129, 0.2);"
+            >
+              <div
+                style="
+                  font-size: 0.8rem;
+                  color: rgba(255, 255, 255, 0.7);
+                  margin-bottom: 0.5rem;
+                "
+                data-en="Processing (EECU)"
+              >
+                Procesamiento (EECU)
+              </div>
+              <div
+                style="
+                  font-size: 2rem;
+                  font-weight: 700;
+                  color: var(--secondary);
+                "
+              >
+                98%
+              </div>
+            </div>
+            <div
+              class="dashboard-stat-box"
+              style="background: rgba(59, 130, 246, 0.2);"
+            >
+              <div
+                style="
+                  font-size: 0.8rem;
+                  color: rgba(255, 255, 255, 0.7);
+                  margin-bottom: 0.5rem;
+                "
+                data-en="Analysis Latency"
+              >
+                Latencia Análisis
+              </div>
+              <div style="font-size: 2rem; font-weight: 700; color: #3b82f6">
+                120ms
+              </div>
+            </div>
+            <div
+              class="dashboard-stat-box"
+              style="background: rgba(245, 158, 11, 0.2);"
+            >
+              <div
+                style="
+                  font-size: 0.8rem;
+                  color: rgba(255, 255, 255, 0.7);
+                  margin-bottom: 0.5rem;
+                "
+                data-en="Images/sec"
+              >
+                Imágenes/seg
+              </div>
+              <div style="font-size: 2rem; font-weight: 700; color: #f59e0b">
+                2.5k
+              </div>
+            </div>
+            <div
+              class="dashboard-stat-box"
+              style="background: rgba(239, 68, 68, 0.2);"
+            >
+              <div
+                style="
+                  font-size: 0.8rem;
+                  color: rgba(255, 255, 255, 0.7);
+                  margin-bottom: 0.5rem;
+                "
+                data-en="Risk Zones"
+              >
+                Zonas de Riesgo
+              </div>
+              <div style="font-size: 2rem; font-weight: 700; color: #ef4444">
+                8
+              </div>
+            </div>
+          </div>
+
+          <!-- Alertas Demo -->
+          <div
+            style="
+              border-top: 1px solid rgba(255, 255, 255, 0.1);
+              padding-top: 1.5rem;
+            "
+          >
+            <h4 style="color: white; margin-bottom: 1rem; font-size: 1rem" data-en-html='<i class="fas fa-bell" style="color: var(--accent)"></i> Latest Alerts'>
+              <i class="fas fa-bell" style="color: var(--accent)"></i> Ultimas
+              Alertas
+            </h4>
+            <div class="demo-alerts-list">
+              <div class="demo-alert-card critical">
+                <i class="fas fa-exclamation-circle alert-icon"></i>
+                <div class="alert-content">
+                  <div
+                    class="alert-title"
+                    data-en="NDVI drop detected - North Sector"
+                  >
+                    Caida de NDVI detectada - Sector Norte
+                  </div>
+                  <div
+                    class="alert-desc"
+                    data-en="2 hours ago - Possible drought or logging"
+                  >
+                    Hace 2 horas - Posible sequia o tala
+                  </div>
+                </div>
+                <span class="alert-badge" data-en="CRITICAL">CRITICO</span>
+              </div>
+              <div class="demo-alert-card moderate">
+                <i class="fas fa-water alert-icon"></i>
+                <div class="alert-content">
+                  <div
+                    class="alert-title"
+                    data-en="NDWI Increase - Quebrada El Frances"
+                  >
+                    Incremento NDWI - Quebrada El Frances
+                  </div>
+                  <div
+                    class="alert-desc"
+                    data-en="5 hours ago - Possible water accumulation"
+                  >
+                    Hace 5 horas - Posible acumulacion de agua
+                  </div>
+                </div>
+                <span class="alert-badge" data-en="MODERATE">MODERADO</span>
+              </div>
+              <div class="demo-alert-card ok">
+                <i class="fas fa-check-circle alert-icon"></i>
+                <div class="alert-content">
+                  <div
+                    class="alert-title"
+                    data-en="Monitoring Completed - Coastal Area"
+                  >
+                    Monitoreo completado - Area Costera
+                  </div>
+                  <div
+                    class="alert-desc"
+                    data-en="1 day ago - No anomalies detected"
+                  >
+                    Hace 1 dia - Sin anomalias detectadas
+                  </div>
+                </div>
+                <span class="alert-badge" data-en="OK">OK</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 2rem">
+          <a
+            href="#contacto"
+            class="btn btn-primary"
+            style="font-size: 1.1rem; padding: 1rem 2rem"
+            ><i class="fas fa-envelope"></i> <span data-en="Request Full Demo">Solicitar Demo Completa</span></a
+          >
+        </div>
+      </div>
+    </section>
+    <section class="contact-section" id="contacto">
+      <div class="contact-container">
+        <h2 class="section-title" data-en-html='<i class="fas fa-envelope"></i> Contact Us'>
+          <i class="fas fa-envelope"></i> Contactanos
+        </h2>
+        <p class="section-subtitle" data-en="Have a question or proposal? Write to us">
+          Tienes alguna pregunta o propuesta? Escribenos
+        </p>
+        <form class="contact-form" id="contact-form">
+          <div class="form-group">
+            <label for="contact-name" data-en="Name *">Nombre *</label>
+            <input
+              type="text"
+              id="contact-name"
+              name="name"
+              placeholder="Tu nombre completo"
+              required
+              autocomplete="name"
+              data-en-placeholder="Your full name"
+            />
+          </div>
+          <div class="form-group">
+            <label for="contact-company" data-en="Company (optional)">Empresa (opcional)</label>
+            <input
+              type="text"
+              id="contact-company"
+              name="company"
+              placeholder="Nombre de tu empresa"
+              autocomplete="organization"
+              data-en-placeholder="Company name"
+            />
+          </div>
+          <div class="form-group">
+            <label for="contact-email" data-en="Email *">Correo electronico *</label>
+            <input
+              type="email"
+              id="contact-email"
+              name="email"
+              placeholder="tu@email.com"
+              required
+              autocomplete="email"
+              data-en-placeholder="you@email.com"
+            />
+          </div>
+          <div class="form-group">
+            <label for="contact-message" data-en="Message *">Mensaje *</label>
+            <textarea
+              id="contact-message"
+              name="message"
+              placeholder="Describe tu solicitud o consulta..."
+              required
+              autocomplete="off"
+              data-en-placeholder="Describe your request or question..."
+            ></textarea>
+          </div>
+          <button type="submit" class="btn-submit" id="contact-submit" data-en-html='<i class="fas fa-paper-plane"></i> Send Message'>
+            <i class="fas fa-paper-plane"></i> Enviar Mensaje
+          </button>
+          <div class="form-success" id="form-success" data-en-html='<i class="fas fa-check-circle"></i> Message sent successfully. We will contact you soon.'>
+            <i class="fas fa-check-circle"></i> Mensaje enviado exitosamente.
+            Nos pondremos en contacto pronto.
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <footer>
+      <div class="footer-content">
+        <div class="footer-logo">
+          <i class="fas fa-globe-americas"></i>GeoFeedback Chile
+        </div>
+        <div class="footer-links">
+          <a href="#demo" data-en="Demo">Demo</a>
+          <a href="/api/docs" data-en="API">API</a>
+          <a
+            href="https://github.com/theChosen16/Demo_geofeedback"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-en="GitHub"
+            >GitHub</a
+          >
+        </div>
+        <div class="social-links">
+          <a
+            href="https://github.com/theChosen16/Demo_geofeedback"
+            target="_blank"
+            rel="noopener noreferrer"
+            ><i class="fab fa-github"></i
+          ></a>
+        </div>
+        <div class="footer-bottom" data-en-html='Professional services and contracting managed by <a href="https://agenticworkflow.cl/" target="_blank" rel="noopener noreferrer">Agentic Workflow</a>.'>
+          Temas profesionales y contratación de servicios gestionados por <a href="https://agenticworkflow.cl/" target="_blank" rel="noopener noreferrer">Agentic Workflow</a>.
+        </div>
+      </div>
+    </footer>
+
+    <!-- Interpretation Modal -->
+    <div class="modal-overlay" id="interpretation-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 data-en-html='<i class="fas fa-info-circle"></i> Result Interpretation'>
+            <i class="fas fa-info-circle"></i> Interpretacion de Resultados
+          </h3>
+          <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="modal-body">
+          <!-- Content injected by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat Toggle Button -->
+    <button
+      class="chat-toggle-btn"
+      onclick="toggleChat()"
+      title="Hablar con Asistente IA"
+      data-en-title="Talk to AI Assistant"
+    >
+      <i class="fas fa-robot"></i>
+    </button>
+
+    <!-- Chat Sidebar -->
+    <div id="chat-sidebar" class="chat-sidebar">
+      <div class="chat-header">
+        <h4 data-en-html='<i class="fas fa-robot"></i> GeoFeedback Assistant'><i class="fas fa-robot"></i> Asistente GeoFeedback</h4>
+        <button class="chat-close" onclick="toggleChat()">&times;</button>
+      </div>
+      <div id="chat-messages" class="chat-messages">
+        <div class="chat-message assistant">
+          <div class="message-bubble" data-en="Hello! I'm the GeoFeedback AI assistant. I can help you understand territorial analysis, explain satellite indices like NDVI or NDWI, or answer questions about the platform. How can I help you today?">
+            Hola! Soy el asistente de IA de GeoFeedback. Puedo ayudarte a
+            entender los analisis territoriales, explicar indices satelitales
+            como NDVI o NDWI, o responder preguntas sobre la plataforma. ¿En que
+            puedo ayudarte?
+          </div>
+        </div>
+      </div>
+      <div class="chat-input-wrapper">
+        <input
+          type="text"
+          id="chat-input"
+          class="chat-input"
+          placeholder="Escribe tu pregunta..."
+          data-en-placeholder="Type your question..."
+          onkeypress="if (event.key === 'Enter') sendChatMessage();"
+        />
+        <button class="chat-send" onclick="sendChatMessage()">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
+    </div>
+
+    <script>
+      window.MAPS_API_KEY = "GOOGLE_MAPS_KEY_PLACEHOLDER";
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" integrity="sha512-CQBWl4fJHWbryGE+Pc7UAxWMUMNMWzWxF4SQo9CgkJIN1kx6djDQZjh3Y8SZ1d+6I+1zze6Z7kHXO7q3UyZAWw==" crossorigin="anonymous"></script>
+    <script src="/static/js/app.js" defer></script>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-notification" id="toast-notification"></div>
+  </body>
+</html>
