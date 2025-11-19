@@ -1,12 +1,54 @@
 # Guía de Despliegue en Railway - GeoFeedback Papudo
 
-Esta guía te llevará paso a paso para desplegar el proyecto completo en Railway.app.
+Esta guía te llevará paso a paso para desplegar el proyecto completo en Railway.app usando una combinación de Railway CLI y Dashboard.
+
+---
+
+## 📊 Estado Actual del Despliegue
+
+### ✅ Completado
+
+- [x] Cuenta Railway creada y autenticada (`railway login`)
+- [x] Proyecto Railway creado: `Demo_geofeedback`
+- [x] Servicio PostgreSQL agregado (nombre: "Postgres")
+- [x] PostgreSQL 18 instalado localmente (para comando `psql`)
+- [x] Configuración `railway.toml` corregida:
+  - Root `railway.toml` → `railway.toml.backup` (eliminado)
+  - Creado `api/railway.toml` con healthcheck `/api/v1/health`
+  - Creado `web/railway.toml` con healthcheck `/health`
+- [x] Cambios commiteados y pusheados a GitHub:
+  - Commit `20a4302`: Railway configuration files
+  - Commit `496f1e8`: Add CLI setup guide
+
+### ⏳ Pendiente
+
+- [ ] Habilitar extensión PostGIS en PostgreSQL
+- [ ] Configurar servicio existente "Demo_geofeedback" como API:
+  - Root Directory → `api`
+  - Service Name → `api`
+  - Variables de entorno (FLASK_ENV, SECRET_KEY, CORS_ORIGINS)
+  - Generar dominio público
+- [ ] Crear nuevo servicio para Web:
+  - Root Directory → `web`
+  - Service Name → `web`
+  - Generar dominio público
+- [ ] Ejecutar migración de base de datos
+- [ ] Verificar deployment de API y Web
+
+### 📝 Notas
+
+- **PostgreSQL local**: Instalado en `C:\Program Files\PostgreSQL\18`
+- **Contraseña generada**: `9e42287208d8431ebabd91b2a83e8d70` (cambiar después)
+- **Archivo de guía CLI**: [RAILWAY_CLI_SETUP_STEPS.md](../RAILWAY_CLI_SETUP_STEPS.md)
+
+---
 
 ## 📋 Requisitos Previos
 
-- Cuenta en [Railway.app](https://railway.app)
-- Cuenta en GitHub con el repositorio `Demo_geofeedback`
-- CLI de Railway instalado (opcional): `npm install -g @railway/cli`
+- Cuenta en [Railway.app](https://railway.app) ✅
+- Cuenta en GitHub con el repositorio `Demo_geofeedback` ✅
+- CLI de Railway instalado: `npm install -g @railway/cli` ✅
+- PostgreSQL instalado localmente (para `psql` command) ✅
 
 ## 🏗️ Arquitectura del Despliegue
 
@@ -48,198 +90,436 @@ railway init
 
 ## 🗄️ Paso 2: Configurar PostgreSQL con PostGIS
 
-### 2.1 Agregar Servicio PostgreSQL
+### 2.1 Agregar Servicio PostgreSQL ✅
 
-1. En el dashboard del proyecto, click en "+ New Service"
+**Usando Railway Dashboard:**
+
+1. En el dashboard del proyecto, presionar `Ctrl+K` (atajo rápido)
+2. Escribir "postgres" y seleccionar "Add PostgreSQL"
+3. Esperar 1-2 minutos mientras se aprovisiona
+
+**Alternativa con mouse:**
+
+1. Click en "+ New" (superior izquierda o en el canvas)
 2. Seleccionar "Database" → "PostgreSQL"
-3. Railway creará automáticamente una instancia PostgreSQL
+3. Click "Add PostgreSQL"
 
-### 2.2 Habilitar PostGIS
+Railway creará automáticamente una instancia PostgreSQL 16 con:
+- ✅ Variable `DATABASE_URL` disponible para todos los servicios
+- ✅ Variables individuales: `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD`
 
-**Opción A: Desde Railway CLI**
+### 2.2 Instalar PostgreSQL localmente (para psql) ✅
 
-```bash
-# Conectar a la base de datos
-railway connect postgres
+**IMPORTANTE**: Railway CLI requiere el comando `psql` instalado localmente para conectarse.
 
-# Dentro de psql:
+```powershell
+# En PowerShell como administrador
+choco install postgresql
+
+# Verificar instalación
+psql --version
+# Debería mostrar: psql (PostgreSQL) 18.x
+```
+
+**Ubicación de instalación:**
+- Ruta: `C:\Program Files\PostgreSQL\18`
+- PATH actualizado automáticamente
+
+**Después de instalar:**
+```powershell
+# Cerrar y reabrir PowerShell, o ejecutar:
+refreshenv
+
+# Navegar al proyecto
+cd C:\Users\alean\Desktop\Geofeedback\Demo
+```
+
+### 2.3 Habilitar PostGIS ⏳
+
+**Conectar a Railway PostgreSQL:**
+
+```powershell
+# Asegúrate de estar en el directorio del proyecto
+cd C:\Users\alean\Desktop\Geofeedback\Demo
+
+# Conectar (nota la 'P' mayúscula en 'Postgres')
+railway connect Postgres
+```
+
+**Dentro de psql (prompt `railway=>#`):**
+
+```sql
 CREATE EXTENSION IF NOT EXISTS postgis;
 CREATE EXTENSION IF NOT EXISTS postgis_topology;
+
+-- Verificar instalación
+SELECT postgis_version();
+-- Deberías ver: 3.4.x USE_GEOS=1 USE_PROJ=1 USE_STATS=1
+
+-- Salir
 \q
 ```
 
-**Opción B: Ejecutar migración**
+### 2.4 Verificar Variables de Entorno
 
-Railway ejecutará automáticamente el script de migración al desplegar.
+Railway crea automáticamente estas variables (visibles en Variables tab):
 
-### 2.3 Verificar Variables de Entorno
-
-Railway crea automáticamente estas variables (no necesitas configurarlas):
-
-- `DATABASE_URL` - URL completa de conexión
+- `DATABASE_URL` - URL completa de conexión (usado por Flask)
 - `PGHOST` - Host de PostgreSQL
-- `PGPORT` - Puerto
-- `PGDATABASE` - Nombre de la BD
+- `PGPORT` - Puerto (5432)
+- `PGDATABASE` - Nombre de la BD (railway)
 - `PGUSER` - Usuario
 - `PGPASSWORD` - Contraseña
 
 ---
 
-## 🔧 Paso 3: Desplegar API Flask
+## 🔧 Paso 3: Configurar Servicio API ⏳
 
-### 3.1 Crear Servicio API
+**NOTA**: Ya existe un servicio llamado "Demo_geofeedback" en tu proyecto Railway que falló. Lo reconfiguraremos como servicio API.
 
-1. Click en "+ New Service"
-2. Seleccionar "GitHub Repo"
-3. Conectar con `theChosen16/Demo_geofeedback`
-4. Railway detectará automáticamente el `Dockerfile` en `/api`
+### 3.1 Reconfigurar Servicio Existente como API
+
+**En el Railway Dashboard:**
+
+1. Click en el servicio "Demo_geofeedback" (el que tiene estado "Failed")
+2. Ve a la pestaña **"Settings"**
+3. En la sección **"Service"**:
+   - Click en **"Service Name"** → cambiar a: `api`
+4. Scroll down a la sección **"Build"**:
+   - Click en **"Add Root Directory"** → escribir: `api`
+   - **Dockerfile Path**: debe quedar como `Dockerfile` (relativo a api/)
+   - **Builder**: debe estar en `DOCKERFILE`
+5. Click **"Save Changes"** o **"Update"**
+
+**Por qué esto funciona:**
+- El `api/railway.toml` que creamos le dice a Railway que use el Dockerfile en `api/`
+- El healthcheck está configurado en `/api/v1/health`
+- Railway reconstruirá el servicio con la configuración correcta
 
 ### 3.2 Configurar Variables de Entorno
 
-En el servicio API, ir a "Variables" y agregar:
+1. En el servicio API, ir a la pestaña **"Variables"**
+2. Click **"+ New Variable"** para cada una:
 
 ```env
-# Flask
 FLASK_ENV=production
 FLASK_DEBUG=False
-SECRET_KEY=<generar-clave-segura-aqui>
-
-# CORS - Especificar dominio del frontend
-CORS_ORIGINS=https://tu-dominio-web.railway.app
-
-# API
-API_TITLE=GeoFeedback Papudo API
-API_VERSION=1.0.0
-
-# Logging
-LOG_LEVEL=INFO
+CORS_ORIGINS=*
 ```
 
-**Generar SECRET_KEY:**
+3. Para `SECRET_KEY`, generarlo primero:
 
-```bash
+```powershell
+# En PowerShell local
 python -c "import secrets; print(secrets.token_hex(32))"
 ```
 
-### 3.3 Configurar Build
+Copiar el resultado y agregarlo como variable `SECRET_KEY`
 
-1. En "Settings" → "Build"
-2. Root Directory: `/api`
-3. Dockerfile Path: `Dockerfile`
-4. Builder: `DOCKERFILE`
-
-### 3.4 Ejecutar Migración de Base de Datos
-
-**Opción A: Automática (recomendada)**
-
-Agregar variable de entorno:
+**Variables opcionales:**
 
 ```env
-RUN_MIGRATIONS=true
+API_TITLE=GeoFeedback Papudo API
+API_VERSION=1.0.0
+LOG_LEVEL=INFO
 ```
 
-**Opción B: Manual**
+**IMPORTANTE**: La variable `DATABASE_URL` ya existe automáticamente, creada por Railway cuando agregaste PostgreSQL.
 
-```bash
-# Desde CLI de Railway
+### 3.3 Generar Dominio Público
+
+1. Ve a la pestaña **"Settings"** → sección **"Networking"**
+2. Click en **"Generate Domain"**
+3. Railway asignará un dominio como: `api-production-xxxx.up.railway.app`
+4. **¡Anota esta URL!** La necesitarás para el servicio web
+
+### 3.4 Ejecutar Migración de Base de Datos (después de PostGIS)
+
+**IMPORTANTE**: Solo ejecutar DESPUÉS de habilitar PostGIS en el Paso 2.3.
+
+```powershell
+# Asegúrate de estar en la raíz del proyecto
+cd C:\Users\alean\Desktop\Geofeedback\Demo
+
+# Link al proyecto (si no lo has hecho)
+railway link
+# Selecciona: tu team → Demo_geofeedback → production
+
+# Seleccionar el servicio API
+railway service
+# Selecciona: api
+
+# Ejecutar migración
 railway run python deployment/migrate_database.py
 ```
 
-### 3.5 Generar Dominio Público
+**Deberías ver output como:**
 
-1. En "Settings" → "Networking"
-2. Click en "Generate Domain"
-3. Railway asignará un dominio como: `geofeedback-api.up.railway.app`
+```
+============================================
+MIGRACIÓN DE BASE DE DATOS - GEOFEEDBACK PAPUDO
+============================================
+
+[→] Usando DATABASE_URL de Railway
+[✓] Conexión establecida
+[→] Creando extensiones PostGIS...
+[✓] Extensiones PostGIS creadas
+[→] Creando schemas...
+[✓] 5 schemas creados
+[→] Creando tablas...
+[✓] Tablas creadas con índices espaciales
+[→] Cargando datos de infraestructura...
+[✓] 20 instalaciones cargadas
+[→] Creando funciones API...
+[✓] 3 funciones API creadas
+[→] Insertando metadata...
+[✓] Metadata insertada
+
+============================================
+✅ MIGRACIÓN COMPLETADA EXITOSAMENTE
+============================================
+```
+
+### 3.5 Verificar Deployment de API
+
+El servicio debería redesplegar automáticamente después de cambiar la configuración.
+
+**Verificar en navegador:**
+
+```
+https://[tu-api-domain].up.railway.app/api/v1/health
+```
+
+**Deberías ver JSON:**
+
+```json
+{
+  "status": "healthy",
+  "timestamp": "2025-11-19T...",
+  "database": {
+    "connected": true,
+    "database": "railway",
+    "version": "PostgreSQL 16...",
+    "postgis": "3.4..."
+  }
+}
+```
 
 ---
 
-## 🌐 Paso 4: Desplegar Visor Web
+## 🌐 Paso 4: Crear Servicio Web ⏳
 
-### 4.1 Crear Servicio Web
+### 4.1 Crear Nuevo Servicio para Web
 
-1. Click en "+ New Service"
-2. Seleccionar "GitHub Repo"
-3. Conectar con `theChosen16/Demo_geofeedback`
+**En el Railway Dashboard:**
 
-### 4.2 Configurar Build
+1. En el canvas del proyecto, click en el botón **"+"** (superior izquierda de la barra lateral)
+2. Seleccionar **"GitHub Repo"**
+3. Conectar con el repositorio: `theChosen16/Demo_geofeedback`
+4. Railway creará un nuevo servicio
 
-1. En "Settings" → "Build"
-2. Root Directory: `/web`
-3. Dockerfile Path: `Dockerfile`
-4. Builder: `DOCKERFILE`
+### 4.2 Configurar el Servicio Web
 
-### 4.3 Configurar Variables de Entorno
+1. Click en el servicio nuevo que se acaba de crear
+2. Ve a la pestaña **"Settings"**
+3. En la sección **"Service"**:
+   - Click en **"Service Name"** → cambiar a: `web`
+4. En la sección **"Build"**:
+   - Click en **"Add Root Directory"** → escribir: `web`
+   - **Dockerfile Path**: debe quedar como `Dockerfile`
+   - **Builder**: debe estar en `DOCKERFILE`
+5. Click **"Save Changes"** o **"Update"**
+
+**Por qué esto funciona:**
+
+- El `web/railway.toml` que creamos configura el servicio correctamente
+- El healthcheck está en `/health` (configurado en nginx)
+- Usará el Dockerfile en `web/` que sirve contenido estático
+
+### 4.3 Generar Dominio Público
+
+1. Ve a la pestaña **"Settings"** → sección **"Networking"**
+2. Click en **"Generate Domain"**
+3. Railway asignará un dominio como: `web-production-xxxx.up.railway.app`
+4. **¡Anota esta URL!** Esta será tu aplicación web pública
+
+### 4.4 (Opcional) Configurar Variables de Entorno
+
+Si quieres que el frontend use la API en producción:
+
+1. Ve a la pestaña **"Variables"**
+2. Click **"+ New Variable"**:
 
 ```env
-# API URL (usar el dominio generado en Paso 3.5)
-API_URL=https://geofeedback-api.up.railway.app
+API_URL=https://[tu-api-domain].up.railway.app
 ```
 
-### 4.4 Actualizar JavaScript para usar API de producción
+Reemplaza `[tu-api-domain]` con el dominio que anotaste en el Paso 3.3.
 
-Editar `web/js/map.js` para usar la variable de entorno:
+### 4.5 (Opcional) Conectar Frontend con API
+
+Por defecto, el frontend carga datos desde un archivo GeoJSON local. Para conectarlo con la API:
+
+**Editar `web/js/map.js`:**
 
 ```javascript
-// Cambiar:
-const API_BASE_URL = 'http://localhost:5000';
-
-// Por:
-const API_BASE_URL = window.location.hostname === 'localhost'
+// Al inicio del archivo
+const API_BASE_URL = window.location.hostname.includes('localhost')
     ? 'http://localhost:5000'
-    : 'https://geofeedback-api.up.railway.app';
+    : 'https://[tu-api-domain].up.railway.app';  // <-- Usar tu URL real
+
+// Modificar la función loadData()
+async function loadData() {
+    try {
+        // Cargar desde API en lugar de archivo local
+        const response = await fetch(`${API_BASE_URL}/api/v1/infrastructure`);
+        const data = await response.json();
+
+        // Adaptar formato
+        infrastructureData = {
+            type: 'FeatureCollection',
+            features: data.facilities.map(f => ({
+                type: 'Feature',
+                geometry: f.geometry,
+                properties: {
+                    name: f.name,
+                    category: f.category,
+                    risk_level: f.risk_level,
+                    risk_name: f.risk_name,
+                    risk_color: f.risk_color
+                }
+            }))
+        };
+
+        createRiskPolygons();
+        createInfrastructureMarkers();
+        updateStatistics();
+        document.getElementById('loading').classList.add('hidden');
+    } catch (error) {
+        console.error('Error loading data:', error);
+        alert('Error al cargar los datos. Mostrando datos locales.');
+        // Fallback a datos locales si la API falla
+        loadLocalData();
+    }
+}
 ```
 
-### 4.5 Generar Dominio Público
+Luego commit y push:
 
-1. En "Settings" → "Networking"
-2. Click en "Generate Domain"
-3. Railway asignará: `geofeedback-web.up.railway.app`
+```bash
+git add web/js/map.js
+git commit -m "Connect frontend to Railway API"
+git push origin master
+```
+
+Railway redesplegará automáticamente el servicio web.
+
+### 4.6 Verificar Deployment de Web
+
+Abrir en navegador:
+
+```text
+https://[tu-web-domain].up.railway.app
+```
+
+Deberías ver:
+
+- ✅ Mapa cargado
+- ✅ Panel lateral con estadísticas
+- ✅ Controles de filtros
+- ⚠️ Puede que no se vean marcadores aún (si no conectaste con API)
 
 ---
 
-## ✅ Paso 5: Verificar Despliegue
+## ✅ Paso 5: Verificar Despliegue Completo
 
-### 5.1 Verificar PostgreSQL
+### 5.1 Verificar PostgreSQL + PostGIS
 
-```bash
+```powershell
 # Desde Railway CLI
-railway connect postgres
+railway connect Postgres
+```
 
-# Verificar extensiones
+Dentro de psql:
+
+```sql
+-- Verificar extensiones
 SELECT postgis_version();
 
-# Verificar tablas
+-- Verificar schemas
+\dn
+
+-- Verificar tablas
 \dt processed.*
 \dt infrastructure.*
 
-# Ver datos
+-- Ver datos de infraestructura
 SELECT COUNT(*) FROM infrastructure.facilities_risk;
+-- Debería retornar: 20
+
+-- Ver datos de polígonos de riesgo
+SELECT COUNT(*) FROM processed.amenaza_poligonos;
+-- Debería retornar: ~2913
+
+-- Salir
+\q
 ```
 
 ### 5.2 Verificar API
 
+**Test 1: Health Check**
+
 Visitar en navegador:
 
-- Health Check: `https://geofeedback-api.up.railway.app/api/v1/health`
-- Stats: `https://geofeedback-api.up.railway.app/api/v1/stats`
-- Docs: `https://geofeedback-api.up.railway.app/`
-
-**Desde terminal:**
-
-```bash
-curl https://geofeedback-api.up.railway.app/api/v1/health
+```text
+https://[tu-api-domain].up.railway.app/api/v1/health
 ```
+
+Deberías ver:
+
+```json
+{
+  "status": "healthy",
+  "timestamp": "2025-11-19T...",
+  "database": {
+    "connected": true,
+    "database": "railway",
+    "version": "PostgreSQL 16...",
+    "postgis": "3.4..."
+  }
+}
+```
+
+**Test 2: Estadísticas**
+
+```text
+https://[tu-api-domain].up.railway.app/api/v1/stats
+```
+
+**Test 3: Infraestructura**
+
+```text
+https://[tu-api-domain].up.railway.app/api/v1/infrastructure
+```
+
+Deberías ver un array JSON con 20 instalaciones.
 
 ### 5.3 Verificar Visor Web
 
-Abrir en navegador: `https://geofeedback-web.up.railway.app`
+Abrir en navegador:
+
+```text
+https://[tu-web-domain].up.railway.app
+```
 
 Verificar:
-- ✅ Mapa se carga correctamente
+
+- ✅ Mapa se carga correctamente (Leaflet)
 - ✅ Marcadores de infraestructura aparecen
-- ✅ Estadísticas se cargan
+- ✅ Estadísticas se cargan en el panel lateral
 - ✅ Búsqueda funciona
-- ✅ Filtros funcionan
+- ✅ Filtros por riesgo funcionan
+- ✅ Colores de riesgo se muestran correctamente (Verde/Amarillo/Rojo)
 
 ---
 
