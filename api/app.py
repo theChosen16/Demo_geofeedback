@@ -25,19 +25,27 @@ from psycopg2.extras import RealDictCursor
 import json
 from datetime import datetime
 from functools import wraps
+import os
+
+# Import configuration
+try:
+    from config import config
+    DB_CONFIG = config.DB_CONFIG
+    CORS_ORIGINS = config.CORS_ORIGINS
+except ImportError:
+    # Fallback para desarrollo sin config.py
+    DB_CONFIG = {
+        'dbname': os.getenv('DB_NAME', 'geofeedback_papudo'),
+        'user': os.getenv('DB_USER', 'geofeedback'),
+        'password': os.getenv('DB_PASSWORD', 'Papudo2025'),
+        'host': os.getenv('DB_HOST', 'localhost'),
+        'port': int(os.getenv('DB_PORT', 5432))
+    }
+    CORS_ORIGINS = '*'
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
-
-# Database configuration
-DB_CONFIG = {
-    'dbname': 'geofeedback_papudo',
-    'user': 'geofeedback',
-    'password': 'Papudo2025',
-    'host': 'localhost',
-    'port': 5432
-}
+CORS(app, origins=CORS_ORIGINS)  # Enable CORS with config
 
 # ===========================================================================
 # DATABASE CONNECTION
