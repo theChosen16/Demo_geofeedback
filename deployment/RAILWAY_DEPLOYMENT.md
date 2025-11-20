@@ -37,16 +37,31 @@ Esta guía te llevará paso a paso para desplegar el proyecto completo en Railwa
 
 ### 🔄 En Progreso
 
-- [x] **Servicio API configurado**:
+- [x] **Servicio API configurado y corregido**:
   - ✅ Root Directory: `api`
   - ✅ Variables de entorno configuradas
   - ✅ Dominio público: `demogeofeedback-production.up.railway.app`
   - ✅ Dockerfile corregido para usar `$PORT` dinámico
-  - 🔄 Redesplegando con configuración corregida
+  - ✅ **CRÍTICO**: Dockerfile corregido para copiar `config.py` (faltaba)
+  - 🔄 Redesplegando con todas las correcciones
 - [x] **Frontend actualizado**:
   - ✅ Conectado con API en producción
   - ✅ Fallback a datos locales si API falla
   - ✅ Detección automática de entorno (dev/prod)
+
+### 🐛 Problemas Resueltos
+
+1. **Puerto Incorrecto (Build #1)**:
+   - **Problema**: Dockerfile usaba puerto hardcoded `5000`, Railway asigna `$PORT` dinámico
+   - **Solución**: Cambiar CMD a usar `${PORT:-5000}`
+   - **Estado**: ✅ Resuelto
+
+2. **DATABASE_URL No Encontrada (Build #2)**:
+   - **Problema**: `config.py` no se copiaba al contenedor, app usaba fallback a `localhost:5432`
+   - **Error**: `connection to server at "localhost" (127.0.0.1), port 5432 failed`
+   - **Causa Raíz**: Dockerfile solo copiaba `app.py`, no `config.py`
+   - **Solución**: Añadir `config.py` al COPY: `COPY app.py config.py ./`
+   - **Estado**: ✅ Resuelto
 
 ### ⏳ Pendiente
 
