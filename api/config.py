@@ -5,11 +5,24 @@ Maneja variables de entorno para desarrollo y producción
 """
 
 import os
+import socket
 from urllib.parse import urlparse
 from dotenv import load_dotenv
 
 # Cargar variables de entorno desde .env (solo en desarrollo)
 load_dotenv()
+
+def resolve_ipv4(hostname):
+    """
+    Resuelve un hostname a su dirección IPv4.
+    Necesario porque Railway tiene conectividad limitada con IPv6 externo.
+    """
+    try:
+        # Forzar resolución IPv4 usando AF_INET
+        return socket.getaddrinfo(hostname, None, socket.AF_INET)[0][4][0]
+    except (socket.gaierror, IndexError):
+        # Si falla la resolución IPv4, devolver el hostname original
+        return hostname
 
 class Config:
     """Configuración base"""
@@ -34,11 +47,15 @@ class Config:
         # Parsear DATABASE_URL (formato Railway/Heroku)
         # postgresql://user:password@host:port/database
         url = urlparse(DATABASE_URL)
+
+        # Resolver hostname a IPv4 para evitar problemas con IPv6 en Railway
+        resolved_host = resolve_ipv4(url.hostname) if url.hostname else 'localhost'
+
         DB_CONFIG = {
             'dbname': url.path[1:],  # Remover el / inicial
             'user': url.username,
             'password': url.password,
-            'host': url.hostname,
+            'host': resolved_host,  # Usar dirección IPv4 resuelta
             'port': url.port or 5432
         }
     else:
