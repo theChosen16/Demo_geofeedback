@@ -38,7 +38,7 @@ COPY app.py .
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
 USER appuser
 
-# Exponer puerto
+# Exponer puerto (Railway usa $PORT dinámicamente)
 EXPOSE 5000
 
 # Health check
@@ -46,4 +46,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD python -c "import requests; requests.get('http://localhost:5000/api/v1/health')"
 
 # Comando de inicio con Gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-", "app:app"]
+# Usa $PORT de Railway, o 5000 como fallback para desarrollo local
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 4 --timeout 120 --access-logfile - --error-logfile - app:app"]

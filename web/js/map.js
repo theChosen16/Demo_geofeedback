@@ -56,12 +56,24 @@ function initializeMap() {
     });
 }
 
+// API Configuration
+// En producción (Railway), usa la API. En desarrollo local, usa archivos GeoJSON
+const API_BASE_URL = window.location.hostname.includes('railway.app')
+    ? 'https://demogeofeedback-production.up.railway.app'
+    : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? null  // Desarrollo local: usar archivos
+        : 'https://demogeofeedback-production.up.railway.app';  // Producción
+
 // Load GeoJSON data
 async function loadData() {
     try {
-        // Load infrastructure with risk data
-        const response = await fetch('../data/processed/infrastructure_with_risk.geojson');
-        infrastructureData = await response.json();
+        // Intentar cargar desde API si está configurada
+        if (API_BASE_URL) {
+            await loadDataFromAPI();
+        } else {
+            // Modo desarrollo: cargar desde archivos locales
+            await loadDataFromFile();
+        }
 
         // Create layers
         createRiskPolygons();
@@ -75,8 +87,63 @@ async function loadData() {
 
     } catch (error) {
         console.error('Error loading data:', error);
-        alert('Error al cargar los datos. Por favor verifica que los archivos GeoJSON existan.');
+
+        // Fallback: intentar cargar desde archivo si la API falla
+        if (API_BASE_URL) {
+            console.warn('API falló, intentando cargar desde archivo local...');
+            try {
+                await loadDataFromFile();
+                createRiskPolygons();
+                createInfrastructureMarkers();
+                updateStatistics();
+                document.getElementById('loading').classList.add('hidden');
+            } catch (fallbackError) {
+                alert('Error al cargar los datos. Por favor verifica la conexión.');
+            }
+        } else {
+            alert('Error al cargar los datos. Por favor verifica que los archivos GeoJSON existan.');
+        }
     }
+}
+
+// Load data from API (production)
+async function loadDataFromAPI() {
+    console.log('Cargando datos desde API...');
+    const response = await fetch(`${API_BASE_URL}/api/v1/infrastructure`);
+
+    if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // Convertir formato de API a GeoJSON
+    infrastructureData = {
+        type: 'FeatureCollection',
+        features: data.facilities.map(facility => ({
+            type: 'Feature',
+            geometry: facility.geometry,
+            properties: {
+                name: facility.name,
+                category: facility.category,
+                address: facility.address || '',
+                risk_level: facility.risk_level,
+                risk_name: facility.risk_name,
+                risk_color: facility.risk_color,
+                distance_to_risk: facility.distance_to_risk
+            }
+        }))
+    };
+
+    console.log(`✓ ${data.facilities.length} instalaciones cargadas desde API`);
+}
+
+// Load data from local file (development)
+async function loadDataFromFile() {
+    console.log('Cargando datos desde archivo local...');
+    const response = await fetch('../data/processed/infrastructure_with_risk.geojson');
+    infrastructureData = await response.json();
+    console.log(`✓ ${infrastructureData.features.length} instalaciones cargadas desde archivo`);
 }
 
 // Create risk polygon layer

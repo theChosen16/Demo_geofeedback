@@ -35,13 +35,23 @@ Esta guía te llevará paso a paso para desplegar el proyecto completo en Railwa
   - ✅ 3 funciones API creadas
   - ✅ Metadata insertada
 
+### 🔄 En Progreso
+
+- [x] **Servicio API configurado**:
+  - ✅ Root Directory: `api`
+  - ✅ Variables de entorno configuradas
+  - ✅ Dominio público: `demogeofeedback-production.up.railway.app`
+  - ✅ Dockerfile corregido para usar `$PORT` dinámico
+  - 🔄 Redesplegando con configuración corregida
+- [x] **Frontend actualizado**:
+  - ✅ Conectado con API en producción
+  - ✅ Fallback a datos locales si API falla
+  - ✅ Detección automática de entorno (dev/prod)
+
 ### ⏳ Pendiente
 
-- [ ] Configurar servicio existente "Demo_geofeedback" como API:
-  - Root Directory → `api`
-  - Variables de entorno (FLASK_ENV, SECRET_KEY, CORS_ORIGINS)
-- [ ] Verificar deployment del servicio API
-- [ ] Crear nuevo servicio para Web:
+- [ ] Verificar deployment exitoso del servicio API
+- [ ] Crear servicio Web en Railway Dashboard:
   - Root Directory → `web`
   - Service Name → `web`
   - Generar dominio público
