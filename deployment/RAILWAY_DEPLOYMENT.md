@@ -9,8 +9,8 @@ Esta guía te llevará paso a paso para desplegar el proyecto completo en Railwa
 ### ✅ Completado
 
 - [x] Cuenta Railway creada y autenticada (`railway login`)
-- [x] Proyecto Railway creado: `Demo_geofeedback`
-- [x] Servicio PostgreSQL agregado (nombre: "Postgres")
+- [x] Proyecto Railway creado y linked: `thorough-emotion`
+- [x] Servicio inicial: `Demo_geofeedback` (linked)
 - [x] PostgreSQL 18 instalado localmente (para comando `psql`)
 - [x] Configuración `railway.toml` corregida:
   - Root `railway.toml` → `railway.toml.backup` (eliminado)
@@ -19,27 +19,47 @@ Esta guía te llevará paso a paso para desplegar el proyecto completo en Railwa
 - [x] Cambios commiteados y pusheados a GitHub:
   - Commit `20a4302`: Railway configuration files
   - Commit `496f1e8`: Add CLI setup guide
+- [x] Railway CLI linked a proyecto:
+  - Workspace: `thechosen16's Projects`
+  - Project: `thorough-emotion`
+  - Environment: `production`
+  - Service: `Demo_geofeedback`
+- [x] **Base de datos configurada:** Usando Supabase PostgreSQL con PostGIS
+  - Host: `db.gskrrpduiqabnzzbbtbw.supabase.co:5432`
+  - DATABASE_URL configurada en Railway apuntando a Supabase
+- [x] **Migración de base de datos ejecutada exitosamente:**
+  - ✅ Extensiones PostGIS creadas
+  - ✅ 5 schemas creados
+  - ✅ Tablas creadas con índices espaciales
+  - ✅ 20 instalaciones cargadas
+  - ✅ 3 funciones API creadas
+  - ✅ Metadata insertada
 
 ### ⏳ Pendiente
 
-- [ ] Habilitar extensión PostGIS en PostgreSQL
 - [ ] Configurar servicio existente "Demo_geofeedback" como API:
   - Root Directory → `api`
-  - Service Name → `api`
   - Variables de entorno (FLASK_ENV, SECRET_KEY, CORS_ORIGINS)
-  - Generar dominio público
+- [ ] Verificar deployment del servicio API
 - [ ] Crear nuevo servicio para Web:
   - Root Directory → `web`
   - Service Name → `web`
   - Generar dominio público
-- [ ] Ejecutar migración de base de datos
-- [ ] Verificar deployment de API y Web
+- [ ] Verificar deployment completo de API y Web
 
 ### 📝 Notas
 
 - **PostgreSQL local**: Instalado en `C:\Program Files\PostgreSQL\18`
 - **Contraseña generada**: `9e42287208d8431ebabd91b2a83e8d70` (cambiar después)
 - **Archivo de guía CLI**: [RAILWAY_CLI_SETUP_STEPS.md](../RAILWAY_CLI_SETUP_STEPS.md)
+- **Proyecto Railway actual**: `thorough-emotion` (production)
+- **Servicio principal**: `Demo_geofeedback`
+- **Dominio público API**: `https://demogeofeedback-production.up.railway.app`
+- **Variables Railway configuradas**:
+  - RAILWAY_SERVICE_NAME: `Demo_geofeedback`
+  - RAILWAY_ENVIRONMENT_NAME: `production`
+  - RAILWAY_PROJECT_NAME: `thorough-emotion`
+  - RAILWAY_PUBLIC_DOMAIN: `demogeofeedback-production.up.railway.app`
 
 ---
 
