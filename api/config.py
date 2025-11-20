@@ -6,8 +6,13 @@ Maneja variables de entorno para desarrollo y producción
 
 import os
 import socket
+import logging
 from urllib.parse import urlparse
 from dotenv import load_dotenv
+
+# Configurar logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Cargar variables de entorno desde .env (solo en desarrollo)
 load_dotenv()
@@ -19,9 +24,12 @@ def resolve_ipv4(hostname):
     """
     try:
         # Forzar resolución IPv4 usando AF_INET
-        return socket.getaddrinfo(hostname, None, socket.AF_INET)[0][4][0]
-    except (socket.gaierror, IndexError):
+        result = socket.getaddrinfo(hostname, None, socket.AF_INET)[0][4][0]
+        logger.info(f"✓ Resolved {hostname} to IPv4: {result}")
+        return result
+    except (socket.gaierror, IndexError) as e:
         # Si falla la resolución IPv4, devolver el hostname original
+        logger.warning(f"✗ Failed to resolve {hostname} to IPv4: {e}")
         return hostname
 
 class Config:
@@ -49,13 +57,14 @@ class Config:
         url = urlparse(DATABASE_URL)
 
         # Resolver hostname a IPv4 para evitar problemas con IPv6 en Railway
-        resolved_host = resolve_ipv4(url.hostname) if url.hostname else 'localhost'
+        resolved_ip = resolve_ipv4(url.hostname) if url.hostname else '127.0.0.1'
 
         DB_CONFIG = {
             'dbname': url.path[1:],  # Remover el / inicial
             'user': url.username,
             'password': url.password,
-            'host': resolved_host,  # Usar dirección IPv4 resuelta
+            'hostaddr': resolved_ip,  # Usar hostaddr para bypass DNS y forzar IPv4
+            'host': url.hostname,     # Mantener host original para autenticación SSL
             'port': url.port or 5432
         }
     else:
