@@ -43,8 +43,8 @@ Esta guía te llevará paso a paso para desplegar el proyecto completo en Railwa
   - ✅ Dominio público: `demogeofeedback-production.up.railway.app`
   - ✅ Dockerfile corregido para usar `$PORT` dinámico
   - ✅ **CRÍTICO**: Dockerfile corregido para copiar `config.py` (faltaba)
-  - ✅ **CRÍTICO**: config.py corregido para forzar IPv4 (Supabase + Railway)
-  - 🔄 Redesplegando automáticamente vía GitHub push (commit 27e91e5)
+  - ✅ **CRÍTICO**: config.py corregido para usar `hostaddr` (bypass DNS IPv6)
+  - 🔄 Redesplegando automáticamente vía GitHub push (commit 9b2b1b6)
 - [x] **Frontend actualizado**:
   - ✅ Conectado con API en producción
   - ✅ Fallback a datos locales si API falla
@@ -64,15 +64,18 @@ Esta guía te llevará paso a paso para desplegar el proyecto completo en Railwa
    - **Solución**: Añadir `config.py` al COPY: `COPY app.py config.py ./`
    - **Estado**: ✅ Resuelto
 
-3. **Conectividad IPv6 a Supabase (Build #3)**:
+3. **Conectividad IPv6 a Supabase (Build #3-4)**:
    - **Problema**: Railway intentaba conectar vía IPv6 a Supabase pero la red no soporta IPv6 saliente
    - **Error**: `connection to server at "db.gskrrpduiqabnzzbbtbw.supabase.co" (2600:1f1e:...), port 5432 failed: Network is unreachable`
-   - **Causa Raíz**: Railway resuelve el DNS de Supabase a dirección IPv6, pero su infraestructura no tiene conectividad IPv6 externa
-   - **Solución**: Forzar resolución IPv4 en `config.py`:
+   - **Causa Raíz**: psycopg2/libpq realiza su propia resolución DNS cuando se usa el parámetro `host`, incluso si se pasa una IP
+   - **Solución Inicial (Fallida)**: Resolver a IPv4 y pasar a `host` → No funcionó, libpq seguía haciendo DNS lookup
+   - **Solución Final**: Usar parámetro `hostaddr` en lugar de `host`:
+     - `hostaddr`: Acepta IP numérica y bypasea DNS completamente ✅
+     - `host`: Se mantiene para autenticación SSL
      - Agregar función `resolve_ipv4()` que usa `socket.AF_INET`
-     - Resolver hostname antes de pasarlo a `DB_CONFIG`
-     - Cambio en línea 52: `resolved_host = resolve_ipv4(url.hostname)`
-   - **Estado**: ✅ Resuelto (Commit 27e91e5)
+     - Cambio en línea 58: `'hostaddr': resolved_ip` + `'host': url.hostname`
+     - Agregar logging para debug
+   - **Estado**: ✅ Resuelto (Commits 27e91e5, 9b2b1b6)
 
 ### ⏳ Pendiente
 
