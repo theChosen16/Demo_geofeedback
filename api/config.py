@@ -5,7 +5,6 @@ Maneja variables de entorno para desarrollo y producción
 """
 
 import os
-import socket
 import logging
 from urllib.parse import urlparse
 from dotenv import load_dotenv
@@ -16,21 +15,6 @@ logger = logging.getLogger(__name__)
 
 # Cargar variables de entorno desde .env (solo en desarrollo)
 load_dotenv()
-
-def resolve_ipv4(hostname):
-    """
-    Resuelve un hostname a su dirección IPv4.
-    Necesario porque Railway tiene conectividad limitada con IPv6 externo.
-    """
-    try:
-        # Forzar resolución IPv4 usando AF_INET
-        result = socket.getaddrinfo(hostname, None, socket.AF_INET)[0][4][0]
-        logger.info(f"✓ Resolved {hostname} to IPv4: {result}")
-        return result
-    except (socket.gaierror, IndexError) as e:
-        # Si falla la resolución IPv4, devolver el hostname original
-        logger.warning(f"✗ Failed to resolve {hostname} to IPv4: {e}")
-        return hostname
 
 class Config:
     """Configuración base"""
@@ -49,23 +33,23 @@ class Config:
     API_PREFIX = os.getenv('API_PREFIX', '/api/v1')
 
     # Database - Railway proporciona DATABASE_URL automáticamente
+    # Usando Supabase Session Pooler (IPv4-compatible, gratis)
     DATABASE_URL = os.getenv('DATABASE_URL')
 
     if DATABASE_URL:
-        # Parsear DATABASE_URL (formato Railway/Heroku)
+        # Parsear DATABASE_URL (formato PostgreSQL estándar)
         # postgresql://user:password@host:port/database
         url = urlparse(DATABASE_URL)
 
-        # Resolver hostname a IPv4 para evitar problemas con IPv6 en Railway
-        resolved_ip = resolve_ipv4(url.hostname) if url.hostname else '127.0.0.1'
+        logger.info(f"Connecting to database: {url.hostname}:{url.port or 5432}")
 
         DB_CONFIG = {
             'dbname': url.path[1:],  # Remover el / inicial
             'user': url.username,
             'password': url.password,
-            'hostaddr': resolved_ip,  # Usar hostaddr para bypass DNS y forzar IPv4
-            'host': url.hostname,     # Mantener host original para autenticación SSL
-            'port': url.port or 5432
+            'host': url.hostname,    # Pooler maneja IPv4 automáticamente
+            'port': url.port or 5432,
+            'sslmode': 'require'     # Supabase requiere SSL
         }
     else:
         # Configuración local/desarrollo
