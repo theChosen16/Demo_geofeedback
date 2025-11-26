@@ -18,78 +18,15 @@ Autor: GeoFeedback Chile
 Fecha: Noviembre 2025
 """
 
-from flask import Flask, jsonify, request
-from flask_cors import CORS
-import psycopg2
-from psycopg2.extras import RealDictCursor
-import json
-from datetime import datetime
-from functools import wraps
-import os
+from flask import Flask, jsonify, request, render_template
 
-# Import configuration
-try:
-    from config import config
-    DB_CONFIG = config.DB_CONFIG
-    CORS_ORIGINS = config.CORS_ORIGINS
-except ImportError:
-    # Fallback para desarrollo sin config.py
-    DB_CONFIG = {
-        'dbname': os.getenv('DB_NAME', 'geofeedback_papudo'),
-        'user': os.getenv('DB_USER', 'geofeedback'),
-        'password': os.getenv('DB_PASSWORD', 'Papudo2025'),
-        'host': os.getenv('DB_HOST', 'localhost'),
-        'port': int(os.getenv('DB_PORT', 5432))
-    }
-    CORS_ORIGINS = '*'
+# ... imports ...
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app, origins=CORS_ORIGINS)  # Enable CORS with config
+CORS(app, origins=CORS_ORIGINS)
 
-# ===========================================================================
-# DATABASE CONNECTION
-# ===========================================================================
-
-def get_db_connection():
-    """Get database connection"""
-    try:
-        conn = psycopg2.connect(**DB_CONFIG)
-        return conn
-    except Exception as e:
-        app.logger.error(f"Database connection error: {e}")
-        return None
-
-def query_db(query, params=None, fetchone=False):
-    """Execute database query"""
-    conn = get_db_connection()
-    if not conn:
-        return None
-
-    try:
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute(query, params)
-        result = cur.fetchone() if fetchone else cur.fetchall()
-        cur.close()
-        conn.close()
-        return result
-    except Exception as e:
-        app.logger.error(f"Query error: {e}")
-        if conn:
-            conn.close()
-        return None
-
-# ===========================================================================
-# ERROR HANDLERS
-# ===========================================================================
-
-@app.errorhandler(404)
-def not_found(error):
-    return jsonify({'error': 'Endpoint no encontrado'}), 404
-
-@app.errorhandler(500)
-def internal_error(error):
-    return jsonify({'error': 'Error interno del servidor'}), 500
+# ... (DB connection code) ...
 
 # ===========================================================================
 # API ROUTES
@@ -97,7 +34,12 @@ def internal_error(error):
 
 @app.route('/')
 def index():
-    """API root - Documentation"""
+    """Serve Frontend Application"""
+    return render_template('index.html')
+
+@app.route('/api/docs')
+def api_docs():
+    """API Documentation"""
     return jsonify({
         'name': 'GeoFeedback Papudo API',
         'version': '1.0.0',
