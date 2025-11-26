@@ -18,7 +18,7 @@ Autor: GeoFeedback Chile
 Fecha: Noviembre 2025
 """
 
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 import psycopg2
 from psycopg2 import pool
@@ -27,6 +27,7 @@ import json
 from datetime import datetime, timedelta
 from functools import wraps
 import os
+import gc
 
 # Import configuration
 try:
@@ -47,6 +48,11 @@ except ImportError:
 # Initialize Flask app
 app = Flask(__name__)
 CORS(app, origins=CORS_ORIGINS)  # Enable CORS with config
+
+# Enable gzip compression for all responses
+from flask_compress import Compress
+compress = Compress()
+compress.init_app(app)
 
 # ===========================================================================
 # DATABASE CONNECTION POOL (OPTIMIZED FOR RAILWAY FREE TIER)
@@ -89,22 +95,23 @@ def return_db_connection(conn):
         db_pool.putconn(conn)
 
 def query_db(query, params=None, fetchone=False):
-    """Execute database query with connection pooling"""
-    conn = get_db_connection()
-    if not conn:
-        return None
-
+    """Execute database query with connection pooling - OPTIMIZED"""
+    conn = None
     try:
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute(query, params)
-        result = cur.fetchone() if fetchone else cur.fetchall()
-        cur.close()
-        return result
+        conn = get_db_connection()
+        if conn is None:
+            return None
+        
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(query, params or ())
+            result = cur.fetchone() if fetchone else cur.fetchall()
+            return result
     except Exception as e:
-        app.logger.error(f"Query error: {e}")
+        app.logger.warning(f"Query error: {e}")
         return None
     finally:
-        return_db_connection(conn)  # Always return to pool
+        if conn:
+            return_db_connection(conn)  # Always executed, even on exception
 
 # Initialize pool on app startup
 with app.app_context():
@@ -152,23 +159,23 @@ def internal_error(error):
 
 @app.route('/')
 def index():
-    """Serve Frontend - Optimized for Railway"""
-    # In production, return JSON to save memory (no template rendering)
-    if os.getenv('RAILWAY_ENVIRONMENT'):
-        return jsonify({
-            'status': 'ok',
-            'service': 'GeoFeedback API',
-            'message': 'API running successfully',
+    """API Landing - JSON only (no templates to save RAM)"""
+    gc.collect()  # Force garbage collection on root access
+    return jsonify({
+        'service': 'GeoFeedback Papudo API',
+        'version': '1.0.2',
+        'status': 'running',
+        'endpoints': {
+            'health': '/api/v1/health',
             'docs': '/api/docs',
-            'health': '/api/v1/health'
-        })
-    
-    # In development, render template
-    try:
-        return render_template('index.html')
-    except Exception as e:
-        app.logger.error(f"Template error: {e}")
-        return jsonify({'error': 'Template not found', 'details': str(e)}), 500
+            'stats': '/api/v1/stats',
+            'infrastructure': '/api/v1/infrastructure',
+            'risk_point': '/api/v1/risk/point?lon=X&lat=Y',
+            'risk_area': '/api/v1/risk/area?lon1=X1&lat1=Y1&lon2=X2&lat2=Y2'
+        },
+        'documentation': 'https://github.com/theChosen16/Demo_geofeedback',
+        'memory_optimized': True
+    })
 
 @app.route('/api/docs')
 def api_docs():

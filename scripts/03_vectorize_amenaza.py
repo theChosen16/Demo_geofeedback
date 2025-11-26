@@ -34,10 +34,11 @@ os.chdir(PROJECT_DIR)
 
 # Database connection
 DB_PARAMS = {
-    'dbname': 'geofeedback_papudo',
-    'user': 'geofeedback',
-    'password': 'Papudo2025',
-    'host': 'localhost'
+    'dbname': os.getenv('DB_NAME', 'geofeedback_papudo'),
+    'user': os.getenv('DB_USER', 'geofeedback'),
+    'password': os.getenv('DB_PASSWORD', 'Papudo2025'),
+    'host': os.getenv('DB_HOST', 'localhost'),
+    'port': os.getenv('DB_PORT', '5432')
 }
 
 print("=" * 80)
