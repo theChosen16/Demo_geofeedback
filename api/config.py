@@ -49,7 +49,7 @@ class Config:
             'password': url.password,
             'host': url.hostname,    # Pooler maneja IPv4 automáticamente
             'port': url.port or 5432,
-            'sslmode': 'require'     # Supabase requiere SSL
+            'sslmode': 'disable'     # Railway Internal no usa SSL
         }
     else:
         # Configuración local/desarrollo

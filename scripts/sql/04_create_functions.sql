@@ -23,7 +23,7 @@ RETURNS TABLE (
     risk_name VARCHAR,
     risk_color VARCHAR,
     area_km2 DOUBLE PRECISION,
-    poly_id INTEGER
+    id INTEGER
 ) AS $$
 BEGIN
     RETURN QUERY
@@ -32,7 +32,7 @@ BEGIN
         p.risk_name,
         p.risk_color,
         p.area_km2,
-        p.poly_id
+        p.id
     FROM processed.amenaza_poligonos p
     WHERE ST_Contains(
         p.geom,
@@ -96,7 +96,7 @@ CREATE OR REPLACE FUNCTION api.get_polygons_in_bbox(
     risk_filter INTEGER DEFAULT NULL
 )
 RETURNS TABLE (
-    poly_id INTEGER,
+    id INTEGER,
     risk_level INTEGER,
     risk_name VARCHAR,
     risk_color VARCHAR,
@@ -106,7 +106,7 @@ RETURNS TABLE (
 BEGIN
     RETURN QUERY
     SELECT
-        p.poly_id,
+        p.id,
         p.risk_level,
         p.risk_name,
         p.risk_color,
@@ -180,7 +180,7 @@ CREATE OR REPLACE FUNCTION api.get_top_polygons(
     limit_count INTEGER DEFAULT 10
 )
 RETURNS TABLE (
-    poly_id INTEGER,
+    id INTEGER,
     risk_level INTEGER,
     risk_name VARCHAR,
     area_km2 DOUBLE PRECISION,
@@ -190,7 +190,7 @@ RETURNS TABLE (
 BEGIN
     RETURN QUERY
     SELECT
-        p.poly_id,
+        p.id,
         p.risk_level,
         p.risk_name,
         p.area_km2,
@@ -220,7 +220,7 @@ BEGIN
     WITH features AS (
         SELECT json_build_object(
             'type', 'Feature',
-            'id', poly_id,
+            'id', id,
             'geometry', ST_AsGeoJSON(
                 CASE
                     WHEN simplify_tolerance > 0 THEN
@@ -230,7 +230,7 @@ BEGIN
                 END
             )::json,
             'properties', json_build_object(
-                'poly_id', poly_id,
+                'id', id,
                 'risk_level', risk_level,
                 'risk_name', risk_name,
                 'risk_color', risk_color,
@@ -366,7 +366,7 @@ SELECT * FROM api.get_risk_statistics();
 
 \echo ''
 \echo '3. Top 5 polígonos más grandes (riesgo alto):'
-SELECT poly_id, area_km2, perimeter_km
+SELECT id, area_km2, perimeter_km
 FROM api.get_top_polygons(3, 5);
 
 \echo ''
