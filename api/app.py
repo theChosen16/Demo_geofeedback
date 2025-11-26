@@ -105,7 +105,14 @@ def internal_error(error):
 @app.route('/')
 def index():
     """Serve Frontend Application"""
-    return render_template('index.html')
+    try:
+        app.logger.info("Attempting to render index.html")
+        return render_template('index.html')
+    except Exception as e:
+        app.logger.error(f"Error rendering index.html: {type(e).__name__}: {str(e)}")
+        import traceback
+        app.logger.error(f"Traceback: {traceback.format_exc()}")
+        return f"Error rendering template: {type(e).__name__}: {str(e)}", 500
 
 @app.route('/api/docs')
 def api_docs():
