@@ -45,8 +45,28 @@ EXPOSE 5000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:5000/api/v1/health')"
+    CMD python -c "import requests; requests.get('http://localhost:${PORT:-5000}/api/v1/health')"
 
-# Comando de inicio con Gunicorn
-# Usa $PORT de Railway, o 5000 como fallback para desarrollo local
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 4 --timeout 120 --access-logfile - --error-logfile - app:app"]
+# ============================================================================
+# COMANDO OPTIMIZADO PARA RAILWAY FREE TIER (512MB)
+# ============================================================================
+# Cambios:
+#   - workers 4 → 2 (reduce memoria ~50%)
+#   - threads 2 (concurrencia sin más workers)
+#   - worker-class gthread (más eficiente que sync)
+#   - max-requests 1000 (recicla workers, evita memory leaks)
+#   - preload (carga app una vez, compartida entre workers)
+# ============================================================================
+
+CMD ["sh", "-c", "gunicorn \
+    --bind 0.0.0.0:${PORT:-5000} \
+    --workers 2 \
+    --threads 2 \
+    --worker-class gthread \
+    --timeout 120 \
+    --max-requests 1000 \
+    --max-requests-jitter 100 \
+    --preload \
+    --access-logfile - \
+    --error-logfile - \
+    app:app"]

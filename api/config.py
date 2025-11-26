@@ -58,7 +58,8 @@ class Config:
             'user': os.getenv('DB_USER', 'geofeedback'),
             'password': os.getenv('DB_PASSWORD', 'Papudo2025'),
             'host': os.getenv('DB_HOST', 'localhost'),
-            'port': int(os.getenv('DB_PORT', 5432))
+            'port': int(os.getenv('DB_PORT', 5432)),
+            'connect_timeout': 10,
         }
 
     # Server

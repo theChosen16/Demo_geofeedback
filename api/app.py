@@ -21,9 +21,10 @@ Fecha: Noviembre 2025
 from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
 import psycopg2
+from psycopg2 import pool
 from psycopg2.extras import RealDictCursor
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import wraps
 import os
 
@@ -48,27 +49,47 @@ app = Flask(__name__)
 CORS(app, origins=CORS_ORIGINS)  # Enable CORS with config
 
 # ===========================================================================
-# DATABASE CONNECTION
+# DATABASE CONNECTION POOL (OPTIMIZED FOR RAILWAY FREE TIER)
 # ===========================================================================
 
-def get_db_connection():
-    """Get database connection"""
-    try:
-        # Log connection attempt (masked)
-        if app.debug or os.getenv('FLASK_ENV') == 'production':
-            masked_config = DB_CONFIG.copy()
-            if 'password' in masked_config:
-                masked_config['password'] = '******'
-            app.logger.info(f"Attempting DB connection with: {masked_config}")
+# Global connection pool
+db_pool = None
 
-        conn = psycopg2.connect(**DB_CONFIG)
-        return conn
+def init_db_pool():
+    """Initialize database connection pool"""
+    global db_pool
+    try:
+        db_pool = pool.ThreadedConnectionPool(
+            minconn=1,
+            maxconn=5,  # Max 5 connections for Railway free tier
+            **DB_CONFIG
+        )
+        app.logger.info("Database connection pool initialized")
     except Exception as e:
-        app.logger.error(f"Database connection error: {e}")
-        return None
+        app.logger.error(f"Failed to create connection pool: {e}")
+        db_pool = None
+
+def get_db_connection():
+    """Get connection from pool"""
+    global db_pool
+    if db_pool is None:
+        init_db_pool()
+    
+    if db_pool:
+        try:
+            return db_pool.getconn()
+        except Exception as e:
+            app.logger.error(f"Pool connection error: {e}")
+    return None
+
+def return_db_connection(conn):
+    """Return connection to pool"""
+    global db_pool
+    if db_pool and conn:
+        db_pool.putconn(conn)
 
 def query_db(query, params=None, fetchone=False):
-    """Execute database query"""
+    """Execute database query with connection pooling"""
     conn = get_db_connection()
     if not conn:
         return None
@@ -78,13 +99,40 @@ def query_db(query, params=None, fetchone=False):
         cur.execute(query, params)
         result = cur.fetchone() if fetchone else cur.fetchall()
         cur.close()
-        conn.close()
         return result
     except Exception as e:
         app.logger.error(f"Query error: {e}")
-        if conn:
-            conn.close()
         return None
+    finally:
+        return_db_connection(conn)  # Always return to pool
+
+# Initialize pool on app startup
+with app.app_context():
+    init_db_pool()
+
+# ===========================================================================
+# QUERY CACHING (REDUCES DB LOAD)
+# ===========================================================================
+
+_stats_cache = {'data': None, 'expires': None}
+
+def get_cached_stats():
+    """Get cached statistics or fetch from database"""
+    now = datetime.now()
+    
+    if _stats_cache['data'] and _stats_cache['expires'] and _stats_cache['expires'] > now:
+        app.logger.info("Returning cached stats")
+        return _stats_cache['data']
+    
+    # Fetch from database
+    app.logger.info("Fetching fresh stats from database")
+    result = query_db("SELECT * FROM api.get_risk_statistics()")
+    
+    if result:
+        _stats_cache['data'] = result
+        _stats_cache['expires'] = now + timedelta(minutes=5)
+    
+    return result
 
 # ===========================================================================
 # ERROR HANDLERS
@@ -104,16 +152,23 @@ def internal_error(error):
 
 @app.route('/')
 def index():
-    """Serve Frontend Application"""
-    return "Hello from Flask! If you see this, the routing works.", 200
-    # try:
-    #     app.logger.info("Attempting to render index.html")
-    #     return render_template('index.html')
-    # except Exception as e:
-    #     app.logger.error(f"Error rendering index.html: {type(e).__name__}: {str(e)}")
-    #     import traceback
-    #     app.logger.error(f"Traceback: {traceback.format_exc()}")
-    #     return f"Error rendering template: {type(e).__name__}: {str(e)}", 500
+    """Serve Frontend - Optimized for Railway"""
+    # In production, return JSON to save memory (no template rendering)
+    if os.getenv('RAILWAY_ENVIRONMENT'):
+        return jsonify({
+            'status': 'ok',
+            'service': 'GeoFeedback API',
+            'message': 'API running successfully',
+            'docs': '/api/docs',
+            'health': '/api/v1/health'
+        })
+    
+    # In development, render template
+    try:
+        return render_template('index.html')
+    except Exception as e:
+        app.logger.error(f"Template error: {e}")
+        return jsonify({'error': 'Template not found', 'details': str(e)}), 500
 
 @app.route('/api/docs')
 def api_docs():
