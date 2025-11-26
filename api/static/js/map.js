@@ -57,14 +57,23 @@ function initializeMap() {
 }
 
 // API Configuration
-// Usar rutas relativas ya que el frontend se sirve desde la misma API
-const API_BASE_URL = '';
+// En producción (Railway), usa la API. En desarrollo local, usa archivos GeoJSON
+const API_BASE_URL = window.location.hostname.includes('railway.app')
+    ? 'https://demogeofeedback-production.up.railway.app'
+    : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? null  // Desarrollo local: usar archivos
+        : 'https://demogeofeedback-production.up.railway.app';  // Producción
 
 // Load GeoJSON data
 async function loadData() {
     try {
-        // Siempre cargar desde API
-        await loadDataFromAPI();
+        // Intentar cargar desde API si está configurada
+        if (API_BASE_URL) {
+            await loadDataFromAPI();
+        } else {
+            // Modo desarrollo: cargar desde archivos locales
+            await loadDataFromFile();
+        }
 
         // Create layers
         createRiskPolygons();
