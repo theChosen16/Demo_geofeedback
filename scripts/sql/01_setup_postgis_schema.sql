@@ -101,7 +101,30 @@ CREATE TABLE IF NOT EXISTS metadata.analysis_runs (
 COMMENT ON TABLE metadata.analysis_runs IS 'Registro de análisis de riesgo ejecutados';
 
 -- Índice en fecha
-CREATE INDEX idx_analysis_runs_date ON metadata.analysis_runs(analysis_date DESC);
+CREATE INDEX IF NOT EXISTS idx_analysis_runs_date ON metadata.analysis_runs(analysis_date DESC);
+
+-- ============================================================================
+-- PASO 4.1: CREAR TABLA DE RESULTADOS DE AMENAZA (POLÍGONOS)
+-- ============================================================================
+
+DROP TABLE IF EXISTS processed.amenaza_poligonos CASCADE;
+
+CREATE TABLE IF NOT EXISTS processed.amenaza_poligonos (
+    id SERIAL PRIMARY KEY,
+    geom GEOMETRY(Polygon, 32719),
+    gridcode INTEGER,
+    area_m2 DOUBLE PRECISION,
+    area_km2 DOUBLE PRECISION,
+    perimeter_m DOUBLE PRECISION,
+    risk_level INTEGER, -- 1: Bajo, 2: Medio, 3: Alto
+    risk_name VARCHAR(50),
+    risk_color VARCHAR(20),
+    analysis_run_id INTEGER REFERENCES metadata.analysis_runs(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_amenaza_poligonos_geom ON processed.amenaza_poligonos USING GIST (geom);
+CREATE INDEX IF NOT EXISTS idx_amenaza_poligonos_risk ON processed.amenaza_poligonos(risk_level);
 
 -- ============================================================================
 -- PASO 5: CREAR TABLA DE CONFIGURACIÓN
@@ -166,7 +189,8 @@ END
 $$;
 
 -- Permisos de lectura
-GRANT CONNECT ON DATABASE geofeedback_papudo TO geofeedback_api;
+-- GRANT CONNECT ON DATABASE geofeedback_papudo TO geofeedback_api;
+GRANT CONNECT ON DATABASE railway TO geofeedback_api;
 GRANT USAGE ON SCHEMA raw, processed, infrastructure, api TO geofeedback_api;
 GRANT SELECT ON ALL TABLES IN SCHEMA raw, processed, infrastructure, api TO geofeedback_api;
 ALTER DEFAULT PRIVILEGES IN SCHEMA raw, processed, infrastructure, api
