@@ -19,14 +19,84 @@ Fecha: Noviembre 2025
 """
 
 from flask import Flask, jsonify, request, render_template
+from flask_cors import CORS
+import psycopg2
+from psycopg2.extras import RealDictCursor
+import json
+from datetime import datetime
+from functools import wraps
+import os
 
-# ... imports ...
+# Import configuration
+try:
+    from config import config
+    DB_CONFIG = config.DB_CONFIG
+    CORS_ORIGINS = config.CORS_ORIGINS
+except ImportError:
+    # Fallback para desarrollo sin config.py
+    DB_CONFIG = {
+        'dbname': os.getenv('DB_NAME', 'geofeedback_papudo'),
+        'user': os.getenv('DB_USER', 'geofeedback'),
+        'password': os.getenv('DB_PASSWORD', 'Papudo2025'),
+        'host': os.getenv('DB_HOST', 'localhost'),
+        'port': int(os.getenv('DB_PORT', 5432))
+    }
+    CORS_ORIGINS = '*'
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app, origins=CORS_ORIGINS)
+CORS(app, origins=CORS_ORIGINS)  # Enable CORS with config
 
-# ... (DB connection code) ...
+# ===========================================================================
+# DATABASE CONNECTION
+# ===========================================================================
+
+def get_db_connection():
+    """Get database connection"""
+    try:
+        # Log connection attempt (masked)
+        if app.debug or os.getenv('FLASK_ENV') == 'production':
+            masked_config = DB_CONFIG.copy()
+            if 'password' in masked_config:
+                masked_config['password'] = '******'
+            app.logger.info(f"Attempting DB connection with: {masked_config}")
+
+        conn = psycopg2.connect(**DB_CONFIG)
+        return conn
+    except Exception as e:
+        app.logger.error(f"Database connection error: {e}")
+        return None
+
+def query_db(query, params=None, fetchone=False):
+    """Execute database query"""
+    conn = get_db_connection()
+    if not conn:
+        return None
+
+    try:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute(query, params)
+        result = cur.fetchone() if fetchone else cur.fetchall()
+        cur.close()
+        conn.close()
+        return result
+    except Exception as e:
+        app.logger.error(f"Query error: {e}")
+        if conn:
+            conn.close()
+        return None
+
+# ===========================================================================
+# ERROR HANDLERS
+# ===========================================================================
+
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({'error': 'Endpoint no encontrado'}), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    return jsonify({'error': 'Error interno del servidor'}), 500
 
 # ===========================================================================
 # API ROUTES
