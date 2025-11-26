@@ -33,6 +33,8 @@ RUN pip install --no-cache-dir -r requirements.txt gunicorn
 
 # Copiar código de la aplicación
 COPY app.py config.py ./
+COPY templates/ ./templates/
+COPY static/ ./static/
 
 # Crear usuario no-root para seguridad
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
