@@ -113,9 +113,8 @@ def query_db(query, params=None, fetchone=False):
         if conn:
             return_db_connection(conn)  # Always executed, even on exception
 
-# Initialize pool on app startup
-with app.app_context():
-    init_db_pool()
+# Initialize pool lazily (not on startup to avoid crash)
+# Pool will be created on first database access
 
 # ===========================================================================
 # QUERY CACHING (REDUCES DB LOAD)
@@ -131,15 +130,20 @@ def get_cached_stats():
         app.logger.info("Returning cached stats")
         return _stats_cache['data']
     
-    # Fetch from database
-    app.logger.info("Fetching fresh stats from database")
-    result = query_db("SELECT * FROM api.get_risk_statistics()")
+    # Fetch from database - handle gracefully if schema doesn't exist
+    try:
+        app.logger.info("Fetching fresh stats from database")
+        result = query_db("SELECT * FROM api.get_risk_statistics()")
+        
+        if result:
+            _stats_cache['data'] = result
+            _stats_cache['expires'] = now + timedelta(minutes=5)
+            return result
+    except Exception as e:
+        app.logger.warning(f"Could not fetch stats (DB schema may not exist): {e}")
     
-    if result:
-        _stats_cache['data'] = result
-        _stats_cache['expires'] = now + timedelta(minutes=5)
-    
-    return result
+    # Return empty stats if DB not available
+    return []
 
 # ===========================================================================
 # ERROR HANDLERS
