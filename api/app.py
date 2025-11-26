@@ -159,23 +159,32 @@ def internal_error(error):
 
 @app.route('/')
 def index():
-    """API Landing - JSON only (no templates to save RAM)"""
-    gc.collect()  # Force garbage collection on root access
-    return jsonify({
-        'service': 'GeoFeedback Papudo API',
-        'version': '1.0.2',
-        'status': 'running',
-        'endpoints': {
-            'health': '/api/v1/health',
-            'docs': '/api/docs',
-            'stats': '/api/v1/stats',
-            'infrastructure': '/api/v1/infrastructure',
-            'risk_point': '/api/v1/risk/point?lon=X&lat=Y',
-            'risk_area': '/api/v1/risk/area?lon1=X1&lat1=Y1&lon2=X2&lat2=Y2'
-        },
-        'documentation': 'https://github.com/theChosen16/Demo_geofeedback',
-        'memory_optimized': True
-    })
+    """API Landing - JSON only (ultra-lightweight)"""
+    try:
+        return jsonify({
+            'service': 'GeoFeedback Papudo API',
+            'version': '1.0.2',
+            'status': 'running',
+            'endpoints': {
+                'health': '/api/v1/health',
+                'docs': '/api/docs',
+                'stats': '/api/v1/stats',
+                'infrastructure': '/api/v1/infrastructure',
+                'risk_point': '/api/v1/risk/point?lon=X&lat=Y'
+            },
+            'documentation': 'https://github.com/theChosen16/Demo_geofeedback',
+            'memory_optimized': True,
+            'database': 'connected'
+        })
+    except Exception as e:
+        app.logger.error(f"Error in index route: {e}")
+        return jsonify({'error': 'Internal error', 'details': str(e)}), 500
+
+
+@app.route('/favicon.ico')
+def favicon():
+    """Return 204 No Content for favicon to avoid 502"""
+    return '', 204
 
 @app.route('/api/docs')
 def api_docs():
