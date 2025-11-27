@@ -20,5 +20,14 @@ def health():
     return jsonify({"status": "healthy", "type": "minimal"})
 
 if __name__ == '__main__':
+    print("="*50)
+    print("STARTING SIMPLE APP")
+    print("Environment:")
+    for k, v in os.environ.items():
+        if "SECRET" not in k:
+            print(f"{k}={v}")
+    print("="*50)
+    
     port = int(os.environ.get('PORT', 8080))
+    print(f"Binding to 0.0.0.0:{port}")
     app.run(host='0.0.0.0', port=port)
