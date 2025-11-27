@@ -18,11 +18,6 @@ echo "Using PORT: $PORT"
 # --access-logfile - : Log to stdout
 # --error-logfile - : Log errors to stdout
 # --log-level debug : Verbose logging
-exec gunicorn \
-    --bind "0.0.0.0:$PORT" \
-    --workers 1 \
-    --timeout 120 \
-    --access-logfile - \
-    --error-logfile - \
-    --log-level debug \
-    simple_app:app
+# Bypass Gunicorn for debugging
+echo "Starting with Flask development server..."
+exec python simple_app.py
