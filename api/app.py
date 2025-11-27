@@ -1,7 +1,22 @@
+import logging
+import sys
+import os
 from flask import Flask, jsonify
 from flask_cors import CORS
 from datetime import datetime
-import os
+
+# Configurar logging detallado al inicio
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    stream=sys.stdout
+)
+logger = logging.getLogger(__name__)
+
+logger.info("="*50)
+logger.info("INICIANDO GEOFEEDBACK PAPUDO API")
+logger.info(f"Python Version: {sys.version}")
+logger.info("="*50)
 
 app = Flask(__name__)
 CORS(app)
@@ -12,6 +27,7 @@ CORS(app)
 
 @app.route('/')
 def index():
+    logger.info("Request received at /")
     return '''<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -143,6 +159,9 @@ def index():
 </body>
 </html>'''
 
+@app.route('/favicon.ico')
+def favicon():
+    return '', 204
 
 # ===========================================================================
 # API ENDPOINTS
@@ -151,6 +170,7 @@ def index():
 @app.route('/api/v1/health')
 def health():
     """Health check - sin dependencia de BD"""
+    logger.info("Health check requested")
     return jsonify({
         'status': 'healthy',
         'timestamp': datetime.now().isoformat(),
@@ -226,6 +246,7 @@ def not_found(error):
 
 @app.errorhandler(500)
 def internal_error(error):
+    logger.error(f"Internal Server Error: {error}", exc_info=True)
     return jsonify({'error': 'Error interno del servidor', 'status': 500}), 500
 
 
@@ -235,4 +256,5 @@ def internal_error(error):
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
+    logger.info(f"Starting Flask app on port {port}")
     app.run(host='0.0.0.0', port=port, debug=False)
