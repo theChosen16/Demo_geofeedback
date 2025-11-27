@@ -20,4 +20,4 @@ echo "Using PORT: $PORT"
 # --log-level debug : Verbose logging
 # Bypass Gunicorn for debugging
 echo "Starting with Flask development server..."
-exec python simple_app.py
+python -u simple_app.py
