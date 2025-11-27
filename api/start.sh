@@ -25,4 +25,4 @@ exec gunicorn \
     --access-logfile - \
     --error-logfile - \
     --log-level debug \
-    app:app
+    simple_app:app

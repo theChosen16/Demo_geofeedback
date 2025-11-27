@@ -10,6 +10,7 @@ RUN pip install --no-cache-dir flask flask-cors gunicorn
 
 # Copiar archivos
 COPY app.py .
+COPY simple_app.py .
 COPY start.sh .
 
 # Dar permisos de ejecución
