@@ -1,0 +1,11 @@
+[build]
+builder = "dockerfile"
+dockerfilePath = "api/Dockerfile"
+
+[deploy]
+service = "api"
+startCommand = "./start.sh"
+healthcheckPath = "/api/v1/health"
+healthcheckTimeout = 100
+restartPolicyType = "on_failure"
+numReplicas = 1
