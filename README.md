@@ -1,320 +1,251 @@
-# GeoFeedback - Análisis de Riesgo de Inundación Papudo
+# GeoFeedback Papudo - Demo Simplificado
 
-Sistema completo de análisis geoespacial de riesgo de inundación para el municipio de Papudo, Región de Valparaíso, Chile.
+## 🌊 Descripción
 
-[![Railway Deploy](https://img.shields.io/badge/Deploy-Railway-blueviolet)](https://railway.app)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![PostGIS](https://img.shields.io/badge/PostGIS-3.4-green)](https://postgis.net/)
+Sistema simplificado de análisis de riesgo de inundación para la comuna de Papudo, Región de Valparaíso, Chile.
 
-![Mapa de Riesgo](outputs/Mapa_Infraestructura_Riesgo_Papudo.png)
+**Versión actual**: 2.0 - Deploy Mínimo (sin base de datos)
 
-## 🌟 Características
+---
 
-- **Análisis Geoespacial Multi-Factor**: Combina pendiente (50%), NDVI (35%) y depresiones (15%)
-- **Base de Datos PostGIS**: 2,913 polígonos de riesgo + 20 instalaciones críticas
-- **API REST**: 8 endpoints con consultas espaciales optimizadas
-- **Visor Web Interactivo**: Leaflet con filtros, búsqueda y clustering
-- **Servicios OGC**: WMS/WFS con GeoServer para QGIS/ArcGIS
-- **Despliegue Cloud**: Listo para Railway.app
+## 🎯 Arquitectura Actual
 
-## 📊 Hallazgos Principales
+### Componentes Principales
 
-- **Cobertura**: 1,925 km² analizados
-- **Riesgo Alto**: 23.38% (450 km²)
-- **Riesgo Medio**: 44.28% (852 km²)
-- **Riesgo Bajo**: 32.34% (623 km²)
-- **Infraestructura en Riesgo**: 20 instalaciones en zona amarilla
-  - 5 centros educativos
-  - 2 centros de salud
-  - 2 servicios de emergencia
-  - 1 municipalidad
+1. **API Flask** (`api/`)
+   - Servidor REST con datos estáticos embebidos
+   - Endpoints de consulta sin dependencia de PostgreSQL
+   - Landing page HTML inline con estadísticas visuales
+   - Desplegado en Railway
 
-## 🏗️ Arquitectura
+2. **Visor Web** (`web/`)
+   - Interfaz de mapa interactivo con Leaflet.js
+   - Visualización de instalaciones críticas
+   - Filtros por nivel de riesgo y categoría
+   - Desplegado en GitHub Pages
 
-```
-GeoFeedback/
-├── Análisis Geoespacial (Python)
-│   ├── DEM SRTM 30m
-│   ├── NDVI Sentinel-2
-│   └── Análisis topográfico
-│
-├── Base de Datos (PostGIS)
-│   ├── Polígonos de riesgo
-│   ├── Infraestructura crítica
-│   ├── Funciones PL/pgSQL
-│   └── Vistas materializadas
-│
-├── Backend (Flask API)
-│   ├── 8 endpoints REST
-│   ├── Consultas espaciales
-│   └── CORS habilitado
-│
-├── Frontend (Leaflet + nginx)
-│   ├── Mapa interactivo
-│   ├── Filtros dinámicos
-│   └── Búsqueda en tiempo real
-│
-└── Servicios OGC (GeoServer)
-    ├── WMS (mapas)
-    ├── WFS (features)
-    └── Estilos SLD
-```
+3. **Datos Estáticos** (`data/`)
+   - GeoJSON procesados de infraestructura
+   - Archivos de zonas de riesgo
+   - Scripts de procesamiento (Python)
 
-## 🚀 Inicio Rápido
+---
 
-### Opción 1: Despliegue en Railway (Recomendado)
+## 🚀 Deployment
 
+### API en Railway
+
+La API está desplegada en: `https://demogeofeedback-production.up.railway.app`
+
+**Endpoints disponibles**:
+- `GET /` - Landing page HTML con estadísticas
+- `GET /api/v1/health` - Health check del servicio
+- `GET /api/v1/stats` - Estadísticas generales (20 instalaciones)
+- `GET /api/v1/infrastructure` - Lista de infraestructura crítica
+- `GET /api/docs` - Documentación de la API
+
+**Desplegar cambios**:
 ```bash
-# 1. Fork el repositorio en GitHub
-
-# 2. Crear cuenta en railway.app
-
-# 3. Nuevo proyecto desde GitHub
-#    - Seleccionar: theChosen16/Demo_geofeedback
-#    - Railway detectará automáticamente la configuración
-
-# 4. Agregar PostgreSQL
-#    - Click "+ New Service" → Database → PostgreSQL
-#    - Railway creará DATABASE_URL automáticamente
-
-# 5. Desplegar
-#    - Push a master → Deploy automático
+cd c:\Users\alean\Desktop\Geofeedback\Demo
+git add .
+git commit -m "Tu mensaje"
+git push origin main  # Railway auto-deploya
 ```
 
-📖 **Guía completa:** [deployment/RAILWAY_DEPLOYMENT.md](deployment/RAILWAY_DEPLOYMENT.md)
+### Visor Web en GitHub Pages
 
-### Opción 2: Desarrollo Local
+URL pública: `https://thechosen16.github.io/Demo_geofeedback/`
 
-**Requisitos:**
-- Python 3.11+
-- PostgreSQL 12+ con PostGIS 3.0+
-- Docker (para GeoServer)
-
+**Actualizar**:
 ```bash
-# 1. Clonar repositorio
-git clone https://github.com/theChosen16/Demo_geofeedback.git
-cd Demo_geofeedback
-
-# 2. Instalar dependencias Python
-pip install -r api/requirements.txt
-
-# 3. Configurar base de datos
-createdb geofeedback_papudo
-psql geofeedback_papudo -c "CREATE EXTENSION postgis;"
-
-# 4. Migrar base de datos
-python deployment/migrate_database.py
-
-# 5. Iniciar API
-cd api && python app.py
-# API en: http://localhost:5000
-
-# 6. Iniciar visor web (en otra terminal)
-cd web && python -m http.server 8000
-# Web en: http://localhost:8000
-
-# 7. GeoServer (opcional)
-cd geoserver && ./start.sh
-# GeoServer en: http://localhost:8080/geoserver
+git add web/
+git commit -m "Update web viewer"
+git push origin main
 ```
 
-## 📚 Documentación
-
-### Componentes
-
-- [API REST](api/README.md) - Documentación de endpoints y ejemplos
-- [Visor Web](web/README.md) - Uso del mapa interactivo
-- [GeoServer](geoserver/README.md) - Servicios OGC (WMS/WFS)
-- [Despliegue](deployment/README.md) - Guías de producción
-
-### Scripts de Análisis
-
-- `scripts/analysis_flooding.py` - Análisis de riesgo multi-factor
-- `scripts/create_flood_risk_map.py` - Generación de mapas
-- `scripts/03_vectorize_amenaza.py` - Vectorización de rasters
-- `scripts/08_analyze_infrastructure_risk.py` - Análisis de infraestructura
-
-### Base de Datos
-
-- `scripts/sql/01_setup_postgis_schema.sql` - Inicialización
-- `scripts/sql/04_create_functions.sql` - 8 funciones PL/pgSQL
-- `scripts/sql/05_create_views.sql` - Vistas materializadas
-
-## 🔧 API Endpoints
-
-### Base URL
-- **Desarrollo**: `http://localhost:5000`
-- **Producción**: `https://geofeedback-api.up.railway.app`
-
-### Endpoints Principales
-
-```bash
-# Health check
-GET /api/v1/health
-
-# Estadísticas de riesgo
-GET /api/v1/stats
-
-# Riesgo en punto específico
-GET /api/v1/risk/point?lon=-71.4492&lat=-32.5067
-
-# Infraestructura completa
-GET /api/v1/infrastructure
-
-# Infraestructura por riesgo
-GET /api/v1/infrastructure/risk/2
-
-# Infraestructura por categoría
-GET /api/v1/infrastructure/category/Educación
-```
-
-**Ejemplos completos:** [api/README.md](api/README.md)
-
-## 🗺️ Servicios OGC
-
-### WMS (Web Map Service)
-
-```
-GetCapabilities:
-http://localhost:8080/geoserver/geofeedback/wms?service=WMS&request=GetCapabilities
-
-GetMap:
-http://localhost:8080/geoserver/geofeedback/wms?
-  service=WMS&version=1.1.0&request=GetMap
-  &layers=geofeedback:amenaza_poligonos
-  &bbox=-71.50,-32.54,-71.42,-32.47
-  &width=800&height=600&srs=EPSG:4326
-  &format=image/png
-```
-
-### WFS (Web Feature Service)
-
-```
-GetFeature (GeoJSON):
-http://localhost:8080/geoserver/geofeedback/wfs?
-  service=WFS&version=2.0.0&request=GetFeature
-  &typeName=geofeedback:amenaza_poligonos
-  &outputFormat=application/json
-```
-
-## 💻 Tecnologías
-
-### Backend
-- **Python 3.11** - Lenguaje principal
-- **Flask 3.0** - Framework web
-- **PostgreSQL 16** - Base de datos
-- **PostGIS 3.4** - Extensión espacial
-- **GeoServer 2.24** - Servidor de mapas
-
-### Frontend
-- **Leaflet 1.9.4** - Mapas interactivos
-- **Leaflet.markercluster** - Agrupación de marcadores
-- **Font Awesome 6.4** - Iconos
-- **nginx alpine** - Servidor web
-
-### Análisis
-- **Rasterio** - Procesamiento de rasters
-- **GeoPandas** - Análisis vectorial
-- **GDAL** - Transformaciones geoespaciales
-- **NumPy** - Cálculos numéricos
-
-### DevOps
-- **Docker** - Containerización
-- **Docker Compose** - Orquestación local
-- **Railway.app** - Despliegue cloud
-- **GitHub Actions** - CI/CD (opcional)
+---
 
 ## 📁 Estructura del Proyecto
 
 ```
 Demo_geofeedback/
-├── api/                      # API REST Flask
-│   ├── app.py               # Aplicación principal
-│   ├── config.py            # Configuración
-│   ├── Dockerfile           # Container para Railway
-│   └── requirements.txt     # Dependencias Python
+├── api/                        # API Flask simplificada
+│   ├── app.py                  # Aplicación principal (datos estáticos)
+│   ├── Dockerfile              # Configuración Docker optimizada
+│   ├── requirements.txt        # Dependencias (Flask, CORS, Gunicorn)
+│   └── README.md               # Documentación de la API
 │
-├── web/                      # Visor web
-│   ├── index.html           # Página principal
-│   ├── css/style.css        # Estilos
-│   ├── js/map.js            # Lógica de mapa
-│   ├── nginx.conf           # Configuración nginx
-│   └── Dockerfile           # Container estático
+├── web/                        # Visor web (GitHub Pages)
+│   ├── index.html              # Página principal
+│   ├── css/
+│   │   └── styles.css
+│   └── js/
+│       └── map.js              # Lógica del mapa
 │
-├── geoserver/                # GeoServer Docker
-│   ├── docker-compose.yml   # Orquestación
-│   ├── styles/              # Estilos SLD
-│   ├── scripts/             # Automatización
-│   └── init/                # Scripts SQL
+├── data/                       # Datos GeoJSON procesados
+│   ├── processed/              # Archivos listos para usar
+│   └── raw/                    # Datos originales
 │
-├── scripts/                  # Análisis geoespacial
-│   ├── analysis_flooding.py
-│   ├── 08_analyze_infrastructure_risk.py
-│   └── sql/                 # Scripts SQL
+├── scripts/                    # Scripts de procesamiento
+│   ├── 03_vectorize_amenaza.py
+│   ├── 07_download_infrastructure.py
+│   └── ...
 │
-├── data/                     # Datos procesados
-│   ├── processed/           # Resultados de análisis
-│   ├── infrastructure/      # Datos OSM
-│   └── raw/                 # Datos originales (gitignore)
+├── backups/                    # Backups de versiones anteriores
+│   ├── app.py.backup           # Versión con PostgreSQL
+│   ├── Dockerfile.backup
+│   └── requirements.txt.backup
 │
-├── deployment/               # Configuración de despliegue
-│   ├── RAILWAY_DEPLOYMENT.md
-│   ├── migrate_database.py
-│   └── README.md
+├── Documentacion/              # Documentación del proyecto
+│   ├── 00_INDICE_Y_RESUMEN.md
+│   └── ...
 │
-├── outputs/                  # Mapas generados
-│   ├── Mapa_Infraestructura_Riesgo_Papudo.png
-│   └── Mapa_Infraestructura_Riesgo_Papudo.pdf
-│
-└── Documentacion/            # Documentación del proyecto
-    ├── 00_INDICE_Y_RESUMEN.md
-    └── QUICK_START_PROTOTIPO.md
+└── README.md                   # Este archivo
 ```
-
-## 🧪 Testing
-
-```bash
-# Test de API
-cd api && python test_api.py
-
-# Test de conexión PostgreSQL
-python deployment/migrate_database.py
-
-# Test de GeoServer
-cd geoserver/scripts && ./setup_geoserver.sh
-```
-
-## 🤝 Contribuir
-
-1. Fork el proyecto
-2. Crear rama feature (`git checkout -b feature/NuevaCaracteristica`)
-3. Commit cambios (`git commit -m 'Agregar NuevaCaracteristica'`)
-4. Push a la rama (`git push origin feature/NuevaCaracteristica`)
-5. Abrir Pull Request
-
-## 📝 Licencia
-
-Este proyecto está bajo la Licencia MIT - ver [LICENSE](LICENSE) para detalles.
-
-## 👥 Autores
-
-**GeoFeedback Chile**
-- GitHub: [@theChosen16](https://github.com/theChosen16)
-
-## 🙏 Agradecimientos
-
-- **Datos**: OpenStreetMap contributors, SRTM DEM, Sentinel-2 ESA
-- **Tecnologías**: Leaflet, PostGIS, GeoServer, Flask
-- **Hosting**: Railway.app
-
-## 📞 Contacto
-
-- **Email**: geofeedback@tudominio.cl
-- **GitHub Issues**: [theChosen16/Demo_geofeedback/issues](https://github.com/theChosen16/Demo_geofeedback/issues)
 
 ---
 
-⭐ Si este proyecto te fue útil, considera darle una estrella en GitHub!
+## 🔧 Desarrollo Local
 
-**Última actualización:** Noviembre 2025
+### Prerrequisitos
+
+- Python 3.11+
+- Git
+
+### Instalación
+
+```bash
+# Clonar repositorio
+git clone https://github.com/theChosen16/Demo_geofeedback.git
+cd Demo_geofeedback
+
+# Instalar dependencias de la API
+cd api
+pip install -r requirements.txt
+
+# Ejecutar API localmente
+python app.py
+```
+
+La API estará disponible en: `http://localhost:8080`
+
+### Probar Endpoints
+
+```bash
+# Health check
+curl http://localhost:8080/api/v1/health
+
+# Estadísticas
+curl http://localhost:8080/api/v1/stats
+
+# Infraestructura
+curl http://localhost:8080/api/v1/infrastructure
+```
+
+---
+
+## 📊 Datos Incluidos
+
+### Área de Estudio: Papudo, Región de Valparaíso
+
+- **Superficie**: 15.4 km²
+- **Instalaciones críticas**: 20 registradas
+- **Niveles de riesgo**:
+  - 🔴 Alto: 5 instalaciones (25%)
+  - 🟡 Medio: 8 instalaciones (40%)
+  - 🟢 Bajo: 7 instalaciones (35%)
+
+### Categorías de Infraestructura
+
+- Salud (hospitales, centros de salud)
+- Educación (escuelas, colegios)
+- Emergencias (bomberos, carabineros)
+- Gobierno (municipalidad, servicios públicos)
+- Comercio (supermercados, farmacias)
+
+---
+
+## 🗑️ Limpieza Realizada (26 Nov 2025)
+
+Se eliminaron los siguientes archivos obsoletos relacionados con PostgreSQL/PostGIS:
+
+### Archivos Eliminados de `/api`:
+- ❌ `config.py` - Configuración de base de datos
+- ❌ `cache_helper.py` - Sistema de caché para queries SQL
+- ❌ `test_api.py` - Tests que requerían BD
+- ❌ `templates/` - Carpeta de plantillas HTML (ahora inline)
+- ❌ `static/` - Archivos estáticos CSS/JS (no usados)
+
+### Archivos Eliminados de raíz:
+- ❌ `setup_database.sql` - Script de creación de esquemas PostgreSQL
+- ❌ `ARREGLOS_RAILWAY.md` - Guía de troubleshooting obsoleta
+- ❌ `QUICK_DEPLOY_RAILWAY.md` - Guía de deploy con BD
+- ❌ `RAILWAY_CLI_SETUP_STEPS.md` - Configuración CLI obsoleta
+- ❌ `railway.toml.backup` - Configuración antigua
+- ❌ `deployment/` - Carpeta completa de deployment con BD
+
+### Archivos Movidos a `/backups`:
+- 📦 `app.py.backup` - Versión anterior con PostgreSQL (539 líneas)
+- 📦 `Dockerfile.backup` - Dockerfile con dependencias de BD
+- 📦 `requirements.txt.backup` - Requirements con psycopg2
+
+**Resultado**: Proyecto más limpio y enfocado en la arquitectura actual sin base de datos.
+
+---
+
+## 🔄 Migración desde Versión con BD
+
+Si necesitas volver a la versión con PostgreSQL/PostGIS:
+
+```bash
+# Restaurar desde backups
+cd api
+Copy-Item "..\backups\app.py.backup" -Destination "app.py" -Force
+Copy-Item "..\backups\Dockerfile.backup" -Destination "Dockerfile" -Force
+Copy-Item "..\backups\requirements.txt.backup" -Destination "requirements.txt" -Force
+
+# Commit y push
+cd ..
+git add api/
+git commit -m "Restore PostgreSQL version"
+git push origin main
+```
+
+---
+
+## ⏭️ Roadmap Futuro
+
+### Fase 1: Deploy Mínimo ✅ (COMPLETADO)
+- [x] API con datos estáticos sin BD
+- [x] Dockerfile optimizado para Railway
+- [x] Landing page HTML inline
+- [x] Limpieza de archivos obsoletos
+
+### Fase 2: Datos Dinámicos (Próximamente)
+- [ ] Reconectar PostgreSQL/PostGIS con manejo robusto de errores
+- [ ] Implementar connection pooling optimizado
+- [ ] Cargar datos GeoJSON completos desde BD
+
+### Fase 3: Análisis Avanzado (Futuro)
+- [ ] Integración con Google Earth Engine
+- [ ] Análisis de series temporales de inundaciones
+- [ ] Predicciones basadas en datos históricos
+- [ ] Sistema de alertas automáticas
+
+---
+
+## 📝 Licencia
+
+Este proyecto es parte de una demostración técnica de GeoFeedback Chile.
+
+---
+
+## 👥 Contacto
+
+- **Repositorio**: [github.com/theChosen16/Demo_geofeedback](https://github.com/theChosen16/Demo_geofeedback)
+- **Demo en vivo**: [thechosen16.github.io/Demo_geofeedback](https://thechosen16.github.io/Demo_geofeedback/)
+- **API**: [demogeofeedback-production.up.railway.app](https://demogeofeedback-production.up.railway.app)
+
+---
+
+*Última actualización: 26 de noviembre de 2025*
