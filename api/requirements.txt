@@ -1,3 +1,24 @@
-flask==3.0.0
-flask-cors==4.0.0
-gunicorn==21.2.0
+# ============================================================================
+# Requirements - API Flask GeoFeedback
+# Versiones pinneadas para reproducibilidad
+# ============================================================================
+
+# Framework
+Flask==3.0.0
+Flask-CORS==4.0.0
+
+# Database
+psycopg2-binary==2.9.9
+
+# Utilities
+python-dotenv==1.0.0
+
+# Producción (instalado en Dockerfile, pero listado aquí para referencia)
+# gunicorn==21.2.0
+
+# ============================================================================
+# Notas:
+# - gunicorn se instala en Dockerfile para mantener requirements.txt limpio
+# - psycopg2-binary es preferido sobre psycopg2 para evitar compilación
+# - Actualizar versiones periódicamente: pip list --outdated
+# ============================================================================
