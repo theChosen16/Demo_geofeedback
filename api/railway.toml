@@ -4,15 +4,12 @@
 # ============================================================================
 
 [build]
-# Usar Dockerfile explícitamente
+# Railway detecta automáticamente el Dockerfile en el root directory
+# NO especificar dockerfilePath cuando usas Root Directory en settings
 builder = "DOCKERFILE"
-dockerfilePath = "Dockerfile"
-
-# Configuración de build
-# watchPatterns = ["**/*.py", "requirements.txt", "Dockerfile"]
 
 [deploy]
-# Health check - CRÍTICO para que Railway sepa que el servicio está listo
+# Health check
 healthcheckPath = "/api/v1/health"
 healthcheckTimeout = 60
 
@@ -20,9 +17,6 @@ healthcheckTimeout = 60
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 5
 
-# Número de réplicas (free tier = 1)
+# Réplicas
 numReplicas = 1
-
-# Tiempo de gracia para shutdown
-# Railway envía SIGTERM, espera este tiempo, luego SIGKILL
 sleepApplication = false
