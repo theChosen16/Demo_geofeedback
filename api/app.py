@@ -1,20 +1,20 @@
 import logging
 import sys
 import os
-from flask import Flask, jsonify
+from flask import Flask, jsonify, Response
 from flask_cors import CORS
 from datetime import datetime
 
-# Configurar logging detallado al inicio
+# Configurar logging
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     stream=sys.stdout
 )
 logger = logging.getLogger(__name__)
 
 logger.info("="*50)
-logger.info("INICIANDO GEOFEEDBACK PAPUDO API")
+logger.info("INICIANDO GEOFEEDBACK CHILE API")
 logger.info(f"Python Version: {sys.version}")
 logger.info("="*50)
 
@@ -22,142 +22,1886 @@ app = Flask(__name__)
 CORS(app)
 
 # ===========================================================================
-# LANDING PAGE - HTML INLINE
+# LANDING PAGE - HTML COMPLETO
 # ===========================================================================
 
-@app.route('/')
-def index():
-    logger.info("Request received at /")
-    return '''<!DOCTYPE html>
+LANDING_HTML = '''
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GeoFeedback Papudo - Demo</title>
+    <title>GeoFeedback Chile | Inteligencia Territorial Open Source</title>
+    <meta name="description" content="Democratizando la Inteligencia Territorial: Monitoreo Satelital Automatizado para Chile. Mapas de riesgo y gestión hídrica 100% Open Source.">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            color: #fff;
-            min-height: 100vh;
-            padding: 40px 20px;
+        :root {
+            --primary: #1e3a5f;
+            --primary-light: #2d5a87;
+            --secondary: #10b981;
+            --secondary-light: #34d399;
+            --accent: #f59e0b;
+            --text-dark: #1f2937;
+            --text-light: #6b7280;
+            --bg-light: #f8fafc;
+            --bg-white: #ffffff;
+            --border: #e5e7eb;
+            --danger: #ef4444;
+            --warning: #f59e0b;
         }
-        .container { max-width: 900px; margin: 0 auto; }
-        h1 { font-size: 2.5rem; margin-bottom: 10px; color: #64ffda; }
-        .subtitle { color: #8892b0; margin-bottom: 40px; }
-        .card {
-            background: rgba(255,255,255,0.05);
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 20px;
-            border: 1px solid rgba(255,255,255,0.1);
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        .card h2 { color: #64ffda; margin-bottom: 16px; font-size: 1.2rem; }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 16px; }
-        .stat { text-align: center; padding: 16px; background: rgba(100,255,218,0.1); border-radius: 8px; }
-        .stat-value { font-size: 2rem; font-weight: bold; color: #64ffda; }
-        .stat-label { color: #8892b0; font-size: 0.85rem; margin-top: 4px; }
-        .risk-high { color: #ff6b6b !important; }
-        .risk-medium { color: #ffd93d !important; }
-        .risk-low { color: #6bcb77 !important; }
-        .endpoint { 
-            display: flex; 
-            justify-content: space-between; 
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--text-dark);
+            line-height: 1.6;
+            background: var(--bg-white);
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
             align-items: center;
-            padding: 12px 16px;
-            background: rgba(255,255,255,0.03);
-            border-radius: 6px;
-            margin-bottom: 8px;
         }
-        .endpoint:hover { background: rgba(100,255,218,0.1); }
-        .method { 
-            background: #64ffda; 
-            color: #1a1a2e; 
-            padding: 4px 8px; 
-            border-radius: 4px; 
-            font-size: 0.75rem; 
-            font-weight: bold;
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
         }
-        a { color: #64ffda; text-decoration: none; }
-        a:hover { text-decoration: underline; }
+
+        .logo span {
+            color: var(--secondary);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: var(--secondary);
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            display: flex;
+            align-items: center;
+            padding: 6rem 2rem 4rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/></svg>') repeat;
+            background-size: 100px 100px;
+        }
+
+        .hero-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-text h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            color: white;
+            line-height: 1.2;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero-text h1 span {
+            color: var(--secondary-light);
+        }
+
+        .hero-text p {
+            font-size: 1.25rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 2rem;
+            line-height: 1.8;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
         .btn {
-            display: inline-block;
-            padding: 12px 24px;
-            background: #64ffda;
-            color: #1a1a2e;
-            border-radius: 6px;
-            font-weight: bold;
-            margin-top: 16px;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            border: none;
+            font-size: 1rem;
         }
-        .btn:hover { background: #4fd1c5; text-decoration: none; }
-        .footer { margin-top: 40px; text-align: center; color: #8892b0; font-size: 0.9rem; }
+
+        .btn-primary {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--secondary-light);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: white;
+        }
+
+        .hero-visual {
+            position: relative;
+        }
+
+        .hero-map-preview {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 1rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .hero-map-preview img {
+            width: 100%;
+            border-radius: 12px;
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 3rem;
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--secondary-light);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Sections Common */
+        section {
+            padding: 6rem 2rem;
+        }
+
+        .section-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .section-tag {
+            display: inline-block;
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--secondary);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .section-subtitle {
+            font-size: 1.15rem;
+            color: var(--text-light);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        /* Problem Section */
+        .problem-section {
+            background: var(--bg-light);
+        }
+
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+        }
+
+        .problem-card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+        }
+
+        .problem-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+        }
+
+        .problem-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--danger), #f87171);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .problem-icon i {
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .problem-card h3 {
+            font-size: 1.4rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .problem-card p {
+            color: var(--text-light);
+            line-height: 1.8;
+        }
+
+        .problem-highlight {
+            background: rgba(239, 68, 68, 0.1);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            border-left: 4px solid var(--danger);
+        }
+
+        .problem-highlight strong {
+            color: var(--danger);
+        }
+
+        /* Solution Section */
+        .solution-section {
+            background: white;
+        }
+
+        .solution-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .solution-features {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .solution-feature {
+            display: flex;
+            gap: 1rem;
+            padding: 1.5rem;
+            background: var(--bg-light);
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+
+        .solution-feature:hover {
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .feature-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--secondary);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .feature-icon i {
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .feature-content h4 {
+            font-size: 1.1rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-content p {
+            color: var(--text-light);
+            font-size: 0.95rem;
+        }
+
+        .tech-stack {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+
+        .tech-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.25rem;
+            background: var(--bg-light);
+            border-radius: 50px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: var(--text-dark);
+            border: 1px solid var(--border);
+        }
+
+        .tech-badge img {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* Roadmap Section */
+        .roadmap-section {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+        }
+
+        .roadmap-section .section-title {
+            color: white;
+        }
+
+        .roadmap-section .section-subtitle {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .roadmap-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 3rem;
+        }
+
+        .roadmap-phase {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 2.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .phase-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .phase-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--secondary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .phase-title h3 {
+            font-size: 1.3rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .phase-title span {
+            font-size: 0.85rem;
+            color: var(--secondary-light);
+        }
+
+        .phase-items {
+            list-style: none;
+        }
+
+        .phase-items li {
+            padding: 1rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .phase-items li:last-child {
+            border-bottom: none;
+        }
+
+        .item-number {
+            width: 28px;
+            height: 28px;
+            background: var(--secondary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .item-content strong {
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .item-content span {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* Open Source Section */
+        .opensource-section {
+            background: var(--bg-light);
+        }
+
+        .opensource-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        .opensource-card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 16px;
+            text-align: center;
+            border: 1px solid var(--border);
+            transition: all 0.3s;
+        }
+
+        .opensource-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+            border-color: var(--secondary);
+        }
+
+        .opensource-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--secondary), var(--secondary-light));
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+        }
+
+        .opensource-icon i {
+            font-size: 2rem;
+            color: white;
+        }
+
+        .opensource-card h3 {
+            font-size: 1.3rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .opensource-card p {
+            color: var(--text-light);
+            line-height: 1.8;
+        }
+
+        /* Demo Section */
+        .demo-section {
+            background: white;
+            padding: 4rem 2rem;
+        }
+
+        .demo-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .demo-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 2rem;
+            min-height: 600px;
+        }
+
+        .demo-sidebar {
+            background: var(--bg-light);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .coord-input-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .coord-input-section h4 {
+            font-size: 1rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .coord-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .input-group label {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+
+        .input-group input {
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--secondary);
+        }
+
+        .btn-locate {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            padding: 0.875rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.3s;
+        }
+
+        .btn-locate:hover {
+            background: var(--primary-light);
+        }
+
+        .quick-locations {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .quick-loc-btn {
+            padding: 0.5rem 0.75rem;
+            background: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.3s;
+        }
+
+        .quick-loc-btn:hover {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: var(--secondary);
+        }
+
+        .layer-controls {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .layer-controls h4 {
+            font-size: 1rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .layer-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bg-light);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .layer-toggle:hover {
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .layer-toggle input {
+            accent-color: var(--secondary);
+            width: 18px;
+            height: 18px;
+        }
+
+        .layer-info {
+            flex: 1;
+        }
+
+        .layer-info span {
+            display: block;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .layer-info small {
+            color: var(--text-light);
+            font-size: 0.8rem;
+        }
+
+        .risk-legend {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .risk-legend h4 {
+            font-size: 1rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0;
+        }
+
+        .legend-color {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+        }
+
+        .legend-color.high { background: #ef4444; }
+        .legend-color.medium { background: #f59e0b; }
+        .legend-color.low { background: #22c55e; }
+        .legend-color.very-low { background: #3b82f6; }
+
+        .legend-text {
+            font-size: 0.9rem;
+            color: var(--text-dark);
+        }
+
+        .demo-map-container {
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            position: relative;
+        }
+
+        #demo-map {
+            height: 600px;
+            width: 100%;
+        }
+
+        .map-info-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            max-width: 300px;
+        }
+
+        .map-info-panel h5 {
+            font-size: 0.9rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .map-info-panel p {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin: 0;
+        }
+
+        /* Data Explanation Section */
+        .data-section {
+            background: var(--bg-light);
+            padding: 4rem 2rem;
+        }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        .data-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .data-card h4 {
+            color: var(--primary);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .data-card p {
+            color: var(--text-light);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        /* Footer */
+        footer {
+            background: var(--primary);
+            color: white;
+            padding: 4rem 2rem 2rem;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 4rem;
+            margin-bottom: 3rem;
+        }
+
+        .footer-brand h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .footer-brand p {
+            color: rgba(255, 255, 255, 0.7);
+            line-height: 1.8;
+            margin-bottom: 1.5rem;
+        }
+
+        .footer-cta {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-top: 1.5rem;
+        }
+
+        .footer-cta p {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .footer-links h4 {
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+            color: var(--secondary-light);
+        }
+
+        .footer-links ul {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 0.75rem;
+        }
+
+        .footer-links a {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: white;
+        }
+
+        .footer-bottom {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .social-links a {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            transition: all 0.3s;
+        }
+
+        .social-links a:hover {
+            background: var(--secondary);
+        }
+
+        /* Mobile Menu */
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--primary);
+            cursor: pointer;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .hero-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .hero-buttons {
+                justify-content: center;
+            }
+
+            .hero-visual {
+                display: none;
+            }
+
+            .stats-bar {
+                justify-content: center;
+            }
+
+            .problem-grid,
+            .solution-content,
+            .roadmap-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .opensource-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .demo-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .demo-sidebar {
+                order: 2;
+            }
+
+            .demo-map-container {
+                order: 1;
+            }
+
+            .data-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .hero-text h1 {
+                font-size: 2rem;
+            }
+
+            .section-title {
+                font-size: 1.8rem;
+            }
+
+            .coord-inputs {
+                grid-template-columns: 1fr;
+            }
+
+            #demo-map {
+                height: 400px;
+            }
+
+            .footer-bottom {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-in {
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+
+        /* Marker Animation */
+        .custom-marker {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        /* Loading State */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            color: var(--text-light);
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-top-color: var(--secondary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🌊 GeoFeedback Papudo</h1>
-        <p class="subtitle">Sistema de Análisis de Riesgo de Inundación</p>
-        
-        <div class="card">
-            <h2>📊 Estadísticas del Área de Estudio</h2>
-            <div class="stats-grid">
-                <div class="stat">
-                    <div class="stat-value">20</div>
-                    <div class="stat-label">Instalaciones</div>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <a href="#" class="logo">Geo<span>Feedback</span></a>
+            <ul class="nav-links">
+                <li><a href="#problema">El Problema</a></li>
+                <li><a href="#solucion">Solución</a></li>
+                <li><a href="#roadmap">Hoja de Ruta</a></li>
+                <li><a href="#opensource">Open Source</a></li>
+                <li><a href="#demo">Demo</a></li>
+                <li><a href="#contacto">Contacto</a></li>
+            </ul>
+            <button class="mobile-menu-btn">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="inicio">
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1>Democratizando la <span>Inteligencia Territorial</span></h1>
+                <p>Monitoreo Satelital Automatizado para el Chile Real. Transformamos datos satelitales complejos en mapas de riesgo y gestión hídrica accionables. Sin licencias costosas, 100% Open Source, diseñado para Municipalidades y Agricultores.</p>
+                <div class="hero-buttons">
+                    <a href="#demo" class="btn btn-primary">
+                        <i class="fas fa-map-marked-alt"></i>
+                        Ver Demo del Prototipo
+                    </a>
+                    <a href="#solucion" class="btn btn-secondary">
+                        <i class="fas fa-info-circle"></i>
+                        Conocer el Proyecto
+                    </a>
                 </div>
-                <div class="stat">
-                    <div class="stat-value risk-high">5</div>
-                    <div class="stat-label">Riesgo Alto</div>
+                <div class="stats-bar">
+                    <div class="stat-item">
+                        <div class="stat-number">346</div>
+                        <div class="stat-label">Municipalidades en Chile</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">15+</div>
+                        <div class="stat-label">Años de Mega-Sequía</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">80%</div>
+                        <div class="stat-label">Reducción de Costos</div>
+                    </div>
                 </div>
-                <div class="stat">
-                    <div class="stat-value risk-medium">8</div>
-                    <div class="stat-label">Riesgo Medio</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-value risk-low">7</div>
-                    <div class="stat-label">Riesgo Bajo</div>
+            </div>
+            <div class="hero-visual">
+                <div class="hero-map-preview">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Papudo_desde_el_mar.jpg/1200px-Papudo_desde_el_mar.jpg" alt="Vista de Papudo, Chile" style="object-fit: cover; height: 400px;">
                 </div>
             </div>
         </div>
-        
-        <div class="card">
-            <h2>🔌 API Endpoints Disponibles</h2>
-            <div class="endpoint">
-                <span><span class="method">GET</span> <a href="/api/v1/health">/api/v1/health</a></span>
-                <span style="color:#8892b0">Estado del sistema</span>
+    </section>
+
+    <!-- Problem Section -->
+    <section class="problem-section" id="problema">
+        <div class="section-container">
+            <div class="section-header">
+                <span class="section-tag">El Contexto</span>
+                <h2 class="section-title">Dos Crisis, Una Brecha Tecnológica</h2>
+                <p class="section-subtitle">Chile enfrenta desafíos urgentes que requieren soluciones accesibles e inmediatas.</p>
             </div>
-            <div class="endpoint">
-                <span><span class="method">GET</span> <a href="/api/v1/stats">/api/v1/stats</a></span>
-                <span style="color:#8892b0">Estadísticas generales</span>
+            
+            <div class="problem-grid">
+                <div class="problem-card">
+                    <div class="problem-icon">
+                        <i class="fas fa-gavel"></i>
+                    </div>
+                    <h3>Ley 21.364: Gestión de Riesgos</h3>
+                    <p>La normativa obliga a las 346 municipalidades de Chile a gestionar sus riesgos de desastre. Sin embargo, la mayoría carece del presupuesto técnico y las herramientas necesarias para cumplir.</p>
+                    <div class="problem-highlight">
+                        <strong>El problema:</strong> Las consultoras tradicionales cobran millones por estudios que tardan meses en entregarse.
+                    </div>
+                </div>
+                
+                <div class="problem-card">
+                    <div class="problem-icon">
+                        <i class="fas fa-tint-slash"></i>
+                    </div>
+                    <h3>Mega-Sequía: 15 Años de Crisis</h3>
+                    <p>Una sequía histórica amenaza nuestra agricultura. Los pequeños productores riegan por intuición, no por datos, perdiendo agua y productividad.</p>
+                    <div class="problem-highlight">
+                        <strong>El problema:</strong> El software propietario de monitoreo agrícola está fuera del alcance de agricultores familiares.
+                    </div>
+                </div>
             </div>
-            <div class="endpoint">
-                <span><span class="method">GET</span> <a href="/api/v1/infrastructure">/api/v1/infrastructure</a></span>
-                <span style="color:#8892b0">Infraestructura crítica</span>
+        </div>
+    </section>
+
+    <!-- Solution Section -->
+    <section class="solution-section" id="solucion">
+        <div class="section-container">
+            <div class="section-header">
+                <span class="section-tag">Nuestra Propuesta</span>
+                <h2 class="section-title">Tecnología de Punta, Costo Accesible</h2>
+                <p class="section-subtitle">No somos una consultora tradicional. Somos una plataforma tecnológica construida sobre un stack 100% Open Source.</p>
             </div>
-            <div class="endpoint">
-                <span><span class="method">GET</span> <a href="/api/docs">/api/docs</a></span>
-                <span style="color:#8892b0">Documentación API</span>
+            
+            <div class="solution-content">
+                <div class="solution-features">
+                    <div class="solution-feature">
+                        <div class="feature-icon">
+                            <i class="fas fa-satellite"></i>
+                        </div>
+                        <div class="feature-content">
+                            <h4>Google Earth Engine & Python</h4>
+                            <p>Procesamos terabytes de imágenes satelitales Sentinel-2 automáticamente, sin necesidad de infraestructura costosa.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="solution-feature">
+                        <div class="feature-icon">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="feature-content">
+                            <h4>Automatización vs. Manualidad</h4>
+                            <p>Lo que antes tomaba meses de dibujo manual, nuestros algoritmos lo procesan en minutos con precisión consistente.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="solution-feature">
+                        <div class="feature-icon">
+                            <i class="fas fa-lock-open"></i>
+                        </div>
+                        <div class="feature-content">
+                            <h4>Sin "Cajas Negras"</h4>
+                            <p>Utilizamos estándares abiertos que garantizan transparencia, auditabilidad y reducen los costos finales en un 80%.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="solution-visual">
+                    <div style="background: var(--bg-light); padding: 2rem; border-radius: 16px;">
+                        <h4 style="margin-bottom: 1.5rem; color: var(--primary);">Stack Tecnológico</h4>
+                        <div class="tech-stack">
+                            <div class="tech-badge">
+                                <i class="fab fa-python" style="color: #3776ab; font-size: 1.2rem;"></i>
+                                Python
+                            </div>
+                            <div class="tech-badge">
+                                <i class="fas fa-globe" style="color: #34a853; font-size: 1.2rem;"></i>
+                                Google Earth Engine
+                            </div>
+                            <div class="tech-badge">
+                                <i class="fas fa-map" style="color: #589632; font-size: 1.2rem;"></i>
+                                QGIS
+                            </div>
+                            <div class="tech-badge">
+                                <i class="fas fa-satellite-dish" style="color: #1a5276; font-size: 1.2rem;"></i>
+                                Sentinel-2
+                            </div>
+                            <div class="tech-badge">
+                                <i class="fas fa-leaf" style="color: #27ae60; font-size: 1.2rem;"></i>
+                                NDWI / NDVI
+                            </div>
+                            <div class="tech-badge">
+                                <i class="fas fa-database" style="color: #336791; font-size: 1.2rem;"></i>
+                                PostGIS
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Roadmap Section -->
+    <section class="roadmap-section" id="roadmap">
+        <div class="section-container">
+            <div class="section-header">
+                <span class="section-tag" style="background: rgba(255,255,255,0.2); color: white;">Evolución</span>
+                <h2 class="section-title">Hoja de Ruta</h2>
+                <p class="section-subtitle">Un plan sólido desde la validación hasta la autonomía total.</p>
+            </div>
+            
+            <div class="roadmap-grid">
+                <div class="roadmap-phase">
+                    <div class="phase-header">
+                        <div class="phase-icon">📍</div>
+                        <div class="phase-title">
+                            <h3>Corto Plazo</h3>
+                            <span>Fase Actual: Validación & Servicio</span>
+                        </div>
+                    </div>
+                    <p style="margin-bottom: 1.5rem; color: rgba(255,255,255,0.8);">
+                        "Cumplimiento y Eficiencia Inmediata" — Desplegando nuestro MVP para resolver dolores urgentes.
+                    </p>
+                    <ul class="phase-items">
+                        <li>
+                            <span class="item-number">1</span>
+                            <div class="item-content">
+                                <strong>Mapas de Riesgo Municipal</strong>
+                                <span>Generación rápida de cartografía para cumplimiento de la Ley 21.364 (incendios, inundaciones, remociones).</span>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="item-number">2</span>
+                            <div class="item-content">
+                                <strong>Monitoreo de Riego</strong>
+                                <span>Índices satelitales (NDWI) para detectar estrés hídrico y optimizar el uso del agua hoy.</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="roadmap-phase">
+                    <div class="phase-header">
+                        <div class="phase-icon">🚀</div>
+                        <div class="phase-title">
+                            <h3>Largo Plazo</h3>
+                            <span>Visión: Plataforma SaaS</span>
+                        </div>
+                    </div>
+                    <p style="margin-bottom: 1.5rem; color: rgba(255,255,255,0.8);">
+                        "El Futuro del Monitoreo Autónomo" — Evolución hacia una plataforma totalmente autónoma.
+                    </p>
+                    <ul class="phase-items">
+                        <li>
+                            <span class="item-number">1</span>
+                            <div class="item-content">
+                                <strong>Alertas en Tiempo Real</strong>
+                                <span>Algoritmos que vigilan el territorio 24/7 y notifican anomalías automáticamente.</span>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="item-number">2</span>
+                            <div class="item-content">
+                                <strong>Sensores LoRaWAN</strong>
+                                <span>Integración de datos satelitales con sensores en tierra para zonas rurales sin internet.</span>
+                            </div>
+                        </li>
+                        <li>
+                            <span class="item-number">3</span>
+                            <div class="item-content">
+                                <strong>Predicción con IA</strong>
+                                <span>Modelos de aprendizaje profundo para predecir rendimientos y escenarios de riesgo.</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Open Source Section -->
+    <section class="opensource-section" id="opensource">
+        <div class="section-container">
+            <div class="section-header">
+                <span class="section-tag">Nuestra Filosofía</span>
+                <h2 class="section-title">¿Por qué Construimos en Abierto?</h2>
+                <p class="section-subtitle">Creemos que la seguridad territorial no debe depender de licencias de software millonarias.</p>
+            </div>
+            
+            <div class="opensource-grid">
+                <div class="opensource-card">
+                    <div class="opensource-icon">
+                        <i class="fas fa-door-open"></i>
+                    </div>
+                    <h3>Eliminamos Barreras</h3>
+                    <p>Hacemos viable que una comuna rural pequeña tenga la misma tecnología que una gran metrópolis. Sin costos prohibitivos de entrada.</p>
+                </div>
+                
+                <div class="opensource-card">
+                    <div class="opensource-icon">
+                        <i class="fas fa-expand-arrows-alt"></i>
+                    </div>
+                    <h3>Escalabilidad Total</h3>
+                    <p>Podemos replicar nuestra solución en cualquier lugar de Latinoamérica sin costos marginales de licencia. Una vez desarrollado, se escala libre.</p>
+                </div>
+                
+                <div class="opensource-card">
+                    <div class="opensource-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3>Soberanía de Datos</h3>
+                    <p>Entregamos productos que el cliente realmente posee y puede usar libremente. Sin dependencias de proveedores extranjeros.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Section -->
+    <section class="demo-section" id="demo">
+        <div class="demo-container">
+            <div class="demo-header">
+                <span class="section-tag">Prototipo Funcional</span>
+                <h2 class="section-title">Demo: Análisis de Riesgo - Papudo</h2>
+                <p class="section-subtitle">Explora el caso de estudio de la comuna de Papudo, Región de Valparaíso. Visualiza zonas de riesgo de inundación e infraestructura crítica.</p>
+            </div>
+            
+            <div class="demo-grid">
+                <div class="demo-sidebar">
+                    <!-- Coordinate Input -->
+                    <div class="coord-input-section">
+                        <h4><i class="fas fa-crosshairs"></i> Buscar Ubicación</h4>
+                        <div class="coord-inputs">
+                            <div class="input-group">
+                                <label for="lat-input">Latitud</label>
+                                <input type="number" id="lat-input" placeholder="-32.5103" step="0.0001" value="-32.5103">
+                            </div>
+                            <div class="input-group">
+                                <label for="lng-input">Longitud</label>
+                                <input type="number" id="lng-input" placeholder="-71.4469" step="0.0001" value="-71.4469">
+                            </div>
+                        </div>
+                        <button class="btn-locate" onclick="locateCoordinates()">
+                            <i class="fas fa-search-location"></i>
+                            Ir a Ubicación
+                        </button>
+                        
+                        <div class="quick-locations">
+                            <small style="color: var(--text-light); margin-bottom: 0.5rem; display: block;">Ubicaciones rápidas:</small>
+                            <button class="quick-loc-btn" onclick="goToLocation(-32.5103, -71.4469, 'Centro Papudo')">
+                                📍 Centro de Papudo
+                            </button>
+                            <button class="quick-loc-btn" onclick="goToLocation(-32.5050, -71.4520, 'Playa Grande')">
+                                🏖️ Playa Grande
+                            </button>
+                            <button class="quick-loc-btn" onclick="goToLocation(-32.5180, -71.4400, 'Zona Sur')">
+                                🏘️ Zona Residencial Sur
+                            </button>
+                            <button class="quick-loc-btn" onclick="goToLocation(-32.5000, -71.4600, 'Puerto')">
+                                ⚓ Sector Puerto
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Layer Controls -->
+                    <div class="layer-controls">
+                        <h4><i class="fas fa-layer-group"></i> Capas del Mapa</h4>
+                        
+                        <label class="layer-toggle">
+                            <input type="checkbox" id="layer-risk" checked onchange="toggleLayer('risk')">
+                            <div class="layer-info">
+                                <span>Zonas de Riesgo</span>
+                                <small>Amenaza de inundación</small>
+                            </div>
+                        </label>
+                        
+                        <label class="layer-toggle">
+                            <input type="checkbox" id="layer-infra" checked onchange="toggleLayer('infra')">
+                            <div class="layer-info">
+                                <span>Infraestructura Crítica</span>
+                                <small>Hospitales, escuelas, bomberos</small>
+                            </div>
+                        </label>
+                        
+                        <label class="layer-toggle">
+                            <input type="checkbox" id="layer-ndwi" onchange="toggleLayer('ndwi')">
+                            <div class="layer-info">
+                                <span>Índice NDWI</span>
+                                <small>Presencia de agua</small>
+                            </div>
+                        </label>
+                    </div>
+                    
+                    <!-- Risk Legend -->
+                    <div class="risk-legend">
+                        <h4><i class="fas fa-palette"></i> Leyenda de Riesgo</h4>
+                        <div class="legend-item">
+                            <div class="legend-color high"></div>
+                            <span class="legend-text">Alto riesgo de inundación</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color medium"></div>
+                            <span class="legend-text">Riesgo moderado</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color low"></div>
+                            <span class="legend-text">Riesgo bajo</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color very-low"></div>
+                            <span class="legend-text">Mínimo / Sin riesgo</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="demo-map-container">
+                    <div id="demo-map"></div>
+                    <div class="map-info-panel" id="info-panel">
+                        <h5>📍 Papudo, Valparaíso</h5>
+                        <p>Haz clic en el mapa o en las zonas de riesgo para ver información detallada.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Data Explanation Section -->
+    <section class="data-section">
+        <div class="section-container">
+            <div class="section-header">
+                <span class="section-tag">Metodología</span>
+                <h2 class="section-title">¿Cómo Obtenemos los Datos?</h2>
+                <p class="section-subtitle">Procesamiento automatizado de imágenes satelitales para generar información accionable.</p>
+            </div>
+            
+            <div class="data-grid">
+                <div class="data-card">
+                    <h4><i class="fas fa-satellite" style="color: var(--secondary);"></i> Sentinel-2</h4>
+                    <p>Utilizamos imágenes del satélite europeo Sentinel-2 con resolución de 10 metros. Actualizaciones cada 5 días permiten monitoreo constante.</p>
+                </div>
+                
+                <div class="data-card">
+                    <h4><i class="fas fa-water" style="color: var(--secondary);"></i> Índice NDWI</h4>
+                    <p>El Normalized Difference Water Index detecta cuerpos de agua y humedad del suelo. Valores altos indican presencia de agua o zonas saturadas.</p>
+                </div>
+                
+                <div class="data-card">
+                    <h4><i class="fas fa-mountain" style="color: var(--secondary);"></i> Modelo de Elevación</h4>
+                    <p>Combinamos datos topográficos SRTM para identificar zonas bajas propensas a acumulación de agua y flujos naturales.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer / Contact -->
+    <footer id="contacto">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <h3>Geo<span style="color: var(--secondary-light);">Feedback</span> Chile</h3>
+                <p>Democratizando la inteligencia territorial para municipalidades y agricultores de Chile. Tecnología Open Source para un país más resiliente.</p>
+                
+                <div class="footer-cta">
+                    <p><strong>¿Eres una municipalidad buscando cumplir la normativa o un agricultor cuidando su agua?</strong></p>
+                    <a href="mailto:contacto@geofeedback.cl" class="btn btn-primary">
+                        <i class="fas fa-envelope"></i>
+                        Hablemos
+                    </a>
+                </div>
+            </div>
+            
+            <div class="footer-links">
+                <h4>Navegación</h4>
+                <ul>
+                    <li><a href="#inicio">Inicio</a></li>
+                    <li><a href="#problema">El Problema</a></li>
+                    <li><a href="#solucion">Solución</a></li>
+                    <li><a href="#roadmap">Hoja de Ruta</a></li>
+                    <li><a href="#demo">Demo</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-links">
+                <h4>Recursos</h4>
+                <ul>
+                    <li><a href="https://demogeofeedback-production.up.railway.app/api/docs" target="_blank">Documentación API</a></li>
+                    <li><a href="https://github.com/thechosen16/Demo_geofeedback" target="_blank">Código Fuente</a></li>
+                    <li><a href="https://earthengine.google.com/" target="_blank">Google Earth Engine</a></li>
+                    <li><a href="https://scihub.copernicus.eu/" target="_blank">Copernicus Open Hub</a></li>
+                </ul>
             </div>
         </div>
         
-        <div class="card">
-            <h2>🗺️ Visor de Mapas Interactivo</h2>
-            <p style="color: #8892b0; margin-bottom: 16px;">
-                Explora las zonas de riesgo de inundación en Papudo con nuestro visor web.
-            </p>
-            <a href="https://thechosen16.github.io/Demo_geofeedback/" target="_blank" class="btn">
-                Ver Mapa Interactivo →
-            </a>
+        <div class="footer-bottom">
+            <p>© 2025 GeoFeedback Chile. Proyecto Open Source.</p>
+            <div class="social-links">
+                <a href="https://github.com/thechosen16/Demo_geofeedback" target="_blank" title="GitHub">
+                    <i class="fab fa-github"></i>
+                </a>
+                <a href="#" title="LinkedIn">
+                    <i class="fab fa-linkedin-in"></i>
+                </a>
+                <a href="#" title="Twitter">
+                    <i class="fab fa-twitter"></i>
+                </a>
+            </div>
         </div>
+    </footer>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        // Initialize Map
+        const map = L.map('demo-map').setView([-32.5103, -71.4469], 14);
         
-        <div class="footer">
-            <p>GeoFeedback Chile • Noviembre 2025</p>
-            <p style="margin-top:8px"><a href="https://github.com/theChosen16/Demo_geofeedback">📁 Repositorio GitHub</a></p>
-        </div>
-    </div>
+        // Base layers
+        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        });
+        
+        const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '© Esri'
+        });
+        
+        // Add default layer
+        satelliteLayer.addTo(map);
+        
+        // Layer control
+        const baseMaps = {
+            "Satélite": satelliteLayer,
+            "Calles": osmLayer
+        };
+        L.control.layers(baseMaps).addTo(map);
+        
+        // Marker for searched location
+        let searchMarker = null;
+        
+        // Sample risk zones (GeoJSON simulation for Papudo)
+        const riskZones = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "risk_level": "high",
+                        "description": "Zona de alto riesgo - Cercanía a estero y baja elevación",
+                        "area_ha": 12.5
+                    },
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [-71.4520, -32.5080],
+                            [-71.4480, -32.5080],
+                            [-71.4480, -32.5120],
+                            [-71.4520, -32.5120],
+                            [-71.4520, -32.5080]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "risk_level": "medium",
+                        "description": "Zona de riesgo moderado - Pendiente suave",
+                        "area_ha": 25.3
+                    },
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [-71.4550, -32.5050],
+                            [-71.4500, -32.5050],
+                            [-71.4500, -32.5090],
+                            [-71.4550, -32.5090],
+                            [-71.4550, -32.5050]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "risk_level": "low",
+                        "description": "Zona de bajo riesgo - Elevación media",
+                        "area_ha": 45.8
+                    },
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [-71.4450, -32.5100],
+                            [-71.4400, -32.5100],
+                            [-71.4400, -32.5150],
+                            [-71.4450, -32.5150],
+                            [-71.4450, -32.5100]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "risk_level": "high",
+                        "description": "Zona costera de alto riesgo - Marejadas",
+                        "area_ha": 8.2
+                    },
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [-71.4600, -32.5030],
+                            [-71.4550, -32.5030],
+                            [-71.4550, -32.5070],
+                            [-71.4600, -32.5070],
+                            [-71.4600, -32.5030]
+                        ]]
+                    }
+                }
+            ]
+        };
+        
+        // Infrastructure points
+        const infrastructure = [
+            { lat: -32.5103, lng: -71.4469, name: "Municipalidad de Papudo", type: "gobierno", icon: "🏛️" },
+            { lat: -32.5095, lng: -71.4455, name: "Cesfam Papudo", type: "salud", icon: "🏥" },
+            { lat: -32.5115, lng: -71.4480, name: "Escuela Básica Papudo", type: "educacion", icon: "🏫" },
+            { lat: -32.5088, lng: -71.4510, name: "Bomberos Papudo", type: "emergencia", icon: "🚒" },
+            { lat: -32.5070, lng: -71.4530, name: "Carabineros", type: "seguridad", icon: "👮" },
+            { lat: -32.5050, lng: -71.4490, name: "Capitanía de Puerto", type: "maritimo", icon: "⚓" }
+        ];
+        
+        // Style for risk zones
+        function getRiskStyle(feature) {
+            const colors = {
+                'high': '#ef4444',
+                'medium': '#f59e0b',
+                'low': '#22c55e',
+                'very-low': '#3b82f6'
+            };
+            return {
+                fillColor: colors[feature.properties.risk_level] || '#gray',
+                weight: 2,
+                opacity: 1,
+                color: 'white',
+                fillOpacity: 0.6
+            };
+        }
+        
+        // Add risk zones layer
+        const riskLayer = L.geoJSON(riskZones, {
+            style: getRiskStyle,
+            onEachFeature: function(feature, layer) {
+                layer.on('click', function() {
+                    const props = feature.properties;
+                    const riskNames = {
+                        'high': 'ALTO',
+                        'medium': 'MODERADO',
+                        'low': 'BAJO'
+                    };
+                    updateInfoPanel(
+                        `⚠️ Zona de Riesgo ${riskNames[props.risk_level]}`,
+                        `${props.description}<br><strong>Área:</strong> ${props.area_ha} hectáreas`
+                    );
+                });
+                layer.on('mouseover', function() {
+                    layer.setStyle({ fillOpacity: 0.8, weight: 3 });
+                });
+                layer.on('mouseout', function() {
+                    riskLayer.resetStyle(layer);
+                });
+            }
+        }).addTo(map);
+        
+        // Add infrastructure markers
+        const infraMarkers = L.layerGroup();
+        infrastructure.forEach(item => {
+            const marker = L.marker([item.lat, item.lng], {
+                icon: L.divIcon({
+                    className: 'custom-marker',
+                    html: `<div style="font-size: 24px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">${item.icon}</div>`,
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 15]
+                })
+            });
+            marker.bindPopup(`<strong>${item.name}</strong><br><em>${item.type}</em>`);
+            marker.on('click', function() {
+                updateInfoPanel(`${item.icon} ${item.name}`, `Tipo: ${item.type}<br>Coordenadas: ${item.lat.toFixed(4)}, ${item.lng.toFixed(4)}`);
+            });
+            infraMarkers.addLayer(marker);
+        });
+        infraMarkers.addTo(map);
+        
+        // NDWI simulation layer (disabled by default)
+        const ndwiLayer = L.rectangle([[-32.52, -71.46], [-32.50, -71.43]], {
+            color: '#0ea5e9',
+            fillColor: '#0ea5e9',
+            fillOpacity: 0.3,
+            weight: 1
+        });
+        
+        // Layer toggle functions
+        const layers = {
+            risk: riskLayer,
+            infra: infraMarkers,
+            ndwi: ndwiLayer
+        };
+        
+        function toggleLayer(layerName) {
+            const checkbox = document.getElementById(`layer-${layerName}`);
+            if (checkbox.checked) {
+                layers[layerName].addTo(map);
+            } else {
+                map.removeLayer(layers[layerName]);
+            }
+        }
+        
+        // Location search function
+        function locateCoordinates() {
+            const lat = parseFloat(document.getElementById('lat-input').value);
+            const lng = parseFloat(document.getElementById('lng-input').value);
+            
+            if (isNaN(lat) || isNaN(lng)) {
+                alert('Por favor ingresa coordenadas válidas');
+                return;
+            }
+            
+            // Remove previous marker
+            if (searchMarker) {
+                map.removeLayer(searchMarker);
+            }
+            
+            // Add new marker
+            searchMarker = L.marker([lat, lng], {
+                icon: L.divIcon({
+                    className: 'search-marker',
+                    html: '<div style="font-size: 28px; animation: pulse 1s infinite;">📍</div>',
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 30]
+                })
+            }).addTo(map);
+            
+            // Fly to location
+            map.flyTo([lat, lng], 16, {
+                duration: 1.5
+            });
+            
+            // Update info panel
+            updateInfoPanel(
+                '📍 Ubicación Buscada',
+                `Latitud: ${lat.toFixed(4)}<br>Longitud: ${lng.toFixed(4)}<br><em>Haz clic en las zonas de color para ver el nivel de riesgo.</em>`
+            );
+        }
+        
+        // Quick location function
+        function goToLocation(lat, lng, name) {
+            document.getElementById('lat-input').value = lat;
+            document.getElementById('lng-input').value = lng;
+            
+            if (searchMarker) {
+                map.removeLayer(searchMarker);
+            }
+            
+            searchMarker = L.marker([lat, lng], {
+                icon: L.divIcon({
+                    className: 'search-marker',
+                    html: '<div style="font-size: 28px;">📍</div>',
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 30]
+                })
+            }).addTo(map);
+            
+            map.flyTo([lat, lng], 16, { duration: 1 });
+            updateInfoPanel(`📍 ${name}`, `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`);
+        }
+        
+        // Update info panel
+        function updateInfoPanel(title, content) {
+            const panel = document.getElementById('info-panel');
+            panel.innerHTML = `<h5>${title}</h5><p>${content}</p>`;
+        }
+        
+        // Map click event
+        map.on('click', function(e) {
+            const lat = e.latlng.lat.toFixed(4);
+            const lng = e.latlng.lng.toFixed(4);
+            
+            document.getElementById('lat-input').value = lat;
+            document.getElementById('lng-input').value = lng;
+            
+            updateInfoPanel(
+                '📍 Punto Seleccionado',
+                `Latitud: ${lat}<br>Longitud: ${lng}`
+            );
+        });
+        
+        // Smooth scroll for navigation
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+        
+        // Navbar background on scroll
+        window.addEventListener('scroll', function() {
+            const nav = document.querySelector('nav');
+            if (window.scrollY > 50) {
+                nav.style.boxShadow = '0 2px 20px rgba(0,0,0,0.1)';
+            } else {
+                nav.style.boxShadow = 'none';
+            }
+        });
+    </script>
 </body>
-</html>'''
+</html>
+'''
+
+@app.route('/')
+def index():
+    logger.info("Serving landing page")
+    return Response(LANDING_HTML, mimetype='text/html')
 
 @app.route('/favicon.ico')
 def favicon():
@@ -169,19 +1913,18 @@ def favicon():
 
 @app.route('/api/v1/health')
 def health():
-    """Health check - sin dependencia de BD"""
-    logger.info("Health check requested")
+    """Health check"""
     return jsonify({
         'status': 'healthy',
         'timestamp': datetime.now().isoformat(),
-        'version': '1.0.0',
-        'service': 'GeoFeedback Papudo API'
+        'version': '2.0.0',
+        'service': 'GeoFeedback Chile API'
     })
 
 
 @app.route('/api/v1/stats')
 def stats():
-    """Estadísticas de Papudo (datos estáticos del análisis)"""
+    """Estadísticas de Papudo"""
     return jsonify({
         'timestamp': datetime.now().isoformat(),
         'location': 'Papudo, Región de Valparaíso, Chile',
@@ -192,11 +1935,11 @@ def stats():
             'medium_risk': 8,
             'low_risk': 7
         },
-        'risk_distribution': [
-            {'level': 3, 'name': 'Alto', 'color': '#ff6b6b', 'count': 5, 'percentage': 25.0},
-            {'level': 2, 'name': 'Medio', 'color': '#ffd93d', 'count': 8, 'percentage': 40.0},
-            {'level': 1, 'name': 'Bajo', 'color': '#6bcb77', 'count': 7, 'percentage': 35.0}
-        ]
+        'risk_zones': {
+            'high': {'area_ha': 12.5, 'percentage': 15},
+            'medium': {'area_ha': 25.3, 'percentage': 30},
+            'low': {'area_ha': 45.8, 'percentage': 55}
+        }
     })
 
 
@@ -204,11 +1947,12 @@ def stats():
 def infrastructure():
     """Infraestructura crítica de Papudo"""
     facilities = [
-        {'id': 1, 'name': 'Hospital de Papudo', 'category': 'health', 'risk_level': 3, 'risk_name': 'Alto', 'lat': -32.5067, 'lon': -71.4492},
-        {'id': 2, 'name': 'Escuela Básica Papudo', 'category': 'education', 'risk_level': 2, 'risk_name': 'Medio', 'lat': -32.5089, 'lon': -71.4478},
-        {'id': 3, 'name': 'Bomberos Papudo', 'category': 'emergency', 'risk_level': 1, 'risk_name': 'Bajo', 'lat': -32.5102, 'lon': -71.4501},
-        {'id': 4, 'name': 'Municipalidad de Papudo', 'category': 'government', 'risk_level': 2, 'risk_name': 'Medio', 'lat': -32.5095, 'lon': -71.4485},
-        {'id': 5, 'name': 'Carabineros Papudo', 'category': 'emergency', 'risk_level': 1, 'risk_name': 'Bajo', 'lat': -32.5078, 'lon': -71.4510},
+        {'id': 1, 'name': 'Municipalidad de Papudo', 'category': 'gobierno', 'risk_level': 2, 'lat': -32.5103, 'lon': -71.4469},
+        {'id': 2, 'name': 'Cesfam Papudo', 'category': 'salud', 'risk_level': 3, 'lat': -32.5095, 'lon': -71.4455},
+        {'id': 3, 'name': 'Escuela Básica Papudo', 'category': 'educacion', 'risk_level': 2, 'lat': -32.5115, 'lon': -71.4480},
+        {'id': 4, 'name': 'Bomberos Papudo', 'category': 'emergencia', 'risk_level': 1, 'lat': -32.5088, 'lon': -71.4510},
+        {'id': 5, 'name': 'Carabineros Papudo', 'category': 'seguridad', 'risk_level': 1, 'lat': -32.5070, 'lon': -71.4530},
+        {'id': 6, 'name': 'Capitanía de Puerto', 'category': 'maritimo', 'risk_level': 2, 'lat': -32.5050, 'lon': -71.4490},
     ]
     return jsonify({
         'timestamp': datetime.now().isoformat(),
@@ -217,19 +1961,46 @@ def infrastructure():
     })
 
 
+@app.route('/api/v1/risk-zones')
+def risk_zones():
+    """GeoJSON de zonas de riesgo"""
+    return jsonify({
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "properties": {"risk_level": "high", "area_ha": 12.5},
+                "geometry": {
+                    "type": "Polygon",
+                    "coordinates": [[[-71.4520, -32.5080], [-71.4480, -32.5080], [-71.4480, -32.5120], [-71.4520, -32.5120], [-71.4520, -32.5080]]]
+                }
+            },
+            {
+                "type": "Feature",
+                "properties": {"risk_level": "medium", "area_ha": 25.3},
+                "geometry": {
+                    "type": "Polygon",
+                    "coordinates": [[[-71.4550, -32.5050], [-71.4480, -32.5050], [-71.4480, -32.5080], [-71.4550, -32.5080], [-71.4550, -32.5050]]]
+                }
+            }
+        ]
+    })
+
+
 @app.route('/api/docs')
 def docs():
     """Documentación de la API"""
     return jsonify({
-        'name': 'GeoFeedback Papudo API',
-        'version': '1.0.0',
-        'description': 'API REST para consultas de riesgo de inundación en Papudo, Chile',
+        'name': 'GeoFeedback Chile API',
+        'version': '2.0.0',
+        'description': 'API REST para análisis de riesgo de inundación',
         'base_url': 'https://demogeofeedback-production.up.railway.app',
         'endpoints': {
-            'GET /': 'Landing page con estadísticas',
-            'GET /api/v1/health': 'Health check del servicio',
-            'GET /api/v1/stats': 'Estadísticas generales del área',
-            'GET /api/v1/infrastructure': 'Lista de infraestructura crítica',
+            'GET /': 'Landing page interactiva con mapa',
+            'GET /api/v1/health': 'Health check',
+            'GET /api/v1/stats': 'Estadísticas generales',
+            'GET /api/v1/infrastructure': 'Infraestructura crítica',
+            'GET /api/v1/risk-zones': 'Zonas de riesgo GeoJSON',
             'GET /api/docs': 'Esta documentación'
         },
         'repository': 'https://github.com/theChosen16/Demo_geofeedback'
