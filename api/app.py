@@ -612,7 +612,7 @@ LANDING_HTML = '''
         .demo-grid {
             align-items: start;
             display: grid;
-            grid-template-columns: 350px 1fr;
+            grid-template-columns: 1fr 320px;
             gap: 2rem;
             min-height: 600px;
         }
@@ -867,6 +867,55 @@ LANDING_HTML = '''
             margin: 0;
         }
 
+
+        /* Demo Results Panel */
+        .demo-results {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .result-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .result-icon {
+            font-size: 2rem;
+            line-height: 1;
+        }
+
+        .result-content h4 {
+            font-size: 1rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .result-content p {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 1024px) {
+            .demo-results {
+                grid-template-columns: 1fr;
+            }
+        }
         /* Data Explanation Section */
         .data-section {
             background: var(--bg-light);
@@ -1527,9 +1576,30 @@ LANDING_HTML = '''
                 <div class="demo-map-container">
                     <div id="demo-map"></div>
                     <button class="home-btn" onclick="centerMap()" title="Centrar mapa"><i class="fas fa-home"></i></button>
-                    <div class="map-info-panel" id="info-panel">
-                        <h5>📍 Papudo, Valparaíso</h5>
-                        <p>Haz clic en el mapa o en las zonas de riesgo para ver información detallada.</p>
+                </div>
+            </div>
+            
+            <!-- Panel de Resultados -->
+            <div class="demo-results">
+                <div class="result-card" id="info-panel">
+                    <div class="result-icon">📍</div>
+                    <div class="result-content">
+                        <h4>Papudo, Valparaíso</h4>
+                        <p>Haz clic en el mapa o en las zonas de riesgo para ver información detallada sobre cada área.</p>
+                    </div>
+                </div>
+                <div class="result-card">
+                    <div class="result-icon">📊</div>
+                    <div class="result-content">
+                        <h4>Estadísticas del Área</h4>
+                        <p>4 zonas de riesgo identificadas • 6 puntos de infraestructura crítica • 83.6 hectáreas analizadas</p>
+                    </div>
+                </div>
+                <div class="result-card">
+                    <div class="result-icon">🛰️</div>
+                    <div class="result-content">
+                        <h4>Última Actualización</h4>
+                        <p>Datos procesados con imágenes Sentinel-2 • Resolución 10m • Noviembre 2025</p>
                     </div>
                 </div>
             </div>
@@ -1886,7 +1956,7 @@ LANDING_HTML = '''
         // Update info panel
         function updateInfoPanel(title, content) {
             const panel = document.getElementById('info-panel');
-            panel.innerHTML = `<h5>${title}</h5><p>${content}</p>`;
+            panel.innerHTML = `<div class="result-icon">📍</div><div class="result-content"><h4>${title}</h4><p>${content}</p></div>`;
         }
         
         // Map click event
