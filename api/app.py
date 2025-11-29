@@ -1581,9 +1581,6 @@ LANDING_HTML = '''
                 <a href="#" title="LinkedIn">
                     <i class="fab fa-linkedin-in"></i>
                 </a>
-                <a href="#" title="Twitter">
-                    <i class="fab fa-twitter"></i>
-                </a>
             </div>
         </div>
     </footer>
