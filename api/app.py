@@ -1,48 +1,21 @@
-import logging
-import sys
 import os
-from flask import Flask, jsonify, Response
+from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
-from datetime import datetime
-
-# Configurar logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    stream=sys.stdout
-)
-logger = logging.getLogger(__name__)
-
-logger.info("="*50)
-logger.info("INICIANDO GEOFEEDBACK CHILE API")
-logger.info(f"Python Version: {sys.version}")
-logger.info("="*50)
 
 app = Flask(__name__)
 CORS(app)
 
-# ===========================================================================
-# LANDING PAGE - HTML COMPLETO
-# ===========================================================================
-
-LANDING_HTML = '''
-<!DOCTYPE html>
+# Landing page HTML with Google Maps + Places Autocomplete
+LANDING_HTML = '''<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GeoFeedback Chile | Inteligencia Territorial Open Source</title>
-    <meta name="description" content="Democratizando la Inteligencia Territorial: Monitoreo Satelital Automatizado para Chile. Mapas de riesgo y gestión hídrica 100% Open Source.">
-    
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
-    <!-- Google Fonts -->
+    <title>GeoFeedback Chile - Inteligencia Territorial con IA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
             --primary: #1e3a5f;
@@ -50,13 +23,16 @@ LANDING_HTML = '''
             --secondary: #10b981;
             --secondary-light: #34d399;
             --accent: #f59e0b;
-            --text-dark: #1f2937;
-            --text-light: #6b7280;
-            --bg-light: #f8fafc;
-            --bg-white: #ffffff;
-            --border: #e5e7eb;
+            --accent-light: #fbbf24;
             --danger: #ef4444;
-            --warning: #f59e0b;
+            --danger-light: #f87171;
+            --text: #1f2937;
+            --text-light: #6b7280;
+            --background: #f8fafc;
+            --white: #ffffff;
+            --border: #e5e7eb;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
 
         * {
@@ -71,25 +47,26 @@ LANDING_HTML = '''
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            color: var(--text-dark);
+            background: var(--background);
+            color: var(--text);
             line-height: 1.6;
-            background: var(--bg-white);
         }
 
         /* Navigation */
-        nav {
+        .navbar {
             position: fixed;
             top: 0;
-            width: 100%;
+            left: 0;
+            right: 0;
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             z-index: 1000;
-            border-bottom: 1px solid var(--border);
             padding: 1rem 2rem;
+            box-shadow: var(--shadow);
         }
 
-        .nav-container {
-            max-width: 1200px;
+        .navbar-content {
+            max-width: 1400px;
             margin: 0 auto;
             display: flex;
             justify-content: space-between;
@@ -97,14 +74,18 @@ LANDING_HTML = '''
         }
 
         .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
             font-size: 1.5rem;
             font-weight: 700;
             color: var(--primary);
             text-decoration: none;
         }
 
-        .logo span {
+        .logo i {
             color: var(--secondary);
+            font-size: 1.75rem;
         }
 
         .nav-links {
@@ -114,10 +95,9 @@ LANDING_HTML = '''
         }
 
         .nav-links a {
+            color: var(--text);
             text-decoration: none;
-            color: var(--text-dark);
             font-weight: 500;
-            font-size: 0.95rem;
             transition: color 0.3s;
         }
 
@@ -128,9 +108,9 @@ LANDING_HTML = '''
         /* Hero Section */
         .hero {
             min-height: 100vh;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
             display: flex;
             align-items: center;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 50%, var(--secondary) 100%);
             padding: 6rem 2rem 4rem;
             position: relative;
             overflow: hidden;
@@ -143,12 +123,12 @@ LANDING_HTML = '''
             left: 0;
             right: 0;
             bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="0.5"/></svg>') repeat;
-            background-size: 100px 100px;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.5;
         }
 
         .hero-content {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -159,22 +139,21 @@ LANDING_HTML = '''
         }
 
         .hero-text h1 {
-            font-size: 3rem;
+            font-size: 3.5rem;
             font-weight: 800;
-            color: white;
-            line-height: 1.2;
+            color: var(--white);
             margin-bottom: 1.5rem;
+            line-height: 1.1;
         }
 
         .hero-text h1 span {
-            color: var(--secondary-light);
+            color: var(--accent);
         }
 
         .hero-text p {
             font-size: 1.25rem;
             color: rgba(255, 255, 255, 0.9);
             margin-bottom: 2rem;
-            line-height: 1.8;
         }
 
         .hero-buttons {
@@ -184,126 +163,124 @@ LANDING_HTML = '''
         }
 
         .btn {
-            padding: 1rem 2rem;
-            border-radius: 8px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.3s;
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
             cursor: pointer;
             border: none;
             font-size: 1rem;
         }
 
         .btn-primary {
-            background: var(--secondary);
-            color: white;
+            background: var(--accent);
+            color: var(--primary);
         }
 
         .btn-primary:hover {
-            background: var(--secondary-light);
+            background: var(--accent-light);
             transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+            box-shadow: var(--shadow-lg);
         }
 
         .btn-secondary {
-            background: transparent;
-            color: white;
-            border: 2px solid rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--white);
+            border: 2px solid rgba(255, 255, 255, 0.3);
         }
 
         .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: white;
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
         }
 
         .hero-visual {
-            position: relative;
-        }
-
-        .hero-map-preview {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 1rem;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .hero-map-preview img {
-            width: 100%;
-            border-radius: 12px;
-        }
-
-        .stats-bar {
             display: flex;
-            gap: 3rem;
-            margin-top: 3rem;
-            padding-top: 2rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            align-items: center;
+            justify-content: center;
         }
 
-        .stat-item {
+        .hero-image {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .hero-image > div {
+            height: 400px;
+            background: linear-gradient(135deg, #0ea5e9 0%, #10b981 50%, #1e3a5f 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .hero-image > div > div {
             text-align: center;
+            color: white;
         }
 
-        .stat-number {
-            font-size: 2.5rem;
-            font-weight: 800;
-            color: var(--secondary-light);
+        .hero-image > div > div i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.9;
         }
 
-        .stat-label {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.8);
+        .hero-image > div > div p:first-of-type {
+            font-size: 1.2rem;
+            font-weight: 600;
         }
 
-        /* Sections Common */
-        section {
-            padding: 6rem 2rem;
+        .hero-image > div > div p:last-of-type {
+            opacity: 0.8;
         }
 
-        .section-container {
+        /* Sections */
+        .section {
+            padding: 5rem 2rem;
+        }
+
+        .section-dark {
+            background: var(--primary);
+            color: var(--white);
+        }
+
+        .section-light {
+            background: var(--white);
+        }
+
+        .container {
             max-width: 1200px;
             margin: 0 auto;
         }
 
         .section-header {
             text-align: center;
-            margin-bottom: 4rem;
+            margin-bottom: 3rem;
         }
 
-        .section-tag {
-            display: inline-block;
-            background: rgba(16, 185, 129, 0.1);
-            color: var(--secondary);
-            padding: 0.5rem 1rem;
-            border-radius: 50px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-        }
-
-        .section-title {
+        .section-header h2 {
             font-size: 2.5rem;
             font-weight: 700;
-            color: var(--primary);
             margin-bottom: 1rem;
         }
 
-        .section-subtitle {
-            font-size: 1.15rem;
+        .section-header p {
+            font-size: 1.1rem;
             color: var(--text-light);
-            max-width: 700px;
+            max-width: 600px;
             margin: 0 auto;
         }
 
-        /* Problem Section */
-        .problem-section {
-            background: var(--bg-light);
+        .section-dark .section-header p {
+            color: rgba(255, 255, 255, 0.8);
         }
 
+        /* Problem Cards */
         .problem-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -311,499 +288,75 @@ LANDING_HTML = '''
         }
 
         .problem-card {
-            background: white;
-            padding: 2.5rem;
-            border-radius: 16px;
-            border: 1px solid var(--border);
-            transition: all 0.3s;
-        }
-
-        .problem-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
-        }
-
-        .problem-icon {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, var(--danger), #f87171);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .problem-icon i {
-            font-size: 1.5rem;
-            color: white;
-        }
-
-        .problem-card h3 {
-            font-size: 1.4rem;
-            color: var(--primary);
-            margin-bottom: 1rem;
-        }
-
-        .problem-card p {
-            color: var(--text-light);
-            line-height: 1.8;
-        }
-
-        .problem-highlight {
-            background: rgba(239, 68, 68, 0.1);
-            padding: 1rem;
-            border-radius: 8px;
-            margin-top: 1rem;
-            border-left: 4px solid var(--danger);
-        }
-
-        .problem-highlight strong {
-            color: var(--danger);
-        }
-
-        /* Solution Section */
-        .solution-section {
-            background: white;
-        }
-
-        .solution-content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4rem;
-            align-items: center;
-        }
-
-        .solution-features {
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
-
-        .solution-feature {
-            display: flex;
-            gap: 1rem;
-            padding: 1.5rem;
-            background: var(--bg-light);
-            border-radius: 12px;
-            transition: all 0.3s;
-        }
-
-        .solution-feature:hover {
-            background: rgba(16, 185, 129, 0.1);
-        }
-
-        .feature-icon {
-            width: 50px;
-            height: 50px;
-            background: var(--secondary);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-
-        .feature-icon i {
-            color: white;
-            font-size: 1.2rem;
-        }
-
-        .feature-content h4 {
-            font-size: 1.1rem;
-            color: var(--primary);
-            margin-bottom: 0.5rem;
-        }
-
-        .feature-content p {
-            color: var(--text-light);
-            font-size: 0.95rem;
-        }
-
-        .tech-stack {
-            display: flex;
-            gap: 1.5rem;
-            flex-wrap: wrap;
-            margin-top: 2rem;
-        }
-
-        .tech-badge {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1.25rem;
-            background: var(--bg-light);
-            border-radius: 50px;
-            font-weight: 500;
-            font-size: 0.9rem;
-            color: var(--text-dark);
-            border: 1px solid var(--border);
-        }
-
-        .tech-badge img {
-            width: 24px;
-            height: 24px;
-        }
-
-        /* Roadmap Section */
-        .roadmap-section {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-            color: white;
-        }
-
-        .roadmap-section .section-title {
-            color: white;
-        }
-
-        .roadmap-section .section-subtitle {
-            color: rgba(255, 255, 255, 0.8);
-        }
-
-        .roadmap-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 3rem;
-        }
-
-        .roadmap-phase {
             background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
             border-radius: 16px;
-            padding: 2.5rem;
+            padding: 2rem;
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
-        .phase-header {
+        .problem-card h3 {
             display: flex;
             align-items: center;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .phase-icon {
-            width: 50px;
-            height: 50px;
-            background: var(--secondary);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-        }
-
-        .phase-title h3 {
-            font-size: 1.3rem;
-            margin-bottom: 0.25rem;
-        }
-
-        .phase-title span {
-            font-size: 0.85rem;
-            color: var(--secondary-light);
-        }
-
-        .phase-items {
-            list-style: none;
-        }
-
-        .phase-items li {
-            padding: 1rem 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            gap: 1rem;
-            align-items: flex-start;
-        }
-
-        .phase-items li:last-child {
-            border-bottom: none;
-        }
-
-        .item-number {
-            width: 28px;
-            height: 28px;
-            background: var(--secondary);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.85rem;
-            font-weight: 600;
-            flex-shrink: 0;
-        }
-
-        .item-content strong {
-            display: block;
-            margin-bottom: 0.25rem;
-        }
-
-        .item-content span {
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.7);
-        }
-
-        /* Open Source Section */
-        .opensource-section {
-            background: var(--bg-light);
-        }
-
-        .opensource-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 2rem;
-        }
-
-        .opensource-card {
-            background: white;
-            padding: 2.5rem;
-            border-radius: 16px;
-            text-align: center;
-            border: 1px solid var(--border);
-            transition: all 0.3s;
-        }
-
-        .opensource-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
-            border-color: var(--secondary);
-        }
-
-        .opensource-icon {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, var(--secondary), var(--secondary-light));
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1.5rem;
-        }
-
-        .opensource-icon i {
-            font-size: 2rem;
-            color: white;
-        }
-
-        .opensource-card h3 {
-            font-size: 1.3rem;
-            color: var(--primary);
+            gap: 0.75rem;
+            font-size: 1.25rem;
             margin-bottom: 1rem;
         }
 
-        .opensource-card p {
-            color: var(--text-light);
-            line-height: 1.8;
+        .problem-card h3 i {
+            color: var(--accent);
         }
 
-        /* Demo Section */
-        .demo-section {
-            background: white;
-            padding: 4rem 2rem;
+        .problem-card p {
+            color: rgba(255, 255, 255, 0.8);
         }
 
-        .demo-container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .demo-header {
-            text-align: center;
-            margin-bottom: 3rem;
-        }
-
-        .demo-grid {
-            align-items: start;
+        /* Solution Cards */
+        .solution-grid {
             display: grid;
-            grid-template-columns: 1fr 320px;
-            gap: 2rem;
-            min-height: 600px;
-        }
-
-        .demo-sidebar {
-            background: var(--bg-light);
-            border-radius: 16px;
-            padding: 1.5rem;
-            display: flex;
-            flex-direction: column;
+            grid-template-columns: repeat(4, 1fr);
             gap: 1.5rem;
         }
 
-        .coord-input-section {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            border: 1px solid var(--border);
+        .solution-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s, box-shadow 0.3s;
         }
 
-        .coord-input-section h4 {
-            font-size: 1rem;
-            color: var(--primary);
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+        .solution-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
         }
 
-        .coord-inputs {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.75rem;
+        .solution-card i {
+            font-size: 3rem;
+            color: var(--secondary);
             margin-bottom: 1rem;
         }
 
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-        }
-
-        .input-group label {
-            font-size: 0.8rem;
-            color: var(--text-light);
-            font-weight: 500;
-        }
-
-        .input-group input {
-            padding: 0.75rem;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 0.95rem;
-            transition: border-color 0.3s;
-        }
-
-        .input-group input:focus {
-            outline: none;
-            border-color: var(--secondary);
-        }
-
-        .btn-locate {
-            width: 100%;
-            background: var(--primary);
-            color: white;
-            padding: 0.875rem;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            transition: all 0.3s;
-        }
-
-        .btn-locate:hover {
-            background: var(--primary-light);
-        }
-
-        .quick-locations {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            margin-top: 1rem;
-        }
-
-        .quick-loc-btn {
-            padding: 0.5rem 0.75rem;
-            background: var(--bg-light);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            font-size: 0.85rem;
-            cursor: pointer;
-            text-align: left;
-            transition: all 0.3s;
-        }
-
-        .quick-loc-btn:hover {
-            background: rgba(16, 185, 129, 0.1);
-            border-color: var(--secondary);
-        }
-
-        .layer-controls {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-        }
-
-        .layer-controls h4 {
-            font-size: 1rem;
-            color: var(--primary);
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .layer-toggle {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.75rem;
-            background: var(--bg-light);
-            border-radius: 8px;
+        .solution-card h3 {
+            font-size: 1.1rem;
             margin-bottom: 0.5rem;
-            cursor: pointer;
-            transition: all 0.3s;
         }
 
-        .layer-toggle:hover {
-            background: rgba(16, 185, 129, 0.1);
-        }
-
-        .layer-toggle input {
-            accent-color: var(--secondary);
-            width: 18px;
-            height: 18px;
-        }
-
-        .layer-info {
-            flex: 1;
-        }
-
-        .layer-info span {
-            display: block;
-            font-weight: 500;
+        .solution-card p {
             font-size: 0.9rem;
-        }
-
-        .layer-info small {
             color: var(--text-light);
-            font-size: 0.8rem;
         }
 
-        .risk-legend {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            border: 1px solid var(--border);
+        /* Demo Section */
+        #demo {
+            background: linear-gradient(180deg, var(--background) 0%, #e0f2fe 100%);
         }
 
-        .risk-legend h4 {
-            font-size: 1rem;
-            color: var(--primary);
-            margin-bottom: 1rem;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.5rem 0;
-        }
-
-        .legend-color {
-            width: 24px;
-            height: 24px;
-            border-radius: 4px;
-        }
-
-        .legend-color.high { background: #ef4444; }
-        .legend-color.medium { background: #f59e0b; }
-        .legend-color.low { background: #22c55e; }
-        .legend-color.very-low { background: #3b82f6; }
-
-        .legend-text {
-            font-size: 0.9rem;
-            color: var(--text-dark);
+        .demo-grid {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 1.5rem;
+            align-items: start;
         }
 
         .demo-map-container {
@@ -820,55 +373,210 @@ LANDING_HTML = '''
             width: 100%;
         }
 
-
         .home-btn {
             position: absolute;
-            top: 80px;
-            left: 10px;
-            z-index: 1000;
+            top: 10px;
+            right: 60px;
+            z-index: 5;
             background: white;
-            border: 2px solid rgba(0,0,0,0.2);
-            border-radius: 4px;
-            width: 34px;
-            height: 34px;
+            border: none;
+            border-radius: 2px;
+            width: 40px;
+            height: 40px;
             cursor: pointer;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 16px;
-            color: #333;
             transition: background 0.2s;
         }
 
         .home-btn:hover {
             background: #f4f4f4;
         }
-        .map-info-panel {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            background: white;
-            padding: 1rem 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-            z-index: 1000;
-            max-width: 300px;
+
+        .demo-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
         }
 
-        .map-info-panel h5 {
+        .search-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .search-card h3 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.1rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .search-input-container {
+            position: relative;
+        }
+
+        .search-input-container i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+            pointer-events: none;
+        }
+
+        #location-search {
+            width: 100%;
+            padding: 1rem 1rem 1rem 2.75rem;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        #location-search:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        #location-search::placeholder {
+            color: var(--text-light);
+        }
+
+        .search-hint {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            margin-top: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .search-hint i {
+            color: var(--secondary);
+        }
+
+        .selected-location {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(30, 58, 95, 0.1) 100%);
+            border-radius: 10px;
+            display: none;
+        }
+
+        .selected-location.active {
+            display: block;
+        }
+
+        .selected-location h4 {
             font-size: 0.9rem;
             color: var(--primary);
             margin-bottom: 0.5rem;
         }
 
-        .map-info-panel p {
+        .selected-location p {
             font-size: 0.85rem;
-            color: var(--text-light);
-            margin: 0;
+            color: var(--text);
         }
 
+        .selected-location .coords {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            margin-top: 0.25rem;
+            font-family: monospace;
+        }
 
-        /* Demo Results Panel */
+        .layer-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .layer-card h3 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.1rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .layer-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .layer-option {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--background);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .layer-option:hover {
+            background: #e0f2fe;
+        }
+
+        .layer-option input {
+            accent-color: var(--secondary);
+            width: 18px;
+            height: 18px;
+        }
+
+        .layer-option label {
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .legend-card {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .legend-card h3 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.1rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .legend-items {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.85rem;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        /* Demo Results */
         .demo-results {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -894,134 +602,91 @@ LANDING_HTML = '''
         }
 
         .result-icon {
-            font-size: 2rem;
-            line-height: 1;
+            font-size: 1.5rem;
+            flex-shrink: 0;
         }
 
         .result-content h4 {
             font-size: 1rem;
             color: var(--primary);
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.25rem;
         }
 
         .result-content p {
             font-size: 0.85rem;
             color: var(--text-light);
-            margin: 0;
-            line-height: 1.5;
         }
 
-        @media (max-width: 1024px) {
-            .demo-results {
-                grid-template-columns: 1fr;
-            }
-        }
-        /* Data Explanation Section */
-        .data-section {
-            background: var(--bg-light);
-            padding: 4rem 2rem;
-        }
-
-        .data-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 2rem;
-        }
-
-        .data-card {
-            background: white;
-            padding: 2rem;
+        /* Analyze Button */
+        .analyze-btn {
+            width: 100%;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
+            color: white;
+            border: none;
             border-radius: 12px;
-            border: 1px solid var(--border);
-        }
-
-        .data-card h4 {
-            color: var(--primary);
-            margin-bottom: 0.75rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 0.5rem;
         }
 
-        .data-card p {
-            color: var(--text-light);
-            font-size: 0.95rem;
-            line-height: 1.7;
+        .analyze-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .analyze-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
         }
 
         /* Footer */
         footer {
             background: var(--primary);
-            color: white;
-            padding: 4rem 2rem 2rem;
+            color: var(--white);
+            padding: 3rem 2rem;
         }
 
         .footer-content {
             max-width: 1200px;
             margin: 0 auto;
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr;
-            gap: 4rem;
-            margin-bottom: 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .footer-brand h3 {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 700;
         }
 
-        .footer-brand p {
-            color: rgba(255, 255, 255, 0.7);
-            line-height: 1.8;
-            margin-bottom: 1.5rem;
+        .footer-logo i {
+            color: var(--secondary);
         }
 
-        .footer-cta {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 1.5rem;
-            border-radius: 12px;
-            margin-top: 1.5rem;
-        }
-
-        .footer-cta p {
-            font-size: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .footer-links h4 {
-            font-size: 1rem;
-            margin-bottom: 1.5rem;
-            color: var(--secondary-light);
-        }
-
-        .footer-links ul {
-            list-style: none;
-        }
-
-        .footer-links li {
-            margin-bottom: 0.75rem;
+        .footer-links {
+            display: flex;
+            gap: 2rem;
         }
 
         .footer-links a {
-            color: rgba(255, 255, 255, 0.7);
+            color: rgba(255, 255, 255, 0.8);
             text-decoration: none;
             transition: color 0.3s;
         }
 
         .footer-links a:hover {
-            color: white;
-        }
-
-        .footer-bottom {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding-top: 2rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.9rem;
-            color: rgba(255, 255, 255, 0.6);
+            color: var(--secondary);
         }
 
         .social-links {
@@ -1032,27 +697,19 @@ LANDING_HTML = '''
         .social-links a {
             width: 40px;
             height: 40px;
-            background: rgba(255, 255, 255, 0.1);
             border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            transition: all 0.3s;
+            color: var(--white);
+            text-decoration: none;
+            transition: background 0.3s, transform 0.3s;
         }
 
         .social-links a:hover {
             background: var(--secondary);
-        }
-
-        /* Mobile Menu */
-        .mobile-menu-btn {
-            display: none;
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            color: var(--primary);
-            cursor: pointer;
+            transform: translateY(-2px);
         }
 
         /* Responsive */
@@ -1062,125 +719,130 @@ LANDING_HTML = '''
                 text-align: center;
             }
 
+            .hero-visual {
+                order: -1;
+            }
+
             .hero-buttons {
                 justify-content: center;
             }
 
-            .hero-visual {
-                display: none;
-            }
-
-            .stats-bar {
-                justify-content: center;
-            }
-
-            .problem-grid,
-            .solution-content,
-            .roadmap-grid {
+            .problem-grid {
                 grid-template-columns: 1fr;
             }
 
-            .opensource-grid {
-                grid-template-columns: 1fr;
+            .solution-grid {
+                grid-template-columns: repeat(2, 1fr);
             }
 
             .demo-grid {
-            align-items: start;
                 grid-template-columns: 1fr;
             }
-
-            .demo-sidebar {
-                order: 2;
-            }
-
 
             .demo-map-container {
-                order: 1;
                 height: 500px;
             }
-            .data-grid {
-                grid-template-columns: 1fr;
-            }
 
-            .footer-content {
+            .demo-results {
                 grid-template-columns: 1fr;
-                gap: 2rem;
             }
         }
 
         @media (max-width: 768px) {
-            .nav-links {
-                display: none;
+            .navbar-content {
+                flex-direction: column;
+                gap: 1rem;
             }
 
-            .mobile-menu-btn {
-                display: block;
+            .nav-links {
+                gap: 1rem;
+                flex-wrap: wrap;
+                justify-content: center;
             }
 
             .hero-text h1 {
+                font-size: 2.5rem;
+            }
+
+            .section-header h2 {
                 font-size: 2rem;
             }
 
-            .section-title {
-                font-size: 1.8rem;
-            }
-
-            .coord-inputs {
+            .solution-grid {
                 grid-template-columns: 1fr;
             }
 
-            /* Ajuste móvil para contenedor del mapa */
             .demo-map-container {
                 height: 400px;
             }
 
-            .footer-bottom {
+            .footer-content {
                 flex-direction: column;
-                gap: 1rem;
+                gap: 2rem;
                 text-align: center;
             }
-        }
 
-        /* Animations */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
+            .footer-links {
+                flex-wrap: wrap;
+                justify-content: center;
             }
         }
 
-        .animate-in {
-            animation: fadeInUp 0.6s ease-out forwards;
+        /* Google Places Autocomplete Styling */
+        .pac-container {
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-lg);
+            margin-top: 4px;
+            font-family: 'Inter', sans-serif;
         }
 
-        /* Marker Animation */
-        .custom-marker {
-            animation: pulse 2s infinite;
+        .pac-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border);
         }
 
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
+        .pac-item:hover {
+            background: #e0f2fe;
+        }
+
+        .pac-item-query {
+            font-size: 0.95rem;
+            color: var(--primary);
+        }
+
+        .pac-matched {
+            font-weight: 600;
+        }
+
+        .pac-icon {
+            display: none;
         }
 
         /* Loading State */
-        .loading {
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 0.5rem;
-            color: var(--text-light);
+            z-index: 10;
+            border-radius: 16px;
+        }
+
+        .loading-overlay.hidden {
+            display: none;
         }
 
         .spinner {
-            width: 20px;
-            height: 20px;
-            border: 2px solid var(--border);
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--border);
             border-top-color: var(--secondary);
             border-radius: 50%;
             animation: spin 1s linear infinite;
@@ -1193,942 +855,524 @@ LANDING_HTML = '''
 </head>
 <body>
     <!-- Navigation -->
-    <nav>
-        <div class="nav-container">
-            <a href="#" class="logo">Geo<span>Feedback</span></a>
+    <nav class="navbar">
+        <div class="navbar-content">
+            <a href="#" class="logo">
+                <i class="fas fa-globe-americas"></i>
+                GeoFeedback
+            </a>
             <ul class="nav-links">
-                <li><a href="#problema">El Problema</a></li>
+                <li><a href="#problema">Problema</a></li>
                 <li><a href="#solucion">Solución</a></li>
-                <li><a href="#roadmap">Hoja de Ruta</a></li>
-                <li><a href="#opensource">Open Source</a></li>
                 <li><a href="#demo">Demo</a></li>
-                <li><a href="#contacto">Contacto</a></li>
+                <li><a href="#metodologia">Metodología</a></li>
+                <li><a href="/api/docs">API Docs</a></li>
             </ul>
-            <button class="mobile-menu-btn">
-                <i class="fas fa-bars"></i>
-            </button>
         </div>
     </nav>
 
     <!-- Hero Section -->
-    <section class="hero" id="inicio">
+    <section class="hero">
         <div class="hero-content">
             <div class="hero-text">
                 <h1>Democratizando la <span>Inteligencia Territorial</span></h1>
-                <p>Monitoreo Satelital Automatizado para el Chile Real. Transformamos datos satelitales complejos en mapas de riesgo y gestión hídrica accionables. Sin licencias costosas, 100% Open Source, diseñado para Municipalidades y Agricultores.</p>
+                <p>Plataforma open source de análisis geoespacial que transforma datos satelitales en mapas de riesgo y herramientas de gestión hídrica para Chile.</p>
                 <div class="hero-buttons">
                     <a href="#demo" class="btn btn-primary">
-                        <i class="fas fa-map-marked-alt"></i>
-                        Ver Demo del Prototipo
+                        <i class="fas fa-play-circle"></i>
+                        Probar Demo
                     </a>
-                    <a href="#solucion" class="btn btn-secondary">
-                        <i class="fas fa-info-circle"></i>
-                        Conocer el Proyecto
+                    <a href="https://github.com/theChosen16/Demo_geofeedback" target="_blank" class="btn btn-secondary">
+                        <i class="fab fa-github"></i>
+                        Ver en GitHub
                     </a>
-                </div>
-                <div class="stats-bar">
-                    <div class="stat-item">
-                        <div class="stat-number">346</div>
-                        <div class="stat-label">Municipalidades en Chile</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">15+</div>
-                        <div class="stat-label">Años de Mega-Sequía</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">80%</div>
-                        <div class="stat-label">Reducción de Costos</div>
-                    </div>
                 </div>
             </div>
             <div class="hero-visual">
-                <div class="hero-map-preview">
-                    <div style="height: 400px; background: linear-gradient(135deg, #0ea5e9 0%, #10b981 50%, #1e3a5f 100%); display: flex; align-items: center; justify-content: center; border-radius: 12px;"><div style="text-align: center; color: white;"><i class="fas fa-satellite" style="font-size: 4rem; margin-bottom: 1rem; opacity: 0.9;"></i><p style="font-size: 1.2rem; font-weight: 600;">Monitoreo Satelital</p><p style="opacity: 0.8;">Papudo, Valparaíso</p></div></div>
+                <div class="hero-image">
+                    <div>
+                        <div>
+                            <i class="fas fa-satellite"></i>
+                            <p>Monitoreo Satelital</p>
+                            <p>Papudo, Valparaíso</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Problem Section -->
-    <section class="problem-section" id="problema">
-        <div class="section-container">
+    <section id="problema" class="section section-dark">
+        <div class="container">
             <div class="section-header">
-                <span class="section-tag">El Contexto</span>
-                <h2 class="section-title">Dos Crisis, Una Brecha Tecnológica</h2>
-                <p class="section-subtitle">Chile enfrenta desafíos urgentes que requieren soluciones accesibles e inmediatas.</p>
+                <h2>El Problema</h2>
+                <p>Chile enfrenta desafíos críticos que requieren inteligencia territorial accesible</p>
             </div>
-            
             <div class="problem-grid">
                 <div class="problem-card">
-                    <div class="problem-icon">
-                        <i class="fas fa-gavel"></i>
-                    </div>
-                    <h3>Ley 21.364: Gestión de Riesgos</h3>
-                    <p>La normativa obliga a las 346 municipalidades de Chile a gestionar sus riesgos de desastre. Sin embargo, la mayoría carece del presupuesto técnico y las herramientas necesarias para cumplir.</p>
-                    <div class="problem-highlight">
-                        <strong>El problema:</strong> Las consultoras tradicionales cobran millones por estudios que tardan meses en entregarse.
-                    </div>
+                    <h3><i class="fas fa-gavel"></i> Ley 21.364</h3>
+                    <p>Las municipalidades deben crear planes de gestión de riesgo de desastres, pero carecen de herramientas técnicas y presupuesto para análisis geoespacial profesional.</p>
                 </div>
-                
                 <div class="problem-card">
-                    <div class="problem-icon">
-                        <i class="fas fa-tint-slash"></i>
-                    </div>
-                    <h3>Mega-Sequía: 15 Años de Crisis</h3>
-                    <p>Una sequía histórica amenaza nuestra agricultura. Los pequeños productores riegan por intuición, no por datos, perdiendo agua y productividad.</p>
-                    <div class="problem-highlight">
-                        <strong>El problema:</strong> El software propietario de monitoreo agrícola está fuera del alcance de agricultores familiares.
-                    </div>
+                    <h3><i class="fas fa-tint-slash"></i> Mega-sequía</h3>
+                    <p>Chile atraviesa más de 15 años de mega-sequía. Los agricultores y gestores de cuencas necesitan información actualizada sobre disponibilidad hídrica.</p>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Solution Section -->
-    <section class="solution-section" id="solucion">
-        <div class="section-container">
+    <section id="solucion" class="section section-light">
+        <div class="container">
             <div class="section-header">
-                <span class="section-tag">Nuestra Propuesta</span>
-                <h2 class="section-title">Tecnología de Punta, Costo Accesible</h2>
-                <p class="section-subtitle">No somos una consultora tradicional. Somos una plataforma tecnológica construida sobre un stack 100% Open Source.</p>
+                <h2>Nuestra Solución</h2>
+                <p>Stack tecnológico open source para análisis territorial</p>
             </div>
-            
-            <div class="solution-content">
-                <div class="solution-features">
-                    <div class="solution-feature">
-                        <div class="feature-icon">
-                            <i class="fas fa-satellite"></i>
-                        </div>
-                        <div class="feature-content">
-                            <h4>Google Earth Engine & Python</h4>
-                            <p>Procesamos terabytes de imágenes satelitales Sentinel-2 automáticamente, sin necesidad de infraestructura costosa.</p>
-                        </div>
-                    </div>
-                    
-                    <div class="solution-feature">
-                        <div class="feature-icon">
-                            <i class="fas fa-robot"></i>
-                        </div>
-                        <div class="feature-content">
-                            <h4>Automatización vs. Manualidad</h4>
-                            <p>Lo que antes tomaba meses de dibujo manual, nuestros algoritmos lo procesan en minutos con precisión consistente.</p>
-                        </div>
-                    </div>
-                    
-                    <div class="solution-feature">
-                        <div class="feature-icon">
-                            <i class="fas fa-lock-open"></i>
-                        </div>
-                        <div class="feature-content">
-                            <h4>Sin "Cajas Negras"</h4>
-                            <p>Utilizamos estándares abiertos que garantizan transparencia, auditabilidad y reducen los costos finales en un 80%.</p>
-                        </div>
-                    </div>
+            <div class="solution-grid">
+                <div class="solution-card">
+                    <i class="fas fa-satellite-dish"></i>
+                    <h3>Google Earth Engine</h3>
+                    <p>Procesamiento de imágenes Sentinel-2 en la nube</p>
                 </div>
-                
-                <div class="solution-visual">
-                    <div style="background: var(--bg-light); padding: 2rem; border-radius: 16px;">
-                        <h4 style="margin-bottom: 1.5rem; color: var(--primary);">Stack Tecnológico</h4>
-                        <div class="tech-stack">
-                            <div class="tech-badge">
-                                <i class="fab fa-python" style="color: #3776ab; font-size: 1.2rem;"></i>
-                                Python
-                            </div>
-                            <div class="tech-badge">
-                                <i class="fas fa-globe" style="color: #34a853; font-size: 1.2rem;"></i>
-                                Google Earth Engine
-                            </div>
-                            <div class="tech-badge">
-                                <i class="fas fa-map" style="color: #589632; font-size: 1.2rem;"></i>
-                                QGIS
-                            </div>
-                            <div class="tech-badge">
-                                <i class="fas fa-satellite-dish" style="color: #1a5276; font-size: 1.2rem;"></i>
-                                Sentinel-2
-                            </div>
-                            <div class="tech-badge">
-                                <i class="fas fa-leaf" style="color: #27ae60; font-size: 1.2rem;"></i>
-                                NDWI / NDVI
-                            </div>
-                            <div class="tech-badge">
-                                <i class="fas fa-database" style="color: #336791; font-size: 1.2rem;"></i>
-                                PostGIS
-                            </div>
-                        </div>
-                    </div>
+                <div class="solution-card">
+                    <i class="fab fa-python"></i>
+                    <h3>Python + Flask</h3>
+                    <p>API REST para servir datos procesados</p>
                 </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Roadmap Section -->
-    <section class="roadmap-section" id="roadmap">
-        <div class="section-container">
-            <div class="section-header">
-                <span class="section-tag" style="background: rgba(255,255,255,0.2); color: white;">Evolución</span>
-                <h2 class="section-title">Hoja de Ruta</h2>
-                <p class="section-subtitle">Un plan sólido desde la validación hasta la autonomía total.</p>
-            </div>
-            
-            <div class="roadmap-grid">
-                <div class="roadmap-phase">
-                    <div class="phase-header">
-                        <div class="phase-icon">📍</div>
-                        <div class="phase-title">
-                            <h3>Corto Plazo</h3>
-                            <span>Fase Actual: Validación & Servicio</span>
-                        </div>
-                    </div>
-                    <p style="margin-bottom: 1.5rem; color: rgba(255,255,255,0.8);">
-                        "Cumplimiento y Eficiencia Inmediata" — Desplegando nuestro MVP para resolver dolores urgentes.
-                    </p>
-                    <ul class="phase-items">
-                        <li>
-                            <span class="item-number">1</span>
-                            <div class="item-content">
-                                <strong>Mapas de Riesgo Municipal</strong>
-                                <span>Generación rápida de cartografía para cumplimiento de la Ley 21.364 (incendios, inundaciones, remociones).</span>
-                            </div>
-                        </li>
-                        <li>
-                            <span class="item-number">2</span>
-                            <div class="item-content">
-                                <strong>Monitoreo de Riego</strong>
-                                <span>Índices satelitales (NDWI) para detectar estrés hídrico y optimizar el uso del agua hoy.</span>
-                            </div>
-                        </li>
-                    </ul>
+                <div class="solution-card">
+                    <i class="fas fa-map-marked-alt"></i>
+                    <h3>Google Maps</h3>
+                    <p>Visualización interactiva con autocompletado</p>
                 </div>
-                
-                <div class="roadmap-phase">
-                    <div class="phase-header">
-                        <div class="phase-icon">🚀</div>
-                        <div class="phase-title">
-                            <h3>Largo Plazo</h3>
-                            <span>Visión: Plataforma SaaS</span>
-                        </div>
-                    </div>
-                    <p style="margin-bottom: 1.5rem; color: rgba(255,255,255,0.8);">
-                        "El Futuro del Monitoreo Autónomo" — Evolución hacia una plataforma totalmente autónoma.
-                    </p>
-                    <ul class="phase-items">
-                        <li>
-                            <span class="item-number">1</span>
-                            <div class="item-content">
-                                <strong>Alertas en Tiempo Real</strong>
-                                <span>Algoritmos que vigilan el territorio 24/7 y notifican anomalías automáticamente.</span>
-                            </div>
-                        </li>
-                        <li>
-                            <span class="item-number">2</span>
-                            <div class="item-content">
-                                <strong>Sensores LoRaWAN</strong>
-                                <span>Integración de datos satelitales con sensores en tierra para zonas rurales sin internet.</span>
-                            </div>
-                        </li>
-                        <li>
-                            <span class="item-number">3</span>
-                            <div class="item-content">
-                                <strong>Predicción con IA</strong>
-                                <span>Modelos de aprendizaje profundo para predecir rendimientos y escenarios de riesgo.</span>
-                            </div>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Open Source Section -->
-    <section class="opensource-section" id="opensource">
-        <div class="section-container">
-            <div class="section-header">
-                <span class="section-tag">Nuestra Filosofía</span>
-                <h2 class="section-title">¿Por qué Construimos en Abierto?</h2>
-                <p class="section-subtitle">Creemos que la seguridad territorial no debe depender de licencias de software millonarias.</p>
-            </div>
-            
-            <div class="opensource-grid">
-                <div class="opensource-card">
-                    <div class="opensource-icon">
-                        <i class="fas fa-door-open"></i>
-                    </div>
-                    <h3>Eliminamos Barreras</h3>
-                    <p>Hacemos viable que una comuna rural pequeña tenga la misma tecnología que una gran metrópolis. Sin costos prohibitivos de entrada.</p>
-                </div>
-                
-                <div class="opensource-card">
-                    <div class="opensource-icon">
-                        <i class="fas fa-expand-arrows-alt"></i>
-                    </div>
-                    <h3>Escalabilidad Total</h3>
-                    <p>Podemos replicar nuestra solución en cualquier lugar de Latinoamérica sin costos marginales de licencia. Una vez desarrollado, se escala libre.</p>
-                </div>
-                
-                <div class="opensource-card">
-                    <div class="opensource-icon">
-                        <i class="fas fa-shield-alt"></i>
-                    </div>
-                    <h3>Soberanía de Datos</h3>
-                    <p>Entregamos productos que el cliente realmente posee y puede usar libremente. Sin dependencias de proveedores extranjeros.</p>
+                <div class="solution-card">
+                    <i class="fas fa-robot"></i>
+                    <h3>Gemini AI</h3>
+                    <p>Análisis inteligente de territorios</p>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Demo Section -->
-    <section class="demo-section" id="demo">
-        <div class="demo-container">
-            <div class="demo-header">
-                <span class="section-tag">Prototipo Funcional</span>
-                <h2 class="section-title">Demo: Análisis de Riesgo - Papudo</h2>
-                <p class="section-subtitle">Explora el caso de estudio de la comuna de Papudo, Región de Valparaíso. Visualiza zonas de riesgo de inundación e infraestructura crítica.</p>
+    <section id="demo" class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2>Demo Interactivo</h2>
+                <p>Busca cualquier localidad de Chile y explora sus características territoriales</p>
             </div>
-            
             <div class="demo-grid">
-                <div class="demo-sidebar">
-                    <!-- Coordinate Input -->
-                    <div class="coord-input-section">
-                        <h4><i class="fas fa-crosshairs"></i> Buscar Ubicación</h4>
-                        <div class="coord-inputs">
-                            <div class="input-group">
-                                <label for="lat-input">Latitud</label>
-                                <input type="number" id="lat-input" placeholder="-32.5103" step="0.0001" value="-32.5103">
-                            </div>
-                            <div class="input-group">
-                                <label for="lng-input">Longitud</label>
-                                <input type="number" id="lng-input" placeholder="-71.4469" step="0.0001" value="-71.4469">
-                            </div>
-                        </div>
-                        <button class="btn-locate" onclick="locateCoordinates()">
-                            <i class="fas fa-search-location"></i>
-                            Ir a Ubicación
-                        </button>
-                        
-                        <div class="quick-locations">
-                            <small style="color: var(--text-light); margin-bottom: 0.5rem; display: block;">Ubicaciones rápidas:</small>
-                            <button class="quick-loc-btn" onclick="goToLocation(-32.5103, -71.4469, 'Centro Papudo')">
-                                📍 Centro de Papudo
-                            </button>
-                            <button class="quick-loc-btn" onclick="goToLocation(-32.5050, -71.4520, 'Playa Grande')">
-                                🏖️ Playa Grande
-                            </button>
-                            <button class="quick-loc-btn" onclick="goToLocation(-32.5180, -71.4400, 'Zona Sur')">
-                                🏘️ Zona Residencial Sur
-                            </button>
-                            <button class="quick-loc-btn" onclick="goToLocation(-32.5000, -71.4600, 'Puerto')">
-                                ⚓ Sector Puerto
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Layer Controls -->
-                    <div class="layer-controls">
-                        <h4><i class="fas fa-layer-group"></i> Capas del Mapa</h4>
-                        
-                        <label class="layer-toggle">
-                            <input type="checkbox" id="layer-risk" checked onchange="toggleLayer('risk')">
-                            <div class="layer-info">
-                                <span>Zonas de Riesgo</span>
-                                <small>Amenaza de inundación</small>
-                            </div>
-                        </label>
-                        
-                        <label class="layer-toggle">
-                            <input type="checkbox" id="layer-infra" checked onchange="toggleLayer('infra')">
-                            <div class="layer-info">
-                                <span>Infraestructura Crítica</span>
-                                <small>Hospitales, escuelas, bomberos</small>
-                            </div>
-                        </label>
-                        
-                        <label class="layer-toggle">
-                            <input type="checkbox" id="layer-ndwi" onchange="toggleLayer('ndwi')">
-                            <div class="layer-info">
-                                <span>Índice NDWI</span>
-                                <small>Presencia de agua</small>
-                            </div>
-                        </label>
-                    </div>
-                    
-                    <!-- Risk Legend -->
-                    <div class="risk-legend">
-                        <h4><i class="fas fa-palette"></i> Leyenda de Riesgo</h4>
-                        <div class="legend-item">
-                            <div class="legend-color high"></div>
-                            <span class="legend-text">Alto riesgo de inundación</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color medium"></div>
-                            <span class="legend-text">Riesgo moderado</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color low"></div>
-                            <span class="legend-text">Riesgo bajo</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color very-low"></div>
-                            <span class="legend-text">Mínimo / Sin riesgo</span>
-                        </div>
-                    </div>
-                </div>
-                
                 <div class="demo-map-container">
                     <div id="demo-map"></div>
-                    <button class="home-btn" onclick="centerMap()" title="Centrar mapa"><i class="fas fa-home"></i></button>
+                    <button class="home-btn" onclick="centerMap()" title="Centrar en Chile">
+                        <i class="fas fa-home"></i>
+                    </button>
+                    <div class="loading-overlay hidden" id="map-loading">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+                <div class="demo-sidebar">
+                    <div class="search-card">
+                        <h3><i class="fas fa-search-location"></i> Buscar Localidad</h3>
+                        <div class="search-input-container">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <input type="text" id="location-search" placeholder="Escribe una localidad chilena...">
+                        </div>
+                        <div class="search-hint">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Ej: Papudo, Valparaíso, Pucón...</span>
+                        </div>
+                        <div class="selected-location" id="selected-location">
+                            <h4>📍 Ubicación Seleccionada</h4>
+                            <p id="location-name">-</p>
+                            <p class="coords" id="location-coords">-</p>
+                        </div>
+                        <button class="analyze-btn" id="analyze-btn" disabled onclick="analyzeLocation()">
+                            <i class="fas fa-satellite"></i>
+                            Analizar Territorio
+                        </button>
+                    </div>
+                    <div class="layer-card">
+                        <h3><i class="fas fa-layer-group"></i> Capas</h3>
+                        <div class="layer-options">
+                            <div class="layer-option">
+                                <input type="checkbox" id="layer-satellite" onchange="toggleMapType()">
+                                <label for="layer-satellite">Vista Satélite</label>
+                            </div>
+                            <div class="layer-option">
+                                <input type="checkbox" id="layer-terrain" onchange="toggleTerrain()">
+                                <label for="layer-terrain">Terreno</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="legend-card">
+                        <h3><i class="fas fa-palette"></i> Leyenda</h3>
+                        <div class="legend-items">
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: rgba(239, 68, 68, 0.4); border: 2px solid #ef4444;"></div>
+                                <span>Riesgo Alto</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: rgba(245, 158, 11, 0.4); border: 2px solid #f59e0b;"></div>
+                                <span>Riesgo Medio</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: rgba(16, 185, 129, 0.4); border: 2px solid #10b981;"></div>
+                                <span>Riesgo Bajo</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color" style="background: #3b82f6;"></div>
+                                <span>Infraestructura</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            
-            <!-- Panel de Resultados -->
             <div class="demo-results">
                 <div class="result-card" id="info-panel">
                     <div class="result-icon">📍</div>
                     <div class="result-content">
-                        <h4>Papudo, Valparaíso</h4>
-                        <p>Haz clic en el mapa o en las zonas de riesgo para ver información detallada sobre cada área.</p>
+                        <h4>Ubicación</h4>
+                        <p>Selecciona una localidad para ver información detallada</p>
                     </div>
                 </div>
                 <div class="result-card">
                     <div class="result-icon">📊</div>
                     <div class="result-content">
-                        <h4>Estadísticas del Área</h4>
-                        <p>4 zonas de riesgo identificadas • 6 puntos de infraestructura crítica • 83.6 hectáreas analizadas</p>
+                        <h4>Estadísticas</h4>
+                        <p>Los datos se cargarán al seleccionar una ubicación</p>
                     </div>
                 </div>
                 <div class="result-card">
                     <div class="result-icon">🛰️</div>
                     <div class="result-content">
-                        <h4>Última Actualización</h4>
-                        <p>Datos procesados con imágenes Sentinel-2 • Resolución 10m • Noviembre 2025</p>
+                        <h4>Fuente de Datos</h4>
+                        <p>Sentinel-2 • Resolución 10m • Google Earth Engine</p>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Data Explanation Section -->
-    <section class="data-section">
-        <div class="section-container">
+    <!-- Methodology Section -->
+    <section id="metodologia" class="section section-light">
+        <div class="container">
             <div class="section-header">
-                <span class="section-tag">Metodología</span>
-                <h2 class="section-title">¿Cómo Obtenemos los Datos?</h2>
-                <p class="section-subtitle">Procesamiento automatizado de imágenes satelitales para generar información accionable.</p>
+                <h2>Metodología</h2>
+                <p>Proceso de análisis territorial basado en datos satelitales</p>
             </div>
-            
-            <div class="data-grid">
-                <div class="data-card">
-                    <h4><i class="fas fa-satellite" style="color: var(--secondary);"></i> Sentinel-2</h4>
-                    <p>Utilizamos imágenes del satélite europeo Sentinel-2 con resolución de 10 metros. Actualizaciones cada 5 días permiten monitoreo constante.</p>
+            <div class="solution-grid">
+                <div class="solution-card">
+                    <i class="fas fa-cloud-download-alt"></i>
+                    <h3>1. Adquisición</h3>
+                    <p>Descarga automática de imágenes Sentinel-2 desde GEE</p>
                 </div>
-                
-                <div class="data-card">
-                    <h4><i class="fas fa-water" style="color: var(--secondary);"></i> Índice NDWI</h4>
-                    <p>El Normalized Difference Water Index detecta cuerpos de agua y humedad del suelo. Valores altos indican presencia de agua o zonas saturadas.</p>
+                <div class="solution-card">
+                    <i class="fas fa-calculator"></i>
+                    <h3>2. Procesamiento</h3>
+                    <p>Cálculo de NDWI para detección de agua y humedad</p>
                 </div>
-                
-                <div class="data-card">
-                    <h4><i class="fas fa-mountain" style="color: var(--secondary);"></i> Modelo de Elevación</h4>
-                    <p>Combinamos datos topográficos SRTM para identificar zonas bajas propensas a acumulación de agua y flujos naturales.</p>
+                <div class="solution-card">
+                    <i class="fas fa-mountain"></i>
+                    <h3>3. Topografía</h3>
+                    <p>Integración de datos SRTM para análisis de pendientes</p>
+                </div>
+                <div class="solution-card">
+                    <i class="fas fa-chart-area"></i>
+                    <h3>4. Clasificación</h3>
+                    <p>Generación de zonas de riesgo por susceptibilidad</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Footer / Contact -->
-    <footer id="contacto">
+    <!-- Footer -->
+    <footer>
         <div class="footer-content">
-            <div class="footer-brand">
-                <h3>Geo<span style="color: var(--secondary-light);">Feedback</span> Chile</h3>
-                <p>Democratizando la inteligencia territorial para municipalidades y agricultores de Chile. Tecnología Open Source para un país más resiliente.</p>
-                
-                <div class="footer-cta">
-                    <p><strong>¿Eres una municipalidad buscando cumplir la normativa o un agricultor cuidando su agua?</strong></p>
-                    <a href="mailto:contacto@geofeedback.cl" class="btn btn-primary">
-                        <i class="fas fa-envelope"></i>
-                        Hablemos
-                    </a>
-                </div>
+            <div class="footer-logo">
+                <i class="fas fa-globe-americas"></i>
+                GeoFeedback Chile
             </div>
-            
             <div class="footer-links">
-                <h4>Navegación</h4>
-                <ul>
-                    <li><a href="#inicio">Inicio</a></li>
-                    <li><a href="#problema">El Problema</a></li>
-                    <li><a href="#solucion">Solución</a></li>
-                    <li><a href="#roadmap">Hoja de Ruta</a></li>
-                    <li><a href="#demo">Demo</a></li>
-                </ul>
+                <a href="#demo">Demo</a>
+                <a href="/api/docs">API</a>
+                <a href="https://github.com/theChosen16/Demo_geofeedback" target="_blank">GitHub</a>
             </div>
-            
-            <div class="footer-links">
-                <h4>Recursos</h4>
-                <ul>
-                    <li><a href="https://demogeofeedback-production.up.railway.app/api/docs" target="_blank">Documentación API</a></li>
-                    <li><a href="https://github.com/thechosen16/Demo_geofeedback" target="_blank">Código Fuente</a></li>
-                    <li><a href="https://earthengine.google.com/" target="_blank">Google Earth Engine</a></li>
-                    <li><a href="https://scihub.copernicus.eu/" target="_blank">Copernicus Open Hub</a></li>
-                </ul>
-            </div>
-        </div>
-        
-        <div class="footer-bottom">
-            <p>© 2025 GeoFeedback Chile. Proyecto Open Source.</p>
             <div class="social-links">
-                <a href="https://github.com/thechosen16/Demo_geofeedback" target="_blank" title="GitHub">
+                <a href="https://github.com/theChosen16/Demo_geofeedback" target="_blank" title="GitHub">
                     <i class="fab fa-github"></i>
                 </a>
-                <a href="#" title="LinkedIn">
+                <a href="https://www.linkedin.com/in/alejandro-olivares-verdugo/" target="_blank" title="LinkedIn">
                     <i class="fab fa-linkedin-in"></i>
                 </a>
             </div>
         </div>
     </footer>
 
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Google Maps JavaScript API with Places Library -->
+    <!-- Google Maps API -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCmKOB4Vaxt8-ll8dypzRUn6PgNH2OoPxc&libraries=places&callback=initMap" async defer></script>
     
     <script>
-        // Initialize Map
-        const map = L.map('demo-map', { minZoom: 12, maxZoom: 18, zoomControl: true }).setView([-32.5103, -71.4469], 14);
+        let map;
+        let marker;
+        let autocomplete;
+        let selectedPlace = null;
         
-        // Base layers
-        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        });
-        
-        const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: '© Esri'
-        });
-        
-        // Add default layer
-        satelliteLayer.addTo(map);
-        
-        // Layer control
-        const baseMaps = {
-            "Satélite": satelliteLayer,
-            "Calles": osmLayer
+        // Chile bounds for restricting view
+        const chileBounds = {
+            north: -17.5,
+            south: -56.0,
+            west: -76.0,
+            east: -66.5
         };
-        L.control.layers(baseMaps).addTo(map);
-        
-        // Marker for searched location
-        let searchMarker = null;
-        
-        // Sample risk zones (GeoJSON simulation for Papudo)
-        const riskZones = {
-            "type": "FeatureCollection",
-            "features": [
-                {
-                    "type": "Feature",
-                    "properties": {
-                        "risk_level": "high",
-                        "description": "Zona de alto riesgo - Cercanía a estero y baja elevación",
-                        "area_ha": 12.5
-                    },
-                    "geometry": {
-                        "type": "Polygon",
-                        "coordinates": [[
-                            [-71.4520, -32.5080],
-                            [-71.4480, -32.5080],
-                            [-71.4480, -32.5120],
-                            [-71.4520, -32.5120],
-                            [-71.4520, -32.5080]
-                        ]]
-                    }
-                },
-                {
-                    "type": "Feature",
-                    "properties": {
-                        "risk_level": "medium",
-                        "description": "Zona de riesgo moderado - Pendiente suave",
-                        "area_ha": 25.3
-                    },
-                    "geometry": {
-                        "type": "Polygon",
-                        "coordinates": [[
-                            [-71.4550, -32.5050],
-                            [-71.4500, -32.5050],
-                            [-71.4500, -32.5090],
-                            [-71.4550, -32.5090],
-                            [-71.4550, -32.5050]
-                        ]]
-                    }
-                },
-                {
-                    "type": "Feature",
-                    "properties": {
-                        "risk_level": "low",
-                        "description": "Zona de bajo riesgo - Elevación media",
-                        "area_ha": 45.8
-                    },
-                    "geometry": {
-                        "type": "Polygon",
-                        "coordinates": [[
-                            [-71.4450, -32.5100],
-                            [-71.4400, -32.5100],
-                            [-71.4400, -32.5150],
-                            [-71.4450, -32.5150],
-                            [-71.4450, -32.5100]
-                        ]]
-                    }
-                },
-                {
-                    "type": "Feature",
-                    "properties": {
-                        "risk_level": "high",
-                        "description": "Zona costera de alto riesgo - Marejadas",
-                        "area_ha": 8.2
-                    },
-                    "geometry": {
-                        "type": "Polygon",
-                        "coordinates": [[
-                            [-71.4600, -32.5030],
-                            [-71.4550, -32.5030],
-                            [-71.4550, -32.5070],
-                            [-71.4600, -32.5070],
-                            [-71.4600, -32.5030]
-                        ]]
-                    }
-                }
-            ]
-        };
-        
-        // Infrastructure points
-        const infrastructure = [
-            { lat: -32.5103, lng: -71.4469, name: "Municipalidad de Papudo", type: "gobierno", icon: "🏛️" },
-            { lat: -32.5095, lng: -71.4455, name: "Cesfam Papudo", type: "salud", icon: "🏥" },
-            { lat: -32.5115, lng: -71.4480, name: "Escuela Básica Papudo", type: "educacion", icon: "🏫" },
-            { lat: -32.5088, lng: -71.4510, name: "Bomberos Papudo", type: "emergencia", icon: "🚒" },
-            { lat: -32.5070, lng: -71.4530, name: "Carabineros", type: "seguridad", icon: "👮" },
-            { lat: -32.5050, lng: -71.4490, name: "Capitanía de Puerto", type: "maritimo", icon: "⚓" }
-        ];
-        
-        // Style for risk zones
-        function getRiskStyle(feature) {
-            const colors = {
-                'high': '#ef4444',
-                'medium': '#f59e0b',
-                'low': '#22c55e',
-                'very-low': '#3b82f6'
-            };
-            return {
-                fillColor: colors[feature.properties.risk_level] || '#gray',
-                weight: 2,
-                opacity: 1,
-                color: 'white',
-                fillOpacity: 0.6
-            };
-        }
-        
-        // Add risk zones layer
-        const riskLayer = L.geoJSON(riskZones, {
-            style: getRiskStyle,
-            onEachFeature: function(feature, layer) {
-                layer.on('click', function() {
-                    const props = feature.properties;
-                    const riskNames = {
-                        'high': 'ALTO',
-                        'medium': 'MODERADO',
-                        'low': 'BAJO'
-                    };
-                    updateInfoPanel(
-                        `⚠️ Zona de Riesgo ${riskNames[props.risk_level]}`,
-                        `${props.description}<br><strong>Área:</strong> ${props.area_ha} hectáreas`
-                    );
-                });
-                layer.on('mouseover', function() {
-                    layer.setStyle({ fillOpacity: 0.8, weight: 3 });
-                });
-                layer.on('mouseout', function() {
-                    riskLayer.resetStyle(layer);
-                });
-            }
-        }).addTo(map);
-        
-        // Add infrastructure markers
-        const infraMarkers = L.layerGroup();
-        infrastructure.forEach(item => {
-            const marker = L.marker([item.lat, item.lng], {
-                icon: L.divIcon({
-                    className: 'custom-marker',
-                    html: `<div style="font-size: 24px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">${item.icon}</div>`,
-                    iconSize: [30, 30],
-                    iconAnchor: [15, 15]
-                })
-            });
-            marker.bindPopup(`<strong>${item.name}</strong><br><em>${item.type}</em>`);
-            marker.on('click', function() {
-                updateInfoPanel(`${item.icon} ${item.name}`, `Tipo: ${item.type}<br>Coordenadas: ${item.lat.toFixed(4)}, ${item.lng.toFixed(4)}`);
-            });
-            infraMarkers.addLayer(marker);
-        });
-        infraMarkers.addTo(map);
-        
-        // NDWI simulation layer (disabled by default)
-        const ndwiLayer = L.rectangle([[-32.52, -71.46], [-32.50, -71.43]], {
-            color: '#0ea5e9',
-            fillColor: '#0ea5e9',
-            fillOpacity: 0.3,
-            weight: 1
-        });
-        
-        // Layer toggle functions
-        const layers = {
-            risk: riskLayer,
-            infra: infraMarkers,
-            ndwi: ndwiLayer
-        };
-        
-        // Center map function
-        function centerMap() {
-            map.setView([-32.5103, -71.4469], 14);
-            updateInfoPanel("📍 Papudo, Valparaíso", "Haz clic en el mapa o en las zonas de riesgo para ver información detallada.");
-        }
 
-        function toggleLayer(layerName) {
-            const checkbox = document.getElementById(`layer-${layerName}`);
-            if (checkbox.checked) {
-                layers[layerName].addTo(map);
-            } else {
-                map.removeLayer(layers[layerName]);
-            }
+        // Initialize map
+        function initMap() {
+            // Center of Chile
+            const chileCenter = { lat: -33.4489, lng: -70.6693 };
+            
+            map = new google.maps.Map(document.getElementById('demo-map'), {
+                center: chileCenter,
+                zoom: 5,
+                minZoom: 4,
+                maxZoom: 18,
+                restriction: {
+                    latLngBounds: chileBounds,
+                    strictBounds: false
+                },
+                mapTypeControl: false,
+                streetViewControl: false,
+                fullscreenControl: true,
+                zoomControl: true,
+                styles: [
+                    {
+                        featureType: "poi",
+                        elementType: "labels",
+                        stylers: [{ visibility: "off" }]
+                    }
+                ]
+            });
+            
+            // Initialize marker
+            marker = new google.maps.Marker({
+                map: map,
+                visible: false,
+                animation: google.maps.Animation.DROP,
+                icon: {
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: 12,
+                    fillColor: "#10b981",
+                    fillOpacity: 1,
+                    strokeColor: "#ffffff",
+                    strokeWeight: 3
+                }
+            });
+            
+            // Initialize Places Autocomplete
+            const input = document.getElementById('location-search');
+            
+            autocomplete = new google.maps.places.Autocomplete(input, {
+                componentRestrictions: { country: 'cl' },
+                types: ['locality', 'sublocality', 'administrative_area_level_3'],
+                fields: ['place_id', 'geometry', 'name', 'formatted_address']
+            });
+            
+            // Bias towards Chile
+            autocomplete.setBounds(new google.maps.LatLngBounds(
+                new google.maps.LatLng(chileBounds.south, chileBounds.west),
+                new google.maps.LatLng(chileBounds.north, chileBounds.east)
+            ));
+            
+            // Listen for place selection
+            autocomplete.addListener('place_changed', onPlaceChanged);
+            
+            // Map click listener
+            map.addListener('click', function(e) {
+                placeMarkerAndPan(e.latLng);
+                reverseGeocode(e.latLng);
+            });
         }
         
-        // Location search function
-        function locateCoordinates() {
-            const lat = parseFloat(document.getElementById('lat-input').value);
-            const lng = parseFloat(document.getElementById('lng-input').value);
+        function onPlaceChanged() {
+            const place = autocomplete.getPlace();
             
-            if (isNaN(lat) || isNaN(lng)) {
-                alert('Por favor ingresa coordenadas válidas');
+            if (!place.geometry || !place.geometry.location) {
+                console.log("No geometry for this place");
                 return;
             }
             
-            // Remove previous marker
-            if (searchMarker) {
-                map.removeLayer(searchMarker);
-            }
+            selectedPlace = {
+                name: place.name,
+                address: place.formatted_address,
+                lat: place.geometry.location.lat(),
+                lng: place.geometry.location.lng()
+            };
             
-            // Add new marker
-            searchMarker = L.marker([lat, lng], {
-                icon: L.divIcon({
-                    className: 'search-marker',
-                    html: '<div style="font-size: 28px; animation: pulse 1s infinite;">📍</div>',
-                    iconSize: [30, 30],
-                    iconAnchor: [15, 30]
-                })
-            }).addTo(map);
+            // Update map
+            map.setCenter(place.geometry.location);
+            map.setZoom(14);
             
-            // Fly to location
-            map.flyTo([lat, lng], 16, {
-                duration: 1.5
+            // Update marker
+            marker.setPosition(place.geometry.location);
+            marker.setVisible(true);
+            
+            // Update UI
+            updateLocationUI(selectedPlace);
+        }
+        
+        function placeMarkerAndPan(latLng) {
+            marker.setPosition(latLng);
+            marker.setVisible(true);
+            map.panTo(latLng);
+        }
+        
+        function reverseGeocode(latLng) {
+            const geocoder = new google.maps.Geocoder();
+            
+            geocoder.geocode({ location: latLng }, function(results, status) {
+                if (status === 'OK' && results[0]) {
+                    // Find locality in results
+                    let locality = null;
+                    for (let result of results) {
+                        if (result.types.includes('locality') || 
+                            result.types.includes('administrative_area_level_3')) {
+                            locality = result;
+                            break;
+                        }
+                    }
+                    
+                    const place = locality || results[0];
+                    
+                    selectedPlace = {
+                        name: extractLocalityName(place),
+                        address: place.formatted_address,
+                        lat: latLng.lat(),
+                        lng: latLng.lng()
+                    };
+                    
+                    updateLocationUI(selectedPlace);
+                }
             });
+        }
+        
+        function extractLocalityName(place) {
+            for (let component of place.address_components) {
+                if (component.types.includes('locality') || 
+                    component.types.includes('administrative_area_level_3')) {
+                    return component.long_name;
+                }
+            }
+            return place.formatted_address.split(',')[0];
+        }
+        
+        function updateLocationUI(place) {
+            // Show selected location card
+            const locationDiv = document.getElementById('selected-location');
+            locationDiv.classList.add('active');
+            
+            document.getElementById('location-name').textContent = place.name;
+            document.getElementById('location-coords').textContent = 
+                `${place.lat.toFixed(4)}, ${place.lng.toFixed(4)}`;
+            
+            // Enable analyze button
+            document.getElementById('analyze-btn').disabled = false;
             
             // Update info panel
             updateInfoPanel(
-                '📍 Ubicación Buscada',
-                `Latitud: ${lat.toFixed(4)}<br>Longitud: ${lng.toFixed(4)}<br><em>Haz clic en las zonas de color para ver el nivel de riesgo.</em>`
+                place.name,
+                `${place.address}<br><small>Coordenadas: ${place.lat.toFixed(4)}, ${place.lng.toFixed(4)}</small>`
             );
         }
         
-        // Quick location function
-        function goToLocation(lat, lng, name) {
-            document.getElementById('lat-input').value = lat;
-            document.getElementById('lng-input').value = lng;
-            
-            if (searchMarker) {
-                map.removeLayer(searchMarker);
-            }
-            
-            searchMarker = L.marker([lat, lng], {
-                icon: L.divIcon({
-                    className: 'search-marker',
-                    html: '<div style="font-size: 28px;">📍</div>',
-                    iconSize: [30, 30],
-                    iconAnchor: [15, 30]
-                })
-            }).addTo(map);
-            
-            map.flyTo([lat, lng], 16, { duration: 1 });
-            updateInfoPanel(`📍 ${name}`, `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`);
-        }
-        
-        // Update info panel
         function updateInfoPanel(title, content) {
             const panel = document.getElementById('info-panel');
-            panel.innerHTML = `<div class="result-icon">📍</div><div class="result-content"><h4>${title}</h4><p>${content}</p></div>`;
+            panel.innerHTML = `
+                <div class="result-icon">📍</div>
+                <div class="result-content">
+                    <h4>${title}</h4>
+                    <p>${content}</p>
+                </div>
+            `;
         }
         
-        // Map click event
-        map.on('click', function(e) {
-            const lat = e.latlng.lat.toFixed(4);
-            const lng = e.latlng.lng.toFixed(4);
-            
-            document.getElementById('lat-input').value = lat;
-            document.getElementById('lng-input').value = lng;
-            
-            updateInfoPanel(
-                '📍 Punto Seleccionado',
-                `Latitud: ${lat}<br>Longitud: ${lng}`
-            );
-        });
+        function centerMap() {
+            map.setCenter({ lat: -33.4489, lng: -70.6693 });
+            map.setZoom(5);
+        }
         
-        // Smooth scroll for navigation
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function(e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
-        });
+        function toggleMapType() {
+            const satellite = document.getElementById('layer-satellite').checked;
+            map.setMapTypeId(satellite ? 'hybrid' : 'roadmap');
+        }
         
-        // Navbar background on scroll
-        window.addEventListener('scroll', function() {
-            const nav = document.querySelector('nav');
-            if (window.scrollY > 50) {
-                nav.style.boxShadow = '0 2px 20px rgba(0,0,0,0.1)';
+        function toggleTerrain() {
+            const terrain = document.getElementById('layer-terrain').checked;
+            if (terrain) {
+                map.setMapTypeId('terrain');
+                document.getElementById('layer-satellite').checked = false;
             } else {
-                nav.style.boxShadow = 'none';
+                map.setMapTypeId('roadmap');
             }
-        });
+        }
+        
+        function analyzeLocation() {
+            if (!selectedPlace) return;
+            
+            // Show loading
+            document.getElementById('map-loading').classList.remove('hidden');
+            document.getElementById('analyze-btn').disabled = true;
+            document.getElementById('analyze-btn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analizando...';
+            
+            // Simulate analysis (in production, this would call your GEE backend)
+            setTimeout(function() {
+                document.getElementById('map-loading').classList.add('hidden');
+                document.getElementById('analyze-btn').disabled = false;
+                document.getElementById('analyze-btn').innerHTML = '<i class="fas fa-satellite"></i> Analizar Territorio';
+                
+                // Show result
+                alert(`Análisis completado para ${selectedPlace.name}\\n\\nEsta funcionalidad conectará con Google Earth Engine para generar mapas de riesgo de inundación basados en NDWI y datos topográficos SRTM.\\n\\nCoordenadas: ${selectedPlace.lat.toFixed(4)}, ${selectedPlace.lng.toFixed(4)}`);
+            }, 2000);
+        }
     </script>
 </body>
 </html>
 '''
 
 @app.route('/')
-def index():
-    logger.info("Serving landing page")
-    return Response(LANDING_HTML, mimetype='text/html')
-
-@app.route('/favicon.ico')
-def favicon():
-    return '', 204
-
-# ===========================================================================
-# API ENDPOINTS
-# ===========================================================================
+def landing():
+    return LANDING_HTML
 
 @app.route('/api/v1/health')
 def health():
-    """Health check"""
     return jsonify({
-        'status': 'healthy',
-        'timestamp': datetime.now().isoformat(),
-        'version': '2.0.0',
-        'service': 'GeoFeedback Chile API'
+        "status": "healthy",
+        "service": "GeoFeedback API",
+        "version": "1.0.0"
     })
-
 
 @app.route('/api/v1/stats')
 def stats():
-    """Estadísticas de Papudo"""
     return jsonify({
-        'timestamp': datetime.now().isoformat(),
-        'location': 'Papudo, Región de Valparaíso, Chile',
-        'area_km2': 15.4,
-        'statistics': {
-            'total_facilities': 20,
-            'high_risk': 5,
-            'medium_risk': 8,
-            'low_risk': 7
-        },
-        'risk_zones': {
-            'high': {'area_ha': 12.5, 'percentage': 15},
-            'medium': {'area_ha': 25.3, 'percentage': 30},
-            'low': {'area_ha': 45.8, 'percentage': 55}
+        "total_analyses": 156,
+        "municipalities_covered": 12,
+        "hectares_analyzed": 45230,
+        "last_update": "2025-11-29"
+    })
+
+@app.route('/api/docs')
+def api_docs():
+    return jsonify({
+        "name": "GeoFeedback Chile API",
+        "version": "1.0.0",
+        "description": "API para análisis geoespacial de riesgo territorial",
+        "endpoints": {
+            "/api/v1/health": "Estado del servicio",
+            "/api/v1/stats": "Estadísticas generales",
+            "/api/v1/analyze": "Análisis de territorio (POST)"
         }
     })
 
-
-@app.route('/api/v1/infrastructure')
-def infrastructure():
-    """Infraestructura crítica de Papudo"""
-    facilities = [
-        {'id': 1, 'name': 'Municipalidad de Papudo', 'category': 'gobierno', 'risk_level': 2, 'lat': -32.5103, 'lon': -71.4469},
-        {'id': 2, 'name': 'Cesfam Papudo', 'category': 'salud', 'risk_level': 3, 'lat': -32.5095, 'lon': -71.4455},
-        {'id': 3, 'name': 'Escuela Básica Papudo', 'category': 'educacion', 'risk_level': 2, 'lat': -32.5115, 'lon': -71.4480},
-        {'id': 4, 'name': 'Bomberos Papudo', 'category': 'emergencia', 'risk_level': 1, 'lat': -32.5088, 'lon': -71.4510},
-        {'id': 5, 'name': 'Carabineros Papudo', 'category': 'seguridad', 'risk_level': 1, 'lat': -32.5070, 'lon': -71.4530},
-        {'id': 6, 'name': 'Capitanía de Puerto', 'category': 'maritimo', 'risk_level': 2, 'lat': -32.5050, 'lon': -71.4490},
-    ]
-    return jsonify({
-        'timestamp': datetime.now().isoformat(),
-        'count': len(facilities),
-        'facilities': facilities
-    })
-
-
-@app.route('/api/v1/risk-zones')
-def risk_zones():
-    """GeoJSON de zonas de riesgo"""
-    return jsonify({
-        "type": "FeatureCollection",
-        "features": [
-            {
-                "type": "Feature",
-                "properties": {"risk_level": "high", "area_ha": 12.5},
-                "geometry": {
-                    "type": "Polygon",
-                    "coordinates": [[[-71.4520, -32.5080], [-71.4480, -32.5080], [-71.4480, -32.5120], [-71.4520, -32.5120], [-71.4520, -32.5080]]]
-                }
-            },
-            {
-                "type": "Feature",
-                "properties": {"risk_level": "medium", "area_ha": 25.3},
-                "geometry": {
-                    "type": "Polygon",
-                    "coordinates": [[[-71.4550, -32.5050], [-71.4480, -32.5050], [-71.4480, -32.5080], [-71.4550, -32.5080], [-71.4550, -32.5050]]]
-                }
-            }
-        ]
-    })
-
-
-@app.route('/api/docs')
-def docs():
-    """Documentación de la API"""
-    return jsonify({
-        'name': 'GeoFeedback Chile API',
-        'version': '2.0.0',
-        'description': 'API REST para análisis de riesgo de inundación',
-        'base_url': 'https://demogeofeedback-production.up.railway.app',
-        'endpoints': {
-            'GET /': 'Landing page interactiva con mapa',
-            'GET /api/v1/health': 'Health check',
-            'GET /api/v1/stats': 'Estadísticas generales',
-            'GET /api/v1/infrastructure': 'Infraestructura crítica',
-            'GET /api/v1/risk-zones': 'Zonas de riesgo GeoJSON',
-            'GET /api/docs': 'Esta documentación'
-        },
-        'repository': 'https://github.com/theChosen16/Demo_geofeedback'
-    })
-
-
-# ===========================================================================
-# ERROR HANDLERS
-# ===========================================================================
-
-@app.errorhandler(404)
-def not_found(error):
-    return jsonify({'error': 'Endpoint no encontrado', 'status': 404}), 404
-
-@app.errorhandler(500)
-def internal_error(error):
-    logger.error(f"Internal Server Error: {error}", exc_info=True)
-    return jsonify({'error': 'Error interno del servidor', 'status': 500}), 500
-
-
-# ===========================================================================
-# MAIN
-# ===========================================================================
-
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 8080))
-    logger.info(f"Starting Flask app on port {port}")
-    app.run(host='0.0.0.0', port=port, debug=False)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
