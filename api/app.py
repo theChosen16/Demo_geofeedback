@@ -806,6 +806,7 @@ LANDING_HTML = '''
         }
 
         .demo-map-container {
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
             border-radius: 16px;
             overflow: hidden;
             border: 1px solid var(--border);
@@ -817,6 +818,29 @@ LANDING_HTML = '''
             width: 100%;
         }
 
+
+        .home-btn {
+            position: absolute;
+            top: 80px;
+            left: 10px;
+            z-index: 1000;
+            background: white;
+            border: 2px solid rgba(0,0,0,0.2);
+            border-radius: 4px;
+            width: 34px;
+            height: 34px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: #333;
+            transition: background 0.2s;
+        }
+
+        .home-btn:hover {
+            background: #f4f4f4;
+        }
         .map-info-panel {
             position: absolute;
             bottom: 20px;
@@ -1018,6 +1042,7 @@ LANDING_HTML = '''
             }
 
             .demo-map-container {
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
                 order: 1;
             }
 
@@ -1165,7 +1190,7 @@ LANDING_HTML = '''
             </div>
             <div class="hero-visual">
                 <div class="hero-map-preview">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Papudo_desde_el_mar.jpg/1200px-Papudo_desde_el_mar.jpg" alt="Vista de Papudo, Chile" style="object-fit: cover; height: 400px;">
+                    <div style="height: 400px; background: linear-gradient(135deg, #0ea5e9 0%, #10b981 50%, #1e3a5f 100%); display: flex; align-items: center; justify-content: center; border-radius: 12px;"><div style="text-align: center; color: white;"><i class="fas fa-satellite" style="font-size: 4rem; margin-bottom: 1rem; opacity: 0.9;"></i><p style="font-size: 1.2rem; font-weight: 600;">Monitoreo Satelital</p><p style="opacity: 0.8;">Papudo, Valparaíso</p></div></div>
                 </div>
             </div>
         </div>
@@ -1497,6 +1522,7 @@ LANDING_HTML = '''
                 
                 <div class="demo-map-container">
                     <div id="demo-map"></div>
+                    <button class="home-btn" onclick="centerMap()" title="Centrar mapa"><i class="fas fa-home"></i></button>
                     <div class="map-info-panel" id="info-panel">
                         <h5>📍 Papudo, Valparaíso</h5>
                         <p>Haz clic en el mapa o en las zonas de riesgo para ver información detallada.</p>
@@ -1590,7 +1616,7 @@ LANDING_HTML = '''
     
     <script>
         // Initialize Map
-        const map = L.map('demo-map').setView([-32.5103, -71.4469], 14);
+        const map = L.map('demo-map', { minZoom: 12, maxZoom: 18, zoomControl: true }).setView([-32.5103, -71.4469], 14);
         
         // Base layers
         const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -1779,6 +1805,12 @@ LANDING_HTML = '''
             ndwi: ndwiLayer
         };
         
+        // Center map function
+        function centerMap() {
+            map.setView([-32.5103, -71.4469], 14);
+            updateInfoPanel("📍 Papudo, Valparaíso", "Haz clic en el mapa o en las zonas de riesgo para ver información detallada.");
+        }
+
         function toggleLayer(layerName) {
             const checkbox = document.getElementById(`layer-${layerName}`);
             if (checkbox.checked) {
