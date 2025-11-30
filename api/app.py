@@ -5,7 +5,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-# Landing page HTML with Google Maps + Places Autocomplete
+# Landing page HTML with Google Maps + Places Autocomplete + Approach Flow
 LANDING_HTML = '''<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -46,6 +46,8 @@ LANDING_HTML = '''<!DOCTYPE html>
             --accent-light: #fbbf24;
             --danger: #ef4444;
             --danger-light: #f87171;
+            --info: #3b82f6;
+            --info-light: #60a5fa;
             --text: #1f2937;
             --text-light: #6b7280;
             --background: #f8fafc;
@@ -105,13 +107,12 @@ LANDING_HTML = '''<!DOCTYPE html>
 
         .logo i {
             color: var(--secondary);
-            font-size: 1.75rem;
         }
 
         .nav-links {
             display: flex;
             gap: 2rem;
-            list-style: none;
+            align-items: center;
         }
 
         .nav-links a {
@@ -125,13 +126,52 @@ LANDING_HTML = '''<!DOCTYPE html>
             color: var(--secondary);
         }
 
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            font-size: 0.95rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--secondary), var(--secondary-light));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: var(--primary-light);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
         /* Hero Section */
         .hero {
             min-height: 100vh;
             display: flex;
             align-items: center;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 50%, var(--secondary) 100%);
-            padding: 6rem 2rem 4rem;
+            padding: 8rem 2rem 4rem;
+            background: linear-gradient(135deg, var(--primary) 0%, #0f2744 100%);
             position: relative;
             overflow: hidden;
         }
@@ -143,7 +183,7 @@ LANDING_HTML = '''<!DOCTYPE html>
             left: 0;
             right: 0;
             bottom: 0;
-            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2310b981' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
             opacity: 0.5;
         }
 
@@ -161,19 +201,23 @@ LANDING_HTML = '''<!DOCTYPE html>
         .hero-text h1 {
             font-size: 3.5rem;
             font-weight: 800;
-            color: var(--white);
-            margin-bottom: 1.5rem;
+            color: white;
             line-height: 1.1;
+            margin-bottom: 1.5rem;
         }
 
         .hero-text h1 span {
-            color: var(--accent);
+            background: linear-gradient(135deg, var(--secondary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .hero-text p {
             font-size: 1.25rem;
-            color: rgba(255, 255, 255, 0.9);
+            color: rgba(255, 255, 255, 0.8);
             margin-bottom: 2rem;
+            max-width: 500px;
         }
 
         .hero-buttons {
@@ -182,91 +226,32 @@ LANDING_HTML = '''<!DOCTYPE html>
             flex-wrap: wrap;
         }
 
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 1rem 2rem;
-            border-radius: 12px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.3s;
-            cursor: pointer;
-            border: none;
-            font-size: 1rem;
-        }
-
-        .btn-primary {
-            background: var(--accent);
-            color: var(--primary);
-        }
-
-        .btn-primary:hover {
-            background: var(--accent-light);
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-lg);
-        }
-
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.15);
-            color: var(--white);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.25);
-            transform: translateY(-2px);
-        }
-
         .hero-visual {
             display: flex;
-            align-items: center;
             justify-content: center;
-        }
-
-        .hero-image {
-            width: 100%;
-            max-width: 500px;
-        }
-
-        .hero-image > div {
-            height: 400px;
-            background: linear-gradient(135deg, #0ea5e9 0%, #10b981 50%, #1e3a5f 100%);
-            display: flex;
             align-items: center;
-            justify-content: center;
-            border-radius: 12px;
-            box-shadow: var(--shadow-lg);
         }
 
-        .hero-image > div > div {
-            text-align: center;
-            color: white;
+        .satellite-icon {
+            font-size: 15rem;
+            color: var(--secondary);
+            opacity: 0.3;
+            animation: float 6s ease-in-out infinite;
         }
 
-        .hero-image > div > div i {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-            opacity: 0.9;
-        }
-
-        .hero-image > div > div p:first-of-type {
-            font-size: 1.2rem;
-            font-weight: 600;
-        }
-
-        .hero-image > div > div p:last-of-type {
-            opacity: 0.8;
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
         }
 
         /* Sections */
         .section {
-            padding: 5rem 2rem;
+            padding: 6rem 2rem;
         }
 
         .section-dark {
             background: var(--primary);
-            color: var(--white);
+            color: white;
         }
 
         .section-light {
@@ -280,7 +265,7 @@ LANDING_HTML = '''<!DOCTYPE html>
 
         .section-header {
             text-align: center;
-            margin-bottom: 3rem;
+            margin-bottom: 4rem;
         }
 
         .section-header h2 {
@@ -297,53 +282,59 @@ LANDING_HTML = '''<!DOCTYPE html>
         }
 
         .section-dark .section-header p {
-            color: rgba(255, 255, 255, 0.8);
+            color: rgba(255, 255, 255, 0.7);
         }
 
         /* Problem Cards */
         .problem-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 2rem;
         }
 
         .problem-card {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 16px;
             padding: 2rem;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s, border-color 0.3s;
         }
 
-        .problem-card h3 {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            font-size: 1.25rem;
+        .problem-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--secondary);
+        }
+
+        .problem-card i {
+            font-size: 2.5rem;
+            color: var(--accent);
             margin-bottom: 1rem;
         }
 
-        .problem-card h3 i {
-            color: var(--accent);
+        .problem-card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.75rem;
         }
 
         .problem-card p {
-            color: rgba(255, 255, 255, 0.8);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.95rem;
         }
 
         /* Solution Cards */
         .solution-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
         }
 
         .solution-card {
-            background: var(--white);
+            background: var(--background);
             border-radius: 16px;
             padding: 2rem;
             text-align: center;
-            box-shadow: var(--shadow);
             transition: transform 0.3s, box-shadow 0.3s;
+            border: 1px solid var(--border);
         }
 
         .solution-card:hover {
@@ -352,7 +343,7 @@ LANDING_HTML = '''<!DOCTYPE html>
         }
 
         .solution-card i {
-            font-size: 3rem;
+            font-size: 2.5rem;
             color: var(--secondary);
             margin-bottom: 1rem;
         }
@@ -360,134 +351,162 @@ LANDING_HTML = '''<!DOCTYPE html>
         .solution-card h3 {
             font-size: 1.1rem;
             margin-bottom: 0.5rem;
+            color: var(--primary);
         }
 
         .solution-card p {
-            font-size: 0.9rem;
             color: var(--text-light);
+            font-size: 0.9rem;
         }
 
         /* Demo Section */
-        #demo {
-            background: linear-gradient(180deg, var(--background) 0%, #e0f2fe 100%);
+        .demo-section {
+            background: linear-gradient(180deg, var(--background) 0%, #e2e8f0 100%);
+            padding: 6rem 2rem;
         }
 
-        .demo-grid {
+        .demo-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .demo-layout {
             display: grid;
-            grid-template-columns: 1fr 320px;
+            grid-template-columns: 1fr 380px;
             gap: 1.5rem;
-            align-items: start;
+            margin-top: 2rem;
         }
 
-        .demo-map-container {
-            height: 600px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+        .map-container {
+            background: white;
             border-radius: 16px;
             overflow: hidden;
-            border: 1px solid var(--border);
+            box-shadow: var(--shadow-lg);
             position: relative;
         }
 
         #demo-map {
-            height: 100%;
             width: 100%;
+            height: 550px;
         }
 
-        .home-btn {
+        .map-controls {
             position: absolute;
-            top: 10px;
-            right: 60px;
-            z-index: 5;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            z-index: 10;
+        }
+
+        .map-control-btn {
             background: white;
             border: none;
-            border-radius: 2px;
             width: 40px;
             height: 40px;
+            border-radius: 8px;
             cursor: pointer;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+            box-shadow: var(--shadow);
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background 0.2s;
+            transition: all 0.3s;
         }
 
-        .home-btn:hover {
-            background: #f4f4f4;
+        .map-control-btn:hover {
+            background: var(--secondary);
+            color: white;
         }
 
-        .demo-sidebar {
+        .map-loading {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
             display: flex;
             flex-direction: column;
-            gap: 1.5rem;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
         }
 
-        .search-card {
-            background: var(--white);
-            border-radius: 16px;
-            padding: 1.5rem;
+        .map-loading.hidden {
+            display: none;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--border);
+            border-top-color: var(--secondary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Sidebar Panel */
+        .sidebar-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .panel-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.25rem;
             box-shadow: var(--shadow);
         }
 
-        .search-card h3 {
+        .panel-card h3 {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-bottom: 0.75rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            font-size: 1.1rem;
-            color: var(--primary);
-            margin-bottom: 1rem;
         }
 
-        .search-input-container {
+        .search-input-wrapper {
             position: relative;
         }
 
-        .search-input-container i {
+        .search-input-wrapper i {
             position: absolute;
             left: 1rem;
             top: 50%;
             transform: translateY(-50%);
             color: var(--text-light);
-            pointer-events: none;
         }
 
         #location-search {
             width: 100%;
-            padding: 1rem 1rem 1rem 2.75rem;
+            padding: 0.875rem 1rem 0.875rem 2.75rem;
             border: 2px solid var(--border);
-            border-radius: 12px;
-            font-size: 1rem;
-            transition: border-color 0.3s, box-shadow 0.3s;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: border-color 0.3s;
         }
 
         #location-search:focus {
             outline: none;
             border-color: var(--secondary);
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
         }
 
-        #location-search::placeholder {
-            color: var(--text-light);
-        }
-
-        .search-hint {
-            font-size: 0.8rem;
-            color: var(--text-light);
-            margin-top: 0.75rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .search-hint i {
-            color: var(--secondary);
-        }
-
+        /* Selected Location */
         .selected-location {
-            margin-top: 1rem;
-            padding: 1rem;
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(30, 58, 95, 0.1) 100%);
-            border-radius: 10px;
             display: none;
+            background: linear-gradient(135deg, var(--secondary), var(--secondary-light));
+            color: white;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 0.75rem;
         }
 
         .selected-location.active {
@@ -495,135 +514,189 @@ LANDING_HTML = '''<!DOCTYPE html>
         }
 
         .selected-location h4 {
-            font-size: 0.9rem;
-            color: var(--primary);
-            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
         }
 
         .selected-location p {
             font-size: 0.85rem;
-            color: var(--text);
+            opacity: 0.9;
         }
 
-        .selected-location .coords {
-            font-size: 0.75rem;
-            color: var(--text-light);
-            margin-top: 0.25rem;
-            font-family: monospace;
+        /* Approach Selection Panel */
+        .approach-panel {
+            display: none;
         }
 
-        .layer-card {
-            background: var(--white);
-            border-radius: 16px;
-            padding: 1.5rem;
-            box-shadow: var(--shadow);
+        .approach-panel.active {
+            display: block;
         }
 
-        .layer-card h3 {
+        .approach-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 1rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            font-size: 1.1rem;
-            color: var(--primary);
-            margin-bottom: 1rem;
         }
 
-        .layer-options {
-            display: flex;
-            flex-direction: column;
+        .approach-grid {
+            display: grid;
             gap: 0.75rem;
         }
 
-        .layer-option {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.75rem;
+        .approach-card {
             background: var(--background);
+            border: 2px solid var(--border);
             border-radius: 10px;
+            padding: 1rem;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.3s;
+            position: relative;
         }
 
-        .layer-option:hover {
-            background: #e0f2fe;
+        .approach-card:hover {
+            border-color: var(--secondary);
+            transform: translateX(5px);
         }
 
-        .layer-option input {
-            accent-color: var(--secondary);
-            width: 18px;
-            height: 18px;
+        .approach-card.selected {
+            border-color: var(--secondary);
+            background: rgba(16, 185, 129, 0.1);
         }
 
-        .layer-option label {
-            cursor: pointer;
-            font-size: 0.9rem;
+        .approach-card.selected::after {
+            content: '✓';
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            width: 24px;
+            height: 24px;
+            background: var(--secondary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
         }
 
-        .legend-card {
-            background: var(--white);
-            border-radius: 16px;
-            padding: 1.5rem;
-            box-shadow: var(--shadow);
+        .approach-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
         }
 
-        .legend-card h3 {
+        .approach-card h4 {
+            font-size: 0.95rem;
+            color: var(--primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .approach-card p {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            margin: 0;
+        }
+
+        /* Layers Panel */
+        .layers-panel {
+            display: none;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .layers-panel.active {
+            display: block;
+        }
+
+        .layers-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-light);
+            margin-bottom: 0.75rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            font-size: 1.1rem;
-            color: var(--primary);
-            margin-bottom: 1rem;
         }
 
-        .legend-items {
+        .layer-list {
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
         }
 
-        .legend-item {
+        .layer-item {
             display: flex;
             align-items: center;
             gap: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            background: var(--background);
+            border-radius: 6px;
             font-size: 0.85rem;
         }
 
-        .legend-color {
-            width: 20px;
-            height: 20px;
-            border-radius: 4px;
-            flex-shrink: 0;
+        .layer-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
         }
 
-        /* Demo Results */
+        .layer-item span {
+            flex: 1;
+        }
+
+        .layer-status {
+            font-size: 0.7rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 10px;
+            background: var(--secondary);
+            color: white;
+        }
+
+        /* Analyze Button */
+        .analyze-section {
+            display: none;
+            margin-top: 1rem;
+        }
+
+        .analyze-section.active {
+            display: block;
+        }
+
+        #analyze-btn {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1rem;
+        }
+
+        /* Results Panel */
         .demo-results {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 1.5rem;
-            margin-top: 2rem;
+            gap: 1rem;
+            margin-top: 1.5rem;
         }
 
         .result-card {
             background: white;
             border-radius: 12px;
-            padding: 1.5rem;
+            padding: 1.25rem;
             display: flex;
-            gap: 1rem;
             align-items: flex-start;
-            border: 1px solid var(--border);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            transition: transform 0.2s, box-shadow 0.2s;
+            gap: 1rem;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s;
         }
 
         .result-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            transform: translateY(-3px);
         }
 
         .result-icon {
-            font-size: 1.5rem;
-            flex-shrink: 0;
+            font-size: 2rem;
         }
 
         .result-content h4 {
@@ -635,42 +708,32 @@ LANDING_HTML = '''<!DOCTYPE html>
         .result-content p {
             font-size: 0.85rem;
             color: var(--text-light);
+            margin: 0;
         }
 
-        /* Analyze Button */
-        .analyze-btn {
-            width: 100%;
-            margin-top: 1rem;
-            padding: 1rem;
-            background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+        /* Layer Toggles */
+        .layer-toggles {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .layer-toggle {
             display: flex;
             align-items: center;
-            justify-content: center;
             gap: 0.5rem;
+            font-size: 0.85rem;
+            cursor: pointer;
         }
 
-        .analyze-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-lg);
-        }
-
-        .analyze-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
+        .layer-toggle input {
+            accent-color: var(--secondary);
         }
 
         /* Footer */
         footer {
             background: var(--primary);
-            color: var(--white);
+            color: white;
             padding: 3rem 2rem;
         }
 
@@ -680,6 +743,8 @@ LANDING_HTML = '''<!DOCTYPE html>
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 2rem;
         }
 
         .footer-logo {
@@ -700,7 +765,7 @@ LANDING_HTML = '''<!DOCTYPE html>
         }
 
         .footer-links a {
-            color: rgba(255, 255, 255, 0.8);
+            color: rgba(255, 255, 255, 0.7);
             text-decoration: none;
             transition: color 0.3s;
         }
@@ -717,100 +782,129 @@ LANDING_HTML = '''<!DOCTYPE html>
         .social-links a {
             width: 40px;
             height: 40px;
-            border-radius: 50%;
             background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: var(--white);
-            text-decoration: none;
-            transition: background 0.3s, transform 0.3s;
+            color: white;
+            transition: all 0.3s;
         }
 
         .social-links a:hover {
             background: var(--secondary);
-            transform: translateY(-2px);
+        }
+
+        /* Step Indicator */
+        .step-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .step-number {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--border);
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .step.active .step-number {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .step.completed .step-number {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .step.completed .step-number::after {
+            content: '✓';
+        }
+
+        .step-label {
+            font-size: 0.8rem;
+            color: var(--text-light);
+        }
+
+        .step.active .step-label {
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        .step-line {
+            width: 30px;
+            height: 2px;
+            background: var(--border);
+        }
+
+        .step.completed + .step-line {
+            background: var(--secondary);
         }
 
         /* Responsive */
         @media (max-width: 1024px) {
-            .hero-content {
+            .demo-layout {
                 grid-template-columns: 1fr;
-                text-align: center;
             }
-
-            .hero-visual {
+            
+            .sidebar-panel {
                 order: -1;
             }
-
-            .hero-buttons {
-                justify-content: center;
+            
+            #demo-map {
+                height: 400px;
             }
-
-            .problem-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .solution-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .demo-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .demo-map-container {
-                height: 500px;
-            }
-
+            
             .demo-results {
                 grid-template-columns: 1fr;
             }
         }
 
         @media (max-width: 768px) {
-            .navbar-content {
-                flex-direction: column;
-                gap: 1rem;
+            .hero-content {
+                grid-template-columns: 1fr;
+                text-align: center;
             }
-
-            .nav-links {
-                gap: 1rem;
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-
+            
             .hero-text h1 {
                 font-size: 2.5rem;
             }
-
-            .section-header h2 {
-                font-size: 2rem;
-            }
-
-            .solution-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .demo-map-container {
-                height: 400px;
-            }
-
-            .footer-content {
-                flex-direction: column;
-                gap: 2rem;
-                text-align: center;
-            }
-
-            .footer-links {
-                flex-wrap: wrap;
+            
+            .hero-buttons {
                 justify-content: center;
+            }
+            
+            .hero-visual {
+                display: none;
+            }
+            
+            .nav-links {
+                display: none;
+            }
+            
+            .step-indicator {
+                flex-wrap: wrap;
             }
         }
 
-        /* Google Places Autocomplete Styling */
+        /* Google Places Autocomplete Dropdown Style */
         .pac-container {
-            border-radius: 12px;
+            border-radius: 8px;
             border: 1px solid var(--border);
             box-shadow: var(--shadow-lg);
             margin-top: 4px;
@@ -820,56 +914,24 @@ LANDING_HTML = '''<!DOCTYPE html>
         .pac-item {
             padding: 10px 14px;
             cursor: pointer;
-            border-bottom: 1px solid var(--border);
+            font-size: 0.9rem;
         }
 
         .pac-item:hover {
-            background: #e0f2fe;
+            background: var(--background);
         }
 
-        .pac-item-query {
-            font-size: 0.95rem;
-            color: var(--primary);
-        }
-
-        .pac-matched {
-            font-weight: 600;
+        .pac-item-selected {
+            background: rgba(16, 185, 129, 0.1);
         }
 
         .pac-icon {
             display: none;
         }
 
-        /* Loading State */
-        .loading-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255, 255, 255, 0.9);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 10;
-            border-radius: 16px;
-        }
-
-        .loading-overlay.hidden {
-            display: none;
-        }
-
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid var(--border);
-            border-top-color: var(--secondary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        .pac-item-query {
+            font-weight: 500;
+            color: var(--primary);
         }
     </style>
 </head>
@@ -881,13 +943,15 @@ LANDING_HTML = '''<!DOCTYPE html>
                 <i class="fas fa-globe-americas"></i>
                 GeoFeedback
             </a>
-            <ul class="nav-links">
-                <li><a href="#problema">Problema</a></li>
-                <li><a href="#solucion">Solución</a></li>
-                <li><a href="#demo">Demo</a></li>
-                <li><a href="#metodologia">Metodología</a></li>
-                <li><a href="/api/docs">API Docs</a></li>
-            </ul>
+            <div class="nav-links">
+                <a href="#problema">Problema</a>
+                <a href="#solucion">Solución</a>
+                <a href="#demo">Demo</a>
+                <a href="#metodologia">Metodología</a>
+                <a href="/api/docs" class="btn btn-primary">
+                    <i class="fas fa-code"></i> API Docs
+                </a>
+            </div>
         </div>
     </nav>
 
@@ -895,29 +959,24 @@ LANDING_HTML = '''<!DOCTYPE html>
     <section class="hero">
         <div class="hero-content">
             <div class="hero-text">
-                <h1>Democratizando la <span>Inteligencia Territorial</span></h1>
-                <p>Plataforma open source de análisis geoespacial que transforma datos satelitales en mapas de riesgo y herramientas de gestión hídrica para Chile.</p>
+                <h1>
+                    Democratizando la <span>Inteligencia Territorial</span>
+                </h1>
+                <p>
+                    Plataforma open source que transforma datos satelitales en mapas de riesgo 
+                    y herramientas de gestión hídrica para Chile.
+                </p>
                 <div class="hero-buttons">
                     <a href="#demo" class="btn btn-primary">
-                        <i class="fas fa-play-circle"></i>
-                        Probar Demo
+                        <i class="fas fa-map-marked-alt"></i> Explorar Demo
                     </a>
                     <a href="https://github.com/theChosen16/Demo_geofeedback" target="_blank" class="btn btn-secondary">
-                        <i class="fab fa-github"></i>
-                        Ver en GitHub
+                        <i class="fab fa-github"></i> GitHub
                     </a>
                 </div>
             </div>
             <div class="hero-visual">
-                <div class="hero-image">
-                    <div>
-                        <div>
-                            <i class="fas fa-satellite"></i>
-                            <p>Monitoreo Satelital</p>
-                            <p>Papudo, Valparaíso</p>
-                        </div>
-                    </div>
-                </div>
+                <i class="fas fa-satellite satellite-icon"></i>
             </div>
         </div>
     </section>
@@ -927,16 +986,23 @@ LANDING_HTML = '''<!DOCTYPE html>
         <div class="container">
             <div class="section-header">
                 <h2>El Problema</h2>
-                <p>Chile enfrenta desafíos críticos que requieren inteligencia territorial accesible</p>
+                <p>Chile enfrenta desafíos críticos en gestión territorial y recursos hídricos</p>
             </div>
             <div class="problem-grid">
                 <div class="problem-card">
-                    <h3><i class="fas fa-gavel"></i> Ley 21.364</h3>
-                    <p>Las municipalidades deben crear planes de gestión de riesgo de desastres, pero carecen de herramientas técnicas y presupuesto para análisis geoespacial profesional.</p>
+                    <i class="fas fa-balance-scale"></i>
+                    <h3>Ley 21.364</h3>
+                    <p>Municipios deben elaborar planes de emergencia y mapas de riesgo, pero carecen de herramientas técnicas accesibles.</p>
                 </div>
                 <div class="problem-card">
-                    <h3><i class="fas fa-tint-slash"></i> Mega-sequía</h3>
-                    <p>Chile atraviesa más de 15 años de mega-sequía. Los agricultores y gestores de cuencas necesitan información actualizada sobre disponibilidad hídrica.</p>
+                    <i class="fas fa-tint-slash"></i>
+                    <h3>Mega-sequía</h3>
+                    <p>15 años consecutivos de déficit hídrico. Agricultores necesitan datos precisos para optimizar el uso del agua.</p>
+                </div>
+                <div class="problem-card">
+                    <i class="fas fa-dollar-sign"></i>
+                    <h3>Alto Costo</h3>
+                    <p>Estudios geoespaciales profesionales son costosos y poco accesibles para municipios rurales y pequeños agricultores.</p>
                 </div>
             </div>
         </div>
@@ -947,120 +1013,170 @@ LANDING_HTML = '''<!DOCTYPE html>
         <div class="container">
             <div class="section-header">
                 <h2>Nuestra Solución</h2>
-                <p>Stack tecnológico open source para análisis territorial</p>
+                <p>Inteligencia territorial accesible mediante tecnología satelital</p>
             </div>
             <div class="solution-grid">
                 <div class="solution-card">
-                    <i class="fas fa-satellite-dish"></i>
+                    <i class="fab fa-google"></i>
                     <h3>Google Earth Engine</h3>
-                    <p>Procesamiento de imágenes Sentinel-2 en la nube</p>
+                    <p>Procesamiento de petabytes de datos satelitales en la nube</p>
                 </div>
                 <div class="solution-card">
                     <i class="fab fa-python"></i>
-                    <h3>Python + Flask</h3>
-                    <p>API REST para servir datos procesados</p>
+                    <h3>Python + QGIS</h3>
+                    <p>Scripts automatizados para análisis reproducible</p>
                 </div>
                 <div class="solution-card">
-                    <i class="fas fa-map-marked-alt"></i>
-                    <h3>Google Maps</h3>
-                    <p>Visualización interactiva con autocompletado</p>
+                    <i class="fas fa-satellite"></i>
+                    <h3>Sentinel-2</h3>
+                    <p>Imágenes multiespectrales gratuitas cada 5 días</p>
                 </div>
                 <div class="solution-card">
-                    <i class="fas fa-robot"></i>
-                    <h3>Gemini AI</h3>
-                    <p>Análisis inteligente de territorios</p>
+                    <i class="fas fa-code-branch"></i>
+                    <h3>Open Source</h3>
+                    <p>Código abierto para replicar en cualquier territorio</p>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Demo Section -->
-    <section id="demo" class="section">
-        <div class="container">
+    <section id="demo" class="demo-section">
+        <div class="demo-container">
             <div class="section-header">
                 <h2>Demo Interactivo</h2>
-                <p>Busca cualquier localidad de Chile y explora sus características territoriales</p>
+                <p>Selecciona una ubicación, elige tu enfoque de análisis y descubre qué podemos analizar</p>
             </div>
-            <div class="demo-grid">
-                <div class="demo-map-container">
+
+            <div class="demo-layout">
+                <!-- Map Container -->
+                <div class="map-container">
                     <div id="demo-map"></div>
-                    <button class="home-btn" onclick="centerMap()" title="Centrar en Chile">
-                        <i class="fas fa-home"></i>
-                    </button>
-                    <div class="loading-overlay hidden" id="map-loading">
-                        <div class="spinner"></div>
-                    </div>
-                </div>
-                <div class="demo-sidebar">
-                    <div class="search-card">
-                        <h3><i class="fas fa-search-location"></i> Buscar Localidad</h3>
-                        <div class="search-input-container">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <input type="text" id="location-search" placeholder="Escribe una localidad chilena...">
-                        </div>
-                        <div class="search-hint">
-                            <i class="fas fa-info-circle"></i>
-                            <span>Ej: Papudo, Valparaíso, Pucón...</span>
-                        </div>
-                        <div class="selected-location" id="selected-location">
-                            <h4>📍 Ubicación Seleccionada</h4>
-                            <p id="location-name">-</p>
-                            <p class="coords" id="location-coords">-</p>
-                        </div>
-                        <button class="analyze-btn" id="analyze-btn" disabled onclick="analyzeLocation()">
-                            <i class="fas fa-satellite"></i>
-                            Analizar Territorio
+                    <div class="map-controls">
+                        <button class="map-control-btn" onclick="centerMap()" title="Centrar en Chile">
+                            <i class="fas fa-home"></i>
                         </button>
                     </div>
-                    <div class="layer-card">
-                        <h3><i class="fas fa-layer-group"></i> Capas</h3>
-                        <div class="layer-options">
-                            <div class="layer-option">
-                                <input type="checkbox" id="layer-satellite" onchange="toggleMapType()">
-                                <label for="layer-satellite">Vista Satélite</label>
+                    <div class="map-loading hidden" id="map-loading">
+                        <div class="spinner"></div>
+                        <p style="margin-top: 1rem; color: var(--text-light);">Procesando análisis...</p>
+                    </div>
+                </div>
+
+                <!-- Sidebar Panel -->
+                <div class="sidebar-panel">
+                    <!-- Step Indicator -->
+                    <div class="panel-card">
+                        <div class="step-indicator">
+                            <div class="step active" id="step-1">
+                                <span class="step-number">1</span>
+                                <span class="step-label">Ubicación</span>
                             </div>
-                            <div class="layer-option">
-                                <input type="checkbox" id="layer-terrain" onchange="toggleTerrain()">
-                                <label for="layer-terrain">Terreno</label>
+                            <div class="step-line"></div>
+                            <div class="step" id="step-2">
+                                <span class="step-number">2</span>
+                                <span class="step-label">Enfoque</span>
+                            </div>
+                            <div class="step-line"></div>
+                            <div class="step" id="step-3">
+                                <span class="step-number">3</span>
+                                <span class="step-label">Analizar</span>
                             </div>
                         </div>
                     </div>
-                    <div class="legend-card">
-                        <h3><i class="fas fa-palette"></i> Leyenda</h3>
-                        <div class="legend-items">
-                            <div class="legend-item">
-                                <div class="legend-color" style="background: rgba(239, 68, 68, 0.4); border: 2px solid #ef4444;"></div>
-                                <span>Riesgo Alto</span>
+
+                    <!-- Location Search -->
+                    <div class="panel-card">
+                        <h3><i class="fas fa-search"></i> Buscar Localidad</h3>
+                        <div class="search-input-wrapper">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <input type="text" id="location-search" placeholder="Ej: Papudo, Valparaíso">
+                        </div>
+                        <div class="selected-location" id="selected-location">
+                            <h4 id="location-name">-</h4>
+                            <p id="location-coords">-</p>
+                        </div>
+                    </div>
+
+                    <!-- Approach Selection -->
+                    <div class="panel-card approach-panel" id="approach-panel">
+                        <div class="approach-title">
+                            <i class="fas fa-crosshairs"></i>
+                            ¿Qué deseas analizar?
+                        </div>
+                        <div class="approach-grid">
+                            <div class="approach-card" data-approach="flood-risk" onclick="selectApproach(this)">
+                                <div class="approach-icon">🌊</div>
+                                <h4>Riesgo de Inundación</h4>
+                                <p>Zonas susceptibles a inundaciones y anegamientos</p>
                             </div>
-                            <div class="legend-item">
-                                <div class="legend-color" style="background: rgba(245, 158, 11, 0.4); border: 2px solid #f59e0b;"></div>
-                                <span>Riesgo Medio</span>
+                            <div class="approach-card" data-approach="water-management" onclick="selectApproach(this)">
+                                <div class="approach-icon">💧</div>
+                                <h4>Gestión Hídrica</h4>
+                                <p>Disponibilidad de agua y estrés hídrico agrícola</p>
                             </div>
-                            <div class="legend-item">
-                                <div class="legend-color" style="background: rgba(16, 185, 129, 0.4); border: 2px solid #10b981;"></div>
-                                <span>Riesgo Bajo</span>
+                            <div class="approach-card" data-approach="drought" onclick="selectApproach(this)">
+                                <div class="approach-icon">🏜️</div>
+                                <h4>Sequía y Desertificación</h4>
+                                <p>Evolución de cobertura vegetal y degradación</p>
                             </div>
-                            <div class="legend-item">
-                                <div class="legend-color" style="background: #3b82f6;"></div>
-                                <span>Infraestructura</span>
+                            <div class="approach-card" data-approach="land-planning" onclick="selectApproach(this)">
+                                <div class="approach-icon">🏗️</div>
+                                <h4>Planificación Territorial</h4>
+                                <p>Aptitud del suelo y análisis de pendientes</p>
                             </div>
+                        </div>
+
+                        <!-- Layers for selected approach -->
+                        <div class="layers-panel" id="layers-panel">
+                            <div class="layers-title">
+                                <i class="fas fa-layer-group"></i>
+                                Capas de datos disponibles
+                            </div>
+                            <div class="layer-list" id="layer-list">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Analyze Button -->
+                    <div class="analyze-section" id="analyze-section">
+                        <button class="btn btn-primary" id="analyze-btn" onclick="analyzeLocation()" disabled>
+                            <i class="fas fa-satellite-dish"></i> Iniciar Análisis
+                        </button>
+                    </div>
+
+                    <!-- Map Layers -->
+                    <div class="panel-card">
+                        <h3><i class="fas fa-layer-group"></i> Capas del Mapa</h3>
+                        <div class="layer-toggles">
+                            <label class="layer-toggle">
+                                <input type="checkbox" id="layer-satellite" onchange="toggleMapType()">
+                                Satélite
+                            </label>
+                            <label class="layer-toggle">
+                                <input type="checkbox" id="layer-terrain" onchange="toggleTerrain()">
+                                Terreno
+                            </label>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Results -->
             <div class="demo-results">
                 <div class="result-card" id="info-panel">
                     <div class="result-icon">📍</div>
                     <div class="result-content">
                         <h4>Ubicación</h4>
-                        <p>Selecciona una localidad para ver información detallada</p>
+                        <p>Selecciona una localidad para comenzar</p>
                     </div>
                 </div>
-                <div class="result-card">
-                    <div class="result-icon">📊</div>
+                <div class="result-card" id="approach-info">
+                    <div class="result-icon">🎯</div>
                     <div class="result-content">
-                        <h4>Estadísticas</h4>
-                        <p>Los datos se cargarán al seleccionar una ubicación</p>
+                        <h4>Enfoque</h4>
+                        <p>Elige qué tipo de análisis necesitas</p>
                     </div>
                 </div>
                 <div class="result-card">
@@ -1090,7 +1206,7 @@ LANDING_HTML = '''<!DOCTYPE html>
                 <div class="solution-card">
                     <i class="fas fa-calculator"></i>
                     <h3>2. Procesamiento</h3>
-                    <p>Cálculo de NDWI para detección de agua y humedad</p>
+                    <p>Cálculo de índices espectrales (NDWI, NDVI, etc.)</p>
                 </div>
                 <div class="solution-card">
                     <i class="fas fa-mountain"></i>
@@ -1100,7 +1216,7 @@ LANDING_HTML = '''<!DOCTYPE html>
                 <div class="solution-card">
                     <i class="fas fa-chart-area"></i>
                     <h3>4. Clasificación</h3>
-                    <p>Generación de zonas de riesgo por susceptibilidad</p>
+                    <p>Generación de zonas según el enfoque seleccionado</p>
                 </div>
             </div>
         </div>
@@ -1130,7 +1246,6 @@ LANDING_HTML = '''<!DOCTYPE html>
     </footer>
 
     <!-- Google Maps JavaScript API with Places Library -->
-    <!-- Google Maps API -->
     <script src="https://maps.googleapis.com/maps/api/js?key={google_maps_key}&libraries=places&callback=initMap" async defer></script>
     
     <script>
@@ -1138,8 +1253,57 @@ LANDING_HTML = '''<!DOCTYPE html>
         let marker;
         let autocomplete;
         let selectedPlace = null;
+        let selectedApproach = null;
         
-        // Chile bounds for restricting view
+        // Approach configurations with their associated layers
+        const approachConfig = {
+            'flood-risk': {
+                name: 'Riesgo de Inundación',
+                icon: '🌊',
+                description: 'Análisis de susceptibilidad a inundaciones basado en topografía e índices de agua',
+                layers: [
+                    { name: 'NDWI - Índice de Agua', color: '#3b82f6', status: 'Disponible' },
+                    { name: 'Pendientes SRTM', color: '#f59e0b', status: 'Disponible' },
+                    { name: 'Zonas de Acumulación', color: '#ef4444', status: 'Disponible' },
+                    { name: 'Red Hídrica', color: '#06b6d4', status: 'Disponible' }
+                ]
+            },
+            'water-management': {
+                name: 'Gestión Hídrica',
+                icon: '💧',
+                description: 'Monitoreo de disponibilidad hídrica para optimización agrícola',
+                layers: [
+                    { name: 'NDWI Temporal', color: '#3b82f6', status: 'Disponible' },
+                    { name: 'Humedad del Suelo', color: '#8b5cf6', status: 'Beta' },
+                    { name: 'NDVI - Vegetación', color: '#10b981', status: 'Disponible' },
+                    { name: 'Estrés Hídrico', color: '#ef4444', status: 'Disponible' }
+                ]
+            },
+            'drought': {
+                name: 'Sequía y Desertificación',
+                icon: '🏜️',
+                description: 'Evaluación temporal de degradación de suelos y vegetación',
+                layers: [
+                    { name: 'NDVI Histórico', color: '#10b981', status: 'Disponible' },
+                    { name: 'Cambio de Cobertura', color: '#f59e0b', status: 'Disponible' },
+                    { name: 'Índice de Aridez', color: '#dc2626', status: 'Beta' },
+                    { name: 'Tendencia 5 años', color: '#6366f1', status: 'Disponible' }
+                ]
+            },
+            'land-planning': {
+                name: 'Planificación Territorial',
+                icon: '🏗️',
+                description: 'Caracterización del territorio para ordenamiento y uso de suelo',
+                layers: [
+                    { name: 'Modelo de Elevación', color: '#78716c', status: 'Disponible' },
+                    { name: 'Clasificación Pendientes', color: '#f59e0b', status: 'Disponible' },
+                    { name: 'Exposición Solar', color: '#fbbf24', status: 'Disponible' },
+                    { name: 'Uso de Suelo', color: '#10b981', status: 'Beta' }
+                ]
+            }
+        };
+        
+        // Chile bounds
         const chileBounds = {
             north: -17.5,
             south: -56.0,
@@ -1149,7 +1313,6 @@ LANDING_HTML = '''<!DOCTYPE html>
 
         // Initialize map
         function initMap() {
-            // Center of Chile
             const chileCenter = { lat: -33.4489, lng: -70.6693 };
             
             map = new google.maps.Map(document.getElementById('demo-map'), {
@@ -1198,14 +1361,28 @@ LANDING_HTML = '''<!DOCTYPE html>
                 fields: ['place_id', 'geometry', 'name', 'formatted_address']
             });
             
-            // Bias towards Chile
+            // Set bounds bias
             autocomplete.setBounds(new google.maps.LatLngBounds(
                 new google.maps.LatLng(chileBounds.south, chileBounds.west),
                 new google.maps.LatLng(chileBounds.north, chileBounds.east)
             ));
             
-            // Listen for place selection
+            // Listen for place selection from autocomplete
             autocomplete.addListener('place_changed', onPlaceChanged);
+            
+            // Also handle Enter key explicitly
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    // The place_changed event should fire automatically
+                    // But we can also try to get the first prediction
+                    const firstPrediction = document.querySelector('.pac-item');
+                    if (firstPrediction) {
+                        // Simulate click on first item
+                        google.maps.event.trigger(autocomplete, 'place_changed');
+                    }
+                }
+            });
             
             // Map click listener
             map.addListener('click', function(e) {
@@ -1217,8 +1394,15 @@ LANDING_HTML = '''<!DOCTYPE html>
         function onPlaceChanged() {
             const place = autocomplete.getPlace();
             
+            console.log('Place changed:', place);
+            
             if (!place.geometry || !place.geometry.location) {
-                console.log("No geometry for this place");
+                console.log("No geometry for this place - trying search");
+                // If user just typed and hit enter without selecting
+                const input = document.getElementById('location-search');
+                if (input.value) {
+                    searchPlace(input.value);
+                }
                 return;
             }
             
@@ -1229,9 +1413,9 @@ LANDING_HTML = '''<!DOCTYPE html>
                 lng: place.geometry.location.lng()
             };
             
-            // Update map
+            // Update map - move to location
             map.setCenter(place.geometry.location);
-            map.setZoom(14);
+            map.setZoom(13);
             
             // Update marker
             marker.setPosition(place.geometry.location);
@@ -1239,12 +1423,52 @@ LANDING_HTML = '''<!DOCTYPE html>
             
             // Update UI
             updateLocationUI(selectedPlace);
+            showApproachPanel();
+            updateStep(2);
+        }
+        
+        // Fallback search using Geocoding
+        function searchPlace(query) {
+            const geocoder = new google.maps.Geocoder();
+            
+            geocoder.geocode({ 
+                address: query + ', Chile',
+                componentRestrictions: { country: 'cl' }
+            }, function(results, status) {
+                if (status === 'OK' && results[0]) {
+                    const result = results[0];
+                    const location = result.geometry.location;
+                    
+                    selectedPlace = {
+                        name: extractLocalityName(result) || query,
+                        address: result.formatted_address,
+                        lat: location.lat(),
+                        lng: location.lng()
+                    };
+                    
+                    // Update map
+                    map.setCenter(location);
+                    map.setZoom(13);
+                    
+                    // Update marker
+                    marker.setPosition(location);
+                    marker.setVisible(true);
+                    
+                    // Update UI
+                    updateLocationUI(selectedPlace);
+                    showApproachPanel();
+                    updateStep(2);
+                }
+            });
         }
         
         function placeMarkerAndPan(latLng) {
             marker.setPosition(latLng);
             marker.setVisible(true);
             map.panTo(latLng);
+            if (map.getZoom() < 10) {
+                map.setZoom(13);
+            }
         }
         
         function reverseGeocode(latLng) {
@@ -1252,7 +1476,6 @@ LANDING_HTML = '''<!DOCTYPE html>
             
             geocoder.geocode({ location: latLng }, function(results, status) {
                 if (status === 'OK' && results[0]) {
-                    // Find locality in results
                     let locality = null;
                     for (let result of results) {
                         if (result.types.includes('locality') || 
@@ -1272,11 +1495,15 @@ LANDING_HTML = '''<!DOCTYPE html>
                     };
                     
                     updateLocationUI(selectedPlace);
+                    showApproachPanel();
+                    updateStep(2);
                 }
             });
         }
         
         function extractLocalityName(place) {
+            if (!place.address_components) return place.formatted_address.split(',')[0];
+            
             for (let component of place.address_components) {
                 if (component.types.includes('locality') || 
                     component.types.includes('administrative_area_level_3')) {
@@ -1295,25 +1522,74 @@ LANDING_HTML = '''<!DOCTYPE html>
             document.getElementById('location-coords').textContent = 
                 `${place.lat.toFixed(4)}, ${place.lng.toFixed(4)}`;
             
+            // Update info panel
+            document.getElementById('info-panel').innerHTML = `
+                <div class="result-icon">📍</div>
+                <div class="result-content">
+                    <h4>${place.name}</h4>
+                    <p>${place.address}</p>
+                </div>
+            `;
+        }
+        
+        function showApproachPanel() {
+            document.getElementById('approach-panel').classList.add('active');
+            document.getElementById('analyze-section').classList.add('active');
+        }
+        
+        function selectApproach(element) {
+            // Remove selected class from all
+            document.querySelectorAll('.approach-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            // Add selected to clicked
+            element.classList.add('selected');
+            
+            // Get approach key
+            selectedApproach = element.dataset.approach;
+            const config = approachConfig[selectedApproach];
+            
+            // Show layers panel
+            const layersPanel = document.getElementById('layers-panel');
+            layersPanel.classList.add('active');
+            
+            // Populate layers
+            const layerList = document.getElementById('layer-list');
+            layerList.innerHTML = config.layers.map(layer => `
+                <div class="layer-item">
+                    <div class="layer-color" style="background: ${layer.color}"></div>
+                    <span>${layer.name}</span>
+                    <span class="layer-status">${layer.status}</span>
+                </div>
+            `).join('');
+            
             // Enable analyze button
             document.getElementById('analyze-btn').disabled = false;
             
-            // Update info panel
-            updateInfoPanel(
-                place.name,
-                `${place.address}<br><small>Coordenadas: ${place.lat.toFixed(4)}, ${place.lng.toFixed(4)}</small>`
-            );
-        }
-        
-        function updateInfoPanel(title, content) {
-            const panel = document.getElementById('info-panel');
-            panel.innerHTML = `
-                <div class="result-icon">📍</div>
+            // Update approach info card
+            document.getElementById('approach-info').innerHTML = `
+                <div class="result-icon">${config.icon}</div>
                 <div class="result-content">
-                    <h4>${title}</h4>
-                    <p>${content}</p>
+                    <h4>${config.name}</h4>
+                    <p>${config.description}</p>
                 </div>
             `;
+            
+            updateStep(3);
+        }
+        
+        function updateStep(step) {
+            for (let i = 1; i <= 3; i++) {
+                const stepEl = document.getElementById(`step-${i}`);
+                stepEl.classList.remove('active', 'completed');
+                
+                if (i < step) {
+                    stepEl.classList.add('completed');
+                } else if (i === step) {
+                    stepEl.classList.add('active');
+                }
+            }
         }
         
         function centerMap() {
@@ -1337,21 +1613,23 @@ LANDING_HTML = '''<!DOCTYPE html>
         }
         
         function analyzeLocation() {
-            if (!selectedPlace) return;
+            if (!selectedPlace || !selectedApproach) return;
+            
+            const config = approachConfig[selectedApproach];
             
             // Show loading
             document.getElementById('map-loading').classList.remove('hidden');
             document.getElementById('analyze-btn').disabled = true;
-            document.getElementById('analyze-btn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analizando...';
+            document.getElementById('analyze-btn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
             
             // Simulate analysis (in production, this would call your GEE backend)
             setTimeout(function() {
                 document.getElementById('map-loading').classList.add('hidden');
                 document.getElementById('analyze-btn').disabled = false;
-                document.getElementById('analyze-btn').innerHTML = '<i class="fas fa-satellite"></i> Analizar Territorio';
+                document.getElementById('analyze-btn').innerHTML = '<i class="fas fa-satellite-dish"></i> Iniciar Análisis';
                 
-                // Show result
-                alert(`Análisis completado para ${selectedPlace.name}\\n\\nEsta funcionalidad conectará con Google Earth Engine para generar mapas de riesgo de inundación basados en NDWI y datos topográficos SRTM.\\n\\nCoordenadas: ${selectedPlace.lat.toFixed(4)}, ${selectedPlace.lng.toFixed(4)}`);
+                // Show results
+                alert(`Análisis "${config.name}" para ${selectedPlace.name}\n\nEsta funcionalidad conectará con Google Earth Engine para procesar:\n\n${config.layers.map(l => '• ' + l.name).join('\n')}\n\nCoordenadas: ${selectedPlace.lat.toFixed(4)}, ${selectedPlace.lng.toFixed(4)}`);
             }, 2000);
         }
     </script>
@@ -1364,6 +1642,7 @@ def landing():
     google_maps_key = os.environ.get('GOOGLE_MAPS_API_KEY', '')
     return LANDING_HTML.replace('{google_maps_key}', google_maps_key)
 
+# API Routes
 @app.route('/api/v1/health')
 def health():
     return jsonify({
@@ -1375,27 +1654,79 @@ def health():
 @app.route('/api/v1/stats')
 def stats():
     return jsonify({
-        "total_analyses": 156,
-        "municipalities_covered": 12,
-        "hectares_analyzed": 45230,
-        "last_update": "2025-11-29"
+        "total_analyses": 147,
+        "municipalities_served": 12,
+        "data_sources": ["Sentinel-2", "SRTM", "ERA5"],
+        "coverage_area_km2": 45000
+    })
+
+@app.route('/api/v1/infrastructure')
+def infrastructure():
+    return jsonify({
+        "features": [
+            {"type": "school", "name": "Escuela Papudo", "lat": -32.5127, "lng": -71.4469},
+            {"type": "hospital", "name": "CESFAM Papudo", "lat": -32.5089, "lng": -71.4523},
+            {"type": "fire_station", "name": "Bomberos Papudo", "lat": -32.5101, "lng": -71.4478}
+        ]
+    })
+
+@app.route('/api/v1/risk-zones')
+def risk_zones():
+    return jsonify({
+        "zones": [
+            {"level": "high", "area_ha": 45.2, "description": "Quebrada El Francés"},
+            {"level": "medium", "area_ha": 128.7, "description": "Sector costero norte"},
+            {"level": "low", "area_ha": 234.1, "description": "Meseta central"}
+        ]
     })
 
 @app.route('/api/docs')
 def api_docs():
-    return jsonify({
-        "name": "GeoFeedback Chile API",
-        "version": "1.0.0",
-        "description": "API para análisis geoespacial de riesgo territorial",
-        "endpoints": {
-            "/api/v1/health": "Estado del servicio",
-            "/api/v1/stats": "Estadísticas generales",
-            "/api/v1/analyze": "Análisis de territorio (POST)"
-        }
-    })
+    return '''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>GeoFeedback API Documentation</title>
+        <style>
+            body { font-family: -apple-system, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+            h1 { color: #1e3a5f; }
+            .endpoint { background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #10b981; }
+            code { background: #e5e7eb; padding: 2px 8px; border-radius: 4px; }
+            .method { background: #10b981; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold; }
+        </style>
+    </head>
+    <body>
+        <h1>🌍 GeoFeedback API v1</h1>
+        <p>API REST para acceso a datos de inteligencia territorial.</p>
+        
+        <div class="endpoint">
+            <span class="method">GET</span> <code>/api/v1/health</code>
+            <p>Estado del servicio</p>
+        </div>
+        
+        <div class="endpoint">
+            <span class="method">GET</span> <code>/api/v1/stats</code>
+            <p>Estadísticas generales de la plataforma</p>
+        </div>
+        
+        <div class="endpoint">
+            <span class="method">GET</span> <code>/api/v1/infrastructure</code>
+            <p>Infraestructura crítica georreferenciada</p>
+        </div>
+        
+        <div class="endpoint">
+            <span class="method">GET</span> <code>/api/v1/risk-zones</code>
+            <p>Zonas de riesgo clasificadas por nivel</p>
+        </div>
+        
+        <p style="margin-top: 40px; color: #6b7280;">
+            <a href="/">← Volver al inicio</a> | 
+            <a href="https://github.com/theChosen16/Demo_geofeedback">GitHub</a>
+        </p>
+    </body>
+    </html>
+    '''
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
-
-
