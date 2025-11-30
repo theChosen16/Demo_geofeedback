@@ -1245,10 +1245,9 @@ LANDING_HTML = '''<!DOCTYPE html>
         </div>
     </footer>
 
-    <!-- Google Maps JavaScript API with Places Library -->
-    <script src="https://maps.googleapis.com/maps/api/js?key={google_maps_key}&libraries=places&callback=initMap" async defer></script>
-    
+    <!-- Initialize variables and callback BEFORE loading Google Maps -->
     <script>
+        // Global variables
         let map;
         let marker;
         let autocomplete;
@@ -1629,10 +1628,17 @@ LANDING_HTML = '''<!DOCTYPE html>
                 document.getElementById('analyze-btn').innerHTML = '<i class="fas fa-satellite-dish"></i> Iniciar Análisis';
                 
                 // Show results
-                alert(`Análisis "${config.name}" para ${selectedPlace.name}\n\nEsta funcionalidad conectará con Google Earth Engine para procesar:\n\n${config.layers.map(l => '• ' + l.name).join('\n')}\n\nCoordenadas: ${selectedPlace.lat.toFixed(4)}, ${selectedPlace.lng.toFixed(4)}`);
+                var layerNames = config.layers.map(function(l) { return l.name; }).join(', ');
+                alert('Análisis: ' + config.name + '\nUbicación: ' + selectedPlace.name + '\n\nCapas a procesar:\n' + layerNames + '\n\nCoordenadas: ' + selectedPlace.lat.toFixed(4) + ', ' + selectedPlace.lng.toFixed(4));
             }, 2000);
         }
+        
+        // Expose initMap globally for Google Maps callback
+        window.initMap = initMap;
     </script>
+    
+    <!-- Load Google Maps API AFTER initMap is defined -->
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key={google_maps_key}&libraries=places&callback=initMap"></script>
 </body>
 </html>
 '''
