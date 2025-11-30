@@ -1131,7 +1131,7 @@ LANDING_HTML = '''<!DOCTYPE html>
 
     <!-- Google Maps JavaScript API with Places Library -->
     <!-- Google Maps API -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCmKOB4Vaxt8-ll8dypzRUn6PgNH2OoPxc&libraries=places&callback=initMap" async defer></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key={google_maps_key}&libraries=places&callback=initMap" async defer></script>
     
     <script>
         let map;
@@ -1361,7 +1361,8 @@ LANDING_HTML = '''<!DOCTYPE html>
 
 @app.route('/')
 def landing():
-    return LANDING_HTML
+    google_maps_key = os.environ.get('GOOGLE_MAPS_API_KEY', '')
+    return LANDING_HTML.replace('{google_maps_key}', google_maps_key)
 
 @app.route('/api/v1/health')
 def health():
@@ -1396,4 +1397,5 @@ def api_docs():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
+
 
