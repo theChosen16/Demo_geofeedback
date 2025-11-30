@@ -12,6 +12,26 @@ LANDING_HTML = '''<!DOCTYPE html>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GeoFeedback Chile - Inteligencia Territorial con IA</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Plataforma open source de análisis geoespacial que transforma datos satelitales en mapas de riesgo y herramientas de gestión hídrica para Chile.">
+    <meta name="keywords" content="geofeedback, inteligencia territorial, mapas de riesgo, Chile, Google Earth Engine, análisis satelital, NDWI, gestión hídrica">
+    <meta name="author" content="GeoFeedback Chile">
+    <link rel="canonical" href="https://geofeedback.cl/">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://geofeedback.cl/">
+    <meta property="og:title" content="GeoFeedback Chile - Inteligencia Territorial con IA">
+    <meta property="og:description" content="Plataforma open source de análisis geoespacial que transforma datos satelitales en mapas de riesgo y herramientas de gestión hídrica para Chile.">
+    <meta property="og:image" content="https://geofeedback.cl/static/og-image.png">
+    <meta property="og:locale" content="es_CL">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://geofeedback.cl/">
+    <meta name="twitter:title" content="GeoFeedback Chile - Inteligencia Territorial">
+    <meta name="twitter:description" content="Análisis geoespacial open source para gestión de riesgo territorial en Chile.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -1376,3 +1396,4 @@ def api_docs():
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
+
