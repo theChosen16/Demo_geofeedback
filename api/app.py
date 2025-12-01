@@ -596,7 +596,8 @@ LANDING_HTML = '''<!DOCTYPE html>
                     { name: "Indice Calidad Aire", color: "#10b981", api: "Air Quality API", desc: "AQI en tiempo real. Mide PM2.5, PM10, O3, NO2, CO en resolucion 500m." },
                     { name: "Contaminantes", color: "#ef4444", api: "Air Quality API", desc: "Concentracion de particulas y gases contaminantes en el aire." },
                     { name: "Potencial Solar", color: "#f59e0b", api: "Solar API", desc: "Radiacion solar anual y potencial fotovoltaico de la zona." },
-                    { name: "Cobertura Vegetal", color: "#22c55e", api: "Earth Engine", desc: "NDVI para evaluar areas verdes y su efecto en calidad ambiental." }
+                    { name: "Cobertura Vegetal", color: "#22c55e", api: "Earth Engine", desc: "NDVI para evaluar areas verdes y su efecto en calidad ambiental." },
+                    { name: "Elevacion", color: "#78716c", api: "Elevation API", desc: "Datos de elevación para análisis de dispersión de contaminantes." }
                 ]
             },
             "land-planning": {
@@ -606,48 +607,57 @@ LANDING_HTML = '''<!DOCTYPE html>
                     { name: "Modelo Elevacion", color: "#78716c", api: "Elevation API", desc: "DEM de alta precision para analisis topografico del territorio." },
                     { name: "Pendientes", color: "#f59e0b", api: "Elevation API", desc: "Clasificacion de pendientes para aptitud constructiva y agricola." },
                     { name: "Potencial Solar", color: "#fbbf24", api: "Solar API", desc: "Horas de sol y potencial para instalaciones fotovoltaicas." },
-                    { name: "Uso de Suelo", color: "#10b981", api: "Earth Engine", desc: "Clasificacion: urbano, agricola, natural, basada en Sentinel-2." }
+                    { name: "Uso de Suelo", color: "#10b981", api: "Earth Engine", desc: "Clasificacion: urbano, agricola, natural, basada en Sentinel-2." },
+                    { name: "Calidad Aire", color: "#10b981", api: "Air Quality API", desc: "Consideración de calidad del aire para zonas residenciales." }
                 ]
             }
         };
 
-        function initMap() {
+        // Dynamic Loader
+        (g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once. Ignoring:",g):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({
+            key: "GOOGLE_MAPS_KEY_PLACEHOLDER",
+            v: "weekly",
+        });
+
+        async function initMap() {
             var placeholder = document.getElementById("map-placeholder");
             if (placeholder) { placeholder.style.display = "none"; }
+            
+            const { Map } = await google.maps.importLibrary("maps");
+            const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
+            const { PlaceAutocompleteElement } = await google.maps.importLibrary("places");
+
             var chileCenter = { lat: -33.4489, lng: -70.6693 };
-            map = new google.maps.Map(document.getElementById("demo-map"), {
+            map = new Map(document.getElementById("demo-map"), {
                 center: chileCenter,
                 zoom: 5,
                 minZoom: 4,
                 maxZoom: 18,
+                mapId: "3a20a11ffd93a81165e3538d",
                 mapTypeControl: false,
                 streetViewControl: false,
                 fullscreenControl: true,
                 zoomControl: true
             });
-            marker = new google.maps.Marker({
-                map: map,
-                visible: false,
-                animation: google.maps.Animation.DROP,
-                icon: {
-                    path: google.maps.SymbolPath.CIRCLE,
-                    scale: 12,
-                    fillColor: "#10b981",
-                    fillOpacity: 1,
-                    strokeColor: "#ffffff",
-                    strokeWeight: 3
-                }
+
+            // Initialize AdvancedMarkerElement (hidden by default)
+            marker = new AdvancedMarkerElement({
+                map: null,
+                position: chileCenter,
             });
+
             elevationService = new google.maps.ElevationService();
             
-            // Initialize new PlaceAutocompleteElement
-            // Requires "Places API (New)" to be enabled in GCP
-            const autocomplete = new google.maps.places.PlaceAutocompleteElement({
+            // Initialize PlaceAutocompleteElement
+            const autocomplete = new PlaceAutocompleteElement({
                 componentRestrictions: { country: "cl" }
             });
             
             const container = document.getElementById("autocomplete-container");
-            container.appendChild(autocomplete);
+            if (container) {
+                container.innerHTML = ''; // Clear previous if any
+                container.appendChild(autocomplete);
+            }
             
             async function handlePlaceSelect(place) {
                 try {
@@ -714,16 +724,21 @@ LANDING_HTML = '''<!DOCTYPE html>
             };
             map.setCenter(loc);
             map.setZoom(14);
-            marker.setPosition(loc);
-            marker.setVisible(true);
+            
+            // Update AdvancedMarkerElement
+            marker.position = loc;
+            marker.map = map;
+            
             updateLocationUI();
             fetchLiveData(loc.lat(), loc.lng());
             checkReadyState();
         }
 
         function placeMarker(latLng) {
-            marker.setPosition(latLng);
-            marker.setVisible(true);
+            // Update AdvancedMarkerElement
+            marker.position = latLng;
+            marker.map = map;
+            
             if (map.getZoom() < 12) { map.setZoom(14); }
             map.panTo(latLng);
         }
@@ -905,9 +920,9 @@ LANDING_HTML = '''<!DOCTYPE html>
             alert("ANALISIS: " + config.name + "\\nUBICACION: " + selectedPlace.name + "\\nCOORDENADAS: " + selectedPlace.lat.toFixed(4) + ", " + selectedPlace.lng.toFixed(4) + "\\n\\nDATOS EN TIEMPO REAL:\\n- Elevacion: " + elevText + "\\n- Pendiente: " + slopeText + "\\n- Calidad Aire: " + aqiText + "\\n- Potencial Solar: " + solarText + "\\n\\nCAPAS A PROCESAR:\\n- " + indices.join("\\n- ") + "\\n\\nSiguiente paso: Conectar con Google Earth Engine.");
         }
 
-        window.initMap = initMap;
+        // Start the map initialization
+        initMap();
     </script>
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key=GOOGLE_MAPS_KEY_PLACEHOLDER&libraries=places&callback=initMap"></script>
 </body>
 </html>
 '''
