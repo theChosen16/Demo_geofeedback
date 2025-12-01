@@ -855,7 +855,7 @@ LANDING_HTML = '''<!DOCTYPE html>
             var aqiText = document.getElementById("data-aqi").textContent;
             var solarText = document.getElementById("data-solar").textContent;
             var slopeText = document.getElementById("data-slope").textContent;
-            alert("ANALISIS: " + config.name + "\nUBICACION: " + selectedPlace.name + "\nCOORDENADAS: " + selectedPlace.lat.toFixed(4) + ", " + selectedPlace.lng.toFixed(4) + "\n\nDATOS EN TIEMPO REAL:\n- Elevacion: " + elevText + "\n- Pendiente: " + slopeText + "\n- Calidad Aire: " + aqiText + "\n- Potencial Solar: " + solarText + "\n\nCAPAS A PROCESAR:\n- " + indices.join("\n- ") + "\n\nSiguiente paso: Conectar con Google Earth Engine.");
+            alert("ANALISIS: " + config.name + "\\nUBICACION: " + selectedPlace.name + "\\nCOORDENADAS: " + selectedPlace.lat.toFixed(4) + ", " + selectedPlace.lng.toFixed(4) + "\\n\\nDATOS EN TIEMPO REAL:\\n- Elevacion: " + elevText + "\\n- Pendiente: " + slopeText + "\\n- Calidad Aire: " + aqiText + "\\n- Potencial Solar: " + solarText + "\\n\\nCAPAS A PROCESAR:\\n- " + indices.join("\\n- ") + "\\n\\nSiguiente paso: Conectar con Google Earth Engine.");
         }
 
         window.initMap = initMap;
