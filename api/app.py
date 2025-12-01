@@ -958,7 +958,7 @@ LANDING_HTML = '''<!DOCTYPE html>
                 if (data.solarPotential) {
                     var potential = data.solarPotential;
                     var hours = Math.round(potential.maxSunshineHoursPerYear || 0);
-                    document.getElementById("data-solar").textContent = hours + " hrs/año";
+                    document.getElementById("data-solar").textContent = hours + " hrs/anio";
                 } else {
                     document.getElementById("data-solar").textContent = "Sin edificio";
                 }
