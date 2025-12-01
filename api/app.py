@@ -501,8 +501,7 @@ LANDING_HTML = '''<!DOCTYPE html>
                     <div class="panel">
                         <div class="panel-header"><i class="fas fa-search"></i> Buscar Ubicacion</div>
                         <div class="search-wrapper">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <input type="text" id="location-search" class="search-input" placeholder="Ej: Papudo, Valparaiso">
+                            <div id="autocomplete-container"></div>
                         </div>
                         <div class="location-badge" id="location-badge">
                             <h4 id="location-name">-</h4>
@@ -640,17 +639,31 @@ LANDING_HTML = '''<!DOCTYPE html>
                 }
             });
             elevationService = new google.maps.ElevationService();
-            var input = document.getElementById("location-search");
-            autocomplete = new google.maps.places.Autocomplete(input, {
-                componentRestrictions: { country: "cl" },
-                fields: ["place_id", "geometry", "name", "formatted_address"]
+            
+            // Initialize new PlaceAutocompleteElement
+            // Requires "Places API (New)" to be enabled in GCP
+            const autocomplete = new google.maps.places.PlaceAutocompleteElement({
+                componentRestrictions: { country: "cl" }
             });
-            autocomplete.addListener("place_changed", function() {
-                var place = autocomplete.getPlace();
-                if (place.geometry && place.geometry.location) {
-                    handlePlaceSelection(place);
-                }
+            
+            const container = document.getElementById("autocomplete-container");
+            container.appendChild(autocomplete);
+            
+            autocomplete.addEventListener("gmp-placeselect", async function(e) {
+                const place = e.place;
+                await place.fetchFields({ fields: ["displayName", "formattedAddress", "location"] });
+                
+                // Adapt new Place object to legacy structure expected by handlePlaceSelection
+                const compatPlace = {
+                    name: place.displayName,
+                    formatted_address: place.formattedAddress,
+                    geometry: {
+                        location: place.location
+                    }
+                };
+                handlePlaceSelection(compatPlace);
             });
+
             map.addListener("click", function(e) {
                 placeMarker(e.latLng);
                 reverseGeocode(e.latLng);
