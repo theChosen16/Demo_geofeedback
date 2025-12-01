@@ -41,7 +41,6 @@ LANDING_HTML = '''<!DOCTYPE html>
             color: var(--text);
             line-height: 1.6;
         }
-        
         .navbar {
             position: fixed;
             top: 0; left: 0; right: 0;
@@ -71,7 +70,6 @@ LANDING_HTML = '''<!DOCTYPE html>
         .nav-links { display: flex; gap: 2rem; align-items: center; }
         .nav-links a { color: var(--text); text-decoration: none; font-weight: 500; }
         .nav-links a:hover { color: var(--secondary); }
-        
         .btn {
             padding: 0.75rem 1.5rem;
             border-radius: 8px;
@@ -95,7 +93,6 @@ LANDING_HTML = '''<!DOCTYPE html>
         }
         .btn-secondary { background: var(--primary); color: white; }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
-
         .hero {
             min-height: 100vh;
             display: flex;
@@ -137,7 +134,6 @@ LANDING_HTML = '''<!DOCTYPE html>
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-20px); }
         }
-
         .section { padding: 6rem 2rem; }
         .section-dark { background: var(--primary); color: white; }
         .section-light { background: var(--white); }
@@ -146,7 +142,6 @@ LANDING_HTML = '''<!DOCTYPE html>
         .section-header h2 { font-size: 2.5rem; font-weight: 700; margin-bottom: 1rem; }
         .section-header p { font-size: 1.1rem; color: var(--text-light); max-width: 600px; margin: 0 auto; }
         .section-dark .section-header p { color: rgba(255,255,255,0.7); }
-
         .cards-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -168,7 +163,6 @@ LANDING_HTML = '''<!DOCTYPE html>
         .card-light i { color: var(--secondary); }
         .card-light h3 { color: var(--primary); }
         .card-light p { color: var(--text-light); }
-
         .demo-section {
             background: linear-gradient(180deg, var(--background) 0%, #e2e8f0 100%);
             padding: 6rem 2rem;
@@ -180,7 +174,6 @@ LANDING_HTML = '''<!DOCTYPE html>
             gap: 1.5rem;
             margin-top: 2rem;
         }
-
         .map-container {
             background: white;
             border-radius: 16px;
@@ -217,7 +210,6 @@ LANDING_HTML = '''<!DOCTYPE html>
             color: var(--text-light);
         }
         .map-placeholder i { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
-
         .sidebar { display: flex; flex-direction: column; gap: 1rem; }
         .panel {
             background: white;
@@ -234,7 +226,6 @@ LANDING_HTML = '''<!DOCTYPE html>
             gap: 0.5rem;
             font-weight: 500;
         }
-
         .search-wrapper { position: relative; }
         .search-wrapper i {
             position: absolute;
@@ -250,7 +241,6 @@ LANDING_HTML = '''<!DOCTYPE html>
             font-size: 0.95rem;
         }
         .search-input:focus { outline: none; border-color: var(--secondary); }
-
         .location-badge {
             display: none;
             background: linear-gradient(135deg, var(--secondary), var(--secondary-light));
@@ -262,7 +252,6 @@ LANDING_HTML = '''<!DOCTYPE html>
         .location-badge.active { display: block; }
         .location-badge h4 { font-size: 1rem; margin-bottom: 0.25rem; }
         .location-badge p { font-size: 0.8rem; opacity: 0.9; margin: 0; }
-
         .approach-select {
             width: 100%;
             padding: 0.875rem;
@@ -273,7 +262,6 @@ LANDING_HTML = '''<!DOCTYPE html>
             background: white;
         }
         .approach-select:focus { outline: none; border-color: var(--secondary); }
-
         .indices-panel {
             display: none;
             margin-top: 1rem;
@@ -310,9 +298,7 @@ LANDING_HTML = '''<!DOCTYPE html>
             border-radius: 4px;
             margin-left: auto;
         }
-
         #analyze-btn { width: 100%; padding: 1rem; font-size: 1rem; margin-top: 0.5rem; }
-
         .status-bar { display: flex; gap: 1rem; margin-bottom: 1rem; }
         .status-item {
             display: flex;
@@ -323,7 +309,6 @@ LANDING_HTML = '''<!DOCTYPE html>
         }
         .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); }
         .status-dot.ready { background: var(--secondary); }
-
         .results-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -339,11 +324,9 @@ LANDING_HTML = '''<!DOCTYPE html>
             gap: 1rem;
             box-shadow: var(--shadow);
         }
-        .result-icon { font-size: 2rem; }
+        .result-icon { font-size: 2rem; color: var(--secondary); }
         .result-content h4 { font-size: 1rem; color: var(--primary); margin-bottom: 0.25rem; }
         .result-content p { font-size: 0.85rem; color: var(--text-light); margin: 0; }
-
-        /* Live Data Panel */
         .live-data {
             display: none;
             margin-top: 1rem;
@@ -372,7 +355,6 @@ LANDING_HTML = '''<!DOCTYPE html>
         }
         .live-data-label { font-size: 0.7rem; opacity: 0.7; }
         .live-data-value { font-size: 0.9rem; font-weight: 600; }
-
         footer {
             background: var(--primary);
             color: white;
@@ -403,7 +385,6 @@ LANDING_HTML = '''<!DOCTYPE html>
             color: white;
         }
         .social-links a:hover { background: var(--secondary); }
-
         @media (max-width: 1024px) {
             .demo-layout { grid-template-columns: 1fr; }
             .sidebar { order: -1; }
@@ -417,7 +398,6 @@ LANDING_HTML = '''<!DOCTYPE html>
             .hero-visual { display: none; }
             .nav-links { display: none; }
         }
-
         .pac-container {
             border-radius: 8px;
             border: 1px solid var(--border);
@@ -428,7 +408,6 @@ LANDING_HTML = '''<!DOCTYPE html>
         .pac-item { padding: 10px 14px; cursor: pointer; }
         .pac-item:hover { background: var(--background); }
         .pac-icon { display: none; }
-
         .loading-spinner {
             display: inline-block;
             width: 16px;
@@ -444,41 +423,28 @@ LANDING_HTML = '''<!DOCTYPE html>
 <body>
     <nav class="navbar">
         <div class="navbar-content">
-            <a href="#" class="logo">
-                <i class="fas fa-globe-americas"></i>
-                GeoFeedback
-            </a>
+            <a href="#" class="logo"><i class="fas fa-globe-americas"></i>GeoFeedback</a>
             <div class="nav-links">
                 <a href="#problema">Problema</a>
                 <a href="#solucion">Solucion</a>
                 <a href="#demo">Demo</a>
-                <a href="/api/docs" class="btn btn-primary">
-                    <i class="fas fa-code"></i> API
-                </a>
+                <a href="/api/docs" class="btn btn-primary"><i class="fas fa-code"></i> API</a>
             </div>
         </div>
     </nav>
-
     <section class="hero">
         <div class="hero-content">
             <div class="hero-text">
                 <h1>Democratizando la <span>Inteligencia Territorial</span></h1>
                 <p>Plataforma open source que transforma datos satelitales en mapas de riesgo y herramientas de gestion hidrica para Chile.</p>
                 <div class="hero-buttons">
-                    <a href="#demo" class="btn btn-primary">
-                        <i class="fas fa-map-marked-alt"></i> Explorar Demo
-                    </a>
-                    <a href="https://github.com/theChosen16/Demo_geofeedback" target="_blank" class="btn btn-secondary">
-                        <i class="fab fa-github"></i> GitHub
-                    </a>
+                    <a href="#demo" class="btn btn-primary"><i class="fas fa-map-marked-alt"></i> Explorar Demo</a>
+                    <a href="https://github.com/theChosen16/Demo_geofeedback" target="_blank" class="btn btn-secondary"><i class="fab fa-github"></i> GitHub</a>
                 </div>
             </div>
-            <div class="hero-visual">
-                <i class="fas fa-satellite satellite-icon"></i>
-            </div>
+            <div class="hero-visual"><i class="fas fa-satellite satellite-icon"></i></div>
         </div>
     </section>
-
     <section id="problema" class="section section-dark">
         <div class="container">
             <div class="section-header">
@@ -486,25 +452,12 @@ LANDING_HTML = '''<!DOCTYPE html>
                 <p>Chile enfrenta desafios criticos en gestion territorial</p>
             </div>
             <div class="cards-grid">
-                <div class="card">
-                    <i class="fas fa-balance-scale"></i>
-                    <h3>Ley 21.364</h3>
-                    <p>Municipios deben elaborar planes de emergencia y mapas de riesgo, pero carecen de herramientas accesibles.</p>
-                </div>
-                <div class="card">
-                    <i class="fas fa-tint-slash"></i>
-                    <h3>Mega-sequia</h3>
-                    <p>15 anios de deficit hidrico. Agricultores necesitan datos para optimizar uso del agua.</p>
-                </div>
-                <div class="card">
-                    <i class="fas fa-dollar-sign"></i>
-                    <h3>Alto Costo</h3>
-                    <p>Estudios geoespaciales profesionales son costosos para municipios rurales.</p>
-                </div>
+                <div class="card"><i class="fas fa-balance-scale"></i><h3>Ley 21.364</h3><p>Municipios deben elaborar planes de emergencia y mapas de riesgo, pero carecen de herramientas accesibles.</p></div>
+                <div class="card"><i class="fas fa-tint-slash"></i><h3>Mega-sequia</h3><p>15 anios de deficit hidrico. Agricultores necesitan datos para optimizar uso del agua.</p></div>
+                <div class="card"><i class="fas fa-dollar-sign"></i><h3>Alto Costo</h3><p>Estudios geoespaciales profesionales son costosos para municipios rurales.</p></div>
             </div>
         </div>
     </section>
-
     <section id="solucion" class="section section-light">
         <div class="container">
             <div class="section-header">
@@ -512,37 +465,19 @@ LANDING_HTML = '''<!DOCTYPE html>
                 <p>Inteligencia territorial con APIs de Google Maps Platform + Google Earth Engine</p>
             </div>
             <div class="cards-grid">
-                <div class="card card-light">
-                    <i class="fab fa-google"></i>
-                    <h3>Google Earth Engine</h3>
-                    <p>Procesamiento de datos satelitales Sentinel-2</p>
-                </div>
-                <div class="card card-light">
-                    <i class="fas fa-mountain"></i>
-                    <h3>Elevation API</h3>
-                    <p>Datos topograficos en tiempo real</p>
-                </div>
-                <div class="card card-light">
-                    <i class="fas fa-wind"></i>
-                    <h3>Air Quality API</h3>
-                    <p>Calidad del aire resolucion 500m</p>
-                </div>
-                <div class="card card-light">
-                    <i class="fas fa-sun"></i>
-                    <h3>Solar API</h3>
-                    <p>Potencial fotovoltaico de cubiertas</p>
-                </div>
+                <div class="card card-light"><i class="fab fa-google"></i><h3>Google Earth Engine</h3><p>Procesamiento de datos satelitales Sentinel-2</p></div>
+                <div class="card card-light"><i class="fas fa-mountain"></i><h3>Elevation API</h3><p>Datos topograficos en tiempo real</p></div>
+                <div class="card card-light"><i class="fas fa-wind"></i><h3>Air Quality API</h3><p>Calidad del aire resolucion 500m</p></div>
+                <div class="card card-light"><i class="fas fa-sun"></i><h3>Solar API</h3><p>Potencial fotovoltaico de cubiertas</p></div>
             </div>
         </div>
     </section>
-
     <section id="demo" class="demo-section">
         <div class="demo-container">
             <div class="section-header">
                 <h2>Demo Interactivo</h2>
                 <p>Selecciona ubicacion y enfoque para explorar datos en tiempo real</p>
             </div>
-
             <div class="demo-layout">
                 <div class="map-container">
                     <div id="demo-map">
@@ -552,33 +487,19 @@ LANDING_HTML = '''<!DOCTYPE html>
                         </div>
                     </div>
                     <div class="map-controls">
-                        <button class="map-control-btn" onclick="centerMap()" title="Centrar en Chile">
-                            <i class="fas fa-home"></i>
-                        </button>
-                        <button class="map-control-btn" onclick="toggleMapType()" title="Cambiar vista">
-                            <i class="fas fa-layer-group"></i>
-                        </button>
+                        <button class="map-control-btn" onclick="centerMap()" title="Centrar en Chile"><i class="fas fa-home"></i></button>
+                        <button class="map-control-btn" onclick="toggleMapType()" title="Cambiar vista"><i class="fas fa-layer-group"></i></button>
                     </div>
                 </div>
-
                 <div class="sidebar">
                     <div class="panel">
                         <div class="status-bar">
-                            <div class="status-item">
-                                <span class="status-dot" id="status-location"></span>
-                                Ubicacion
-                            </div>
-                            <div class="status-item">
-                                <span class="status-dot" id="status-approach"></span>
-                                Enfoque
-                            </div>
+                            <div class="status-item"><span class="status-dot" id="status-location"></span>Ubicacion</div>
+                            <div class="status-item"><span class="status-dot" id="status-approach"></span>Enfoque</div>
                         </div>
                     </div>
-
                     <div class="panel">
-                        <div class="panel-header">
-                            <i class="fas fa-search"></i> Buscar Ubicacion
-                        </div>
+                        <div class="panel-header"><i class="fas fa-search"></i> Buscar Ubicacion</div>
                         <div class="search-wrapper">
                             <i class="fas fa-map-marker-alt"></i>
                             <input type="text" id="location-search" class="search-input" placeholder="Ej: Papudo, Valparaiso">
@@ -587,35 +508,18 @@ LANDING_HTML = '''<!DOCTYPE html>
                             <h4 id="location-name">-</h4>
                             <p id="location-coords">-</p>
                         </div>
-                        
-                        <!-- Live Data from APIs -->
                         <div class="live-data" id="live-data">
                             <h4><i class="fas fa-broadcast-tower"></i> Datos en tiempo real</h4>
                             <div class="live-data-grid">
-                                <div class="live-data-item">
-                                    <div class="live-data-label">Elevacion</div>
-                                    <div class="live-data-value" id="data-elevation">--</div>
-                                </div>
-                                <div class="live-data-item">
-                                    <div class="live-data-label">Calidad Aire (AQI)</div>
-                                    <div class="live-data-value" id="data-aqi">--</div>
-                                </div>
-                                <div class="live-data-item">
-                                    <div class="live-data-label">Potencial Solar</div>
-                                    <div class="live-data-value" id="data-solar">--</div>
-                                </div>
-                                <div class="live-data-item">
-                                    <div class="live-data-label">Pendiente</div>
-                                    <div class="live-data-value" id="data-slope">--</div>
-                                </div>
+                                <div class="live-data-item"><div class="live-data-label">Elevacion</div><div class="live-data-value" id="data-elevation">--</div></div>
+                                <div class="live-data-item"><div class="live-data-label">Calidad Aire (AQI)</div><div class="live-data-value" id="data-aqi">--</div></div>
+                                <div class="live-data-item"><div class="live-data-label">Potencial Solar</div><div class="live-data-value" id="data-solar">--</div></div>
+                                <div class="live-data-item"><div class="live-data-label">Pendiente</div><div class="live-data-value" id="data-slope">--</div></div>
                             </div>
                         </div>
                     </div>
-
                     <div class="panel">
-                        <div class="panel-header">
-                            <i class="fas fa-crosshairs"></i> Seleccionar Enfoque
-                        </div>
+                        <div class="panel-header"><i class="fas fa-crosshairs"></i> Seleccionar Enfoque</div>
                         <select id="approach-select" class="approach-select" onchange="onApproachChange()">
                             <option value="">-- Elige un enfoque de analisis --</option>
                             <option value="flood-risk">Riesgo de Inundacion</option>
@@ -623,75 +527,40 @@ LANDING_HTML = '''<!DOCTYPE html>
                             <option value="environmental">Calidad Ambiental</option>
                             <option value="land-planning">Planificacion Territorial</option>
                         </select>
-
                         <div class="indices-panel" id="indices-panel">
                             <div class="indices-title">Indices y datos del analisis:</div>
                             <div id="indices-list"></div>
                         </div>
                     </div>
-
                     <div class="panel">
-                        <button class="btn btn-primary" id="analyze-btn" onclick="analyzeTerritory()" disabled>
-                            <i class="fas fa-satellite-dish"></i> Iniciar Analisis
-                        </button>
-                        <p style="font-size: 0.8rem; color: var(--text-light); margin-top: 0.5rem; text-align: center;">
-                            Requiere ubicacion y enfoque seleccionados
-                        </p>
+                        <button class="btn btn-primary" id="analyze-btn" onclick="analyzeTerritory()" disabled><i class="fas fa-satellite-dish"></i> Iniciar Analisis</button>
+                        <p style="font-size: 0.8rem; color: var(--text-light); margin-top: 0.5rem; text-align: center;">Requiere ubicacion y enfoque seleccionados</p>
                     </div>
                 </div>
             </div>
-
             <div class="results-grid">
-                <div class="result-card" id="result-location">
-                    <div class="result-icon">📍</div>
-                    <div class="result-content">
-                        <h4>Ubicacion</h4>
-                        <p>Busca o haz clic en el mapa</p>
-                    </div>
-                </div>
-                <div class="result-card" id="result-approach">
-                    <div class="result-icon">🎯</div>
-                    <div class="result-content">
-                        <h4>Enfoque</h4>
-                        <p>Selecciona el tipo de analisis</p>
-                    </div>
-                </div>
-                <div class="result-card">
-                    <div class="result-icon">🛰️</div>
-                    <div class="result-content">
-                        <h4>APIs Integradas</h4>
-                        <p>Elevation, Air Quality, Solar, Geocoding</p>
-                    </div>
-                </div>
+                <div class="result-card" id="result-location"><i class="fas fa-map-marker-alt result-icon"></i><div class="result-content"><h4>Ubicacion</h4><p>Busca o haz clic en el mapa</p></div></div>
+                <div class="result-card" id="result-approach"><i class="fas fa-crosshairs result-icon"></i><div class="result-content"><h4>Enfoque</h4><p>Selecciona el tipo de analisis</p></div></div>
+                <div class="result-card"><i class="fas fa-satellite result-icon"></i><div class="result-content"><h4>APIs Integradas</h4><p>Elevation, Air Quality, Solar, Geocoding</p></div></div>
             </div>
         </div>
     </section>
-
     <footer>
         <div class="footer-content">
-            <div class="footer-logo">
-                <i class="fas fa-globe-americas"></i>
-                GeoFeedback Chile
-            </div>
+            <div class="footer-logo"><i class="fas fa-globe-americas"></i>GeoFeedback Chile</div>
             <div class="footer-links">
                 <a href="#demo">Demo</a>
                 <a href="/api/docs">API</a>
                 <a href="https://github.com/theChosen16/Demo_geofeedback" target="_blank">GitHub</a>
             </div>
             <div class="social-links">
-                <a href="https://github.com/theChosen16/Demo_geofeedback" target="_blank">
-                    <i class="fab fa-github"></i>
-                </a>
-                <a href="https://www.linkedin.com/in/alejandro-olivares-verdugo/" target="_blank">
-                    <i class="fab fa-linkedin-in"></i>
-                </a>
+                <a href="https://github.com/theChosen16/Demo_geofeedback" target="_blank"><i class="fab fa-github"></i></a>
+                <a href="https://www.linkedin.com/in/alejandro-olivares-verdugo/" target="_blank"><i class="fab fa-linkedin-in"></i></a>
             </div>
         </div>
     </footer>
-
     <script>
         var MAPS_API_KEY = "GOOGLE_MAPS_KEY_PLACEHOLDER";
-        
         var map = null;
         var marker = null;
         var autocomplete = null;
@@ -703,7 +572,7 @@ LANDING_HTML = '''<!DOCTYPE html>
         var approaches = {
             "flood-risk": {
                 name: "Riesgo de Inundacion",
-                icon: "🌊",
+                icon: "water",
                 indices: [
                     { name: "Elevacion", color: "#78716c", api: "Elevation API", desc: "Altura sobre nivel del mar. Zonas bajas son mas susceptibles a inundaciones." },
                     { name: "Pendiente", color: "#f59e0b", api: "Elevation API", desc: "Grado de inclinacion del terreno calculado desde puntos de elevacion." },
@@ -713,7 +582,7 @@ LANDING_HTML = '''<!DOCTYPE html>
             },
             "water-management": {
                 name: "Gestion Hidrica",
-                icon: "💧",
+                icon: "tint",
                 indices: [
                     { name: "NDWI Temporal", color: "#3b82f6", api: "Earth Engine", desc: "Serie temporal del indice de agua para detectar variaciones estacionales." },
                     { name: "NDMI", color: "#8b5cf6", api: "Earth Engine", desc: "Indice de Humedad. Mide contenido de agua en vegetacion usando SWIR." },
@@ -723,7 +592,7 @@ LANDING_HTML = '''<!DOCTYPE html>
             },
             "environmental": {
                 name: "Calidad Ambiental",
-                icon: "🌿",
+                icon: "leaf",
                 indices: [
                     { name: "Indice Calidad Aire", color: "#10b981", api: "Air Quality API", desc: "AQI en tiempo real. Mide PM2.5, PM10, O3, NO2, CO en resolucion 500m." },
                     { name: "Contaminantes", color: "#ef4444", api: "Air Quality API", desc: "Concentracion de particulas y gases contaminantes en el aire." },
@@ -733,7 +602,7 @@ LANDING_HTML = '''<!DOCTYPE html>
             },
             "land-planning": {
                 name: "Planificacion Territorial",
-                icon: "🏗️",
+                icon: "building",
                 indices: [
                     { name: "Modelo Elevacion", color: "#78716c", api: "Elevation API", desc: "DEM de alta precision para analisis topografico del territorio." },
                     { name: "Pendientes", color: "#f59e0b", api: "Elevation API", desc: "Clasificacion de pendientes para aptitud constructiva y agricola." },
@@ -744,13 +613,9 @@ LANDING_HTML = '''<!DOCTYPE html>
         };
 
         function initMap() {
-            console.log("Initializing map...");
-            
             var placeholder = document.getElementById("map-placeholder");
-            if (placeholder) placeholder.style.display = "none";
-
+            if (placeholder) { placeholder.style.display = "none"; }
             var chileCenter = { lat: -33.4489, lng: -70.6693 };
-            
             map = new google.maps.Map(document.getElementById("demo-map"), {
                 center: chileCenter,
                 zoom: 5,
@@ -761,7 +626,6 @@ LANDING_HTML = '''<!DOCTYPE html>
                 fullscreenControl: true,
                 zoomControl: true
             });
-
             marker = new google.maps.Marker({
                 map: map,
                 visible: false,
@@ -775,45 +639,36 @@ LANDING_HTML = '''<!DOCTYPE html>
                     strokeWeight: 3
                 }
             });
-
             elevationService = new google.maps.ElevationService();
-
             var input = document.getElementById("location-search");
             autocomplete = new google.maps.places.Autocomplete(input, {
                 componentRestrictions: { country: "cl" },
                 fields: ["place_id", "geometry", "name", "formatted_address"]
             });
-
             autocomplete.addListener("place_changed", function() {
                 var place = autocomplete.getPlace();
                 if (place.geometry && place.geometry.location) {
                     handlePlaceSelection(place);
                 }
             });
-
             map.addListener("click", function(e) {
                 placeMarker(e.latLng);
                 reverseGeocode(e.latLng);
             });
-
-            console.log("Map initialized successfully");
         }
 
         function handlePlaceSelection(place) {
             var loc = place.geometry.location;
-            
             selectedPlace = {
                 name: place.name || "Ubicacion",
                 address: place.formatted_address || "",
                 lat: loc.lat(),
                 lng: loc.lng()
             };
-
             map.setCenter(loc);
             map.setZoom(14);
             marker.setPosition(loc);
             marker.setVisible(true);
-
             updateLocationUI();
             fetchLiveData(loc.lat(), loc.lng());
             checkReadyState();
@@ -822,18 +677,16 @@ LANDING_HTML = '''<!DOCTYPE html>
         function placeMarker(latLng) {
             marker.setPosition(latLng);
             marker.setVisible(true);
-            if (map.getZoom() < 12) map.setZoom(14);
+            if (map.getZoom() < 12) { map.setZoom(14); }
             map.panTo(latLng);
         }
 
         function reverseGeocode(latLng) {
             var geocoder = new google.maps.Geocoder();
-            
             geocoder.geocode({ location: latLng }, function(results, status) {
                 if (status === "OK" && results[0]) {
                     var place = results[0];
                     var name = "Ubicacion";
-                    
                     for (var i = 0; i < place.address_components.length; i++) {
                         var comp = place.address_components[i];
                         if (comp.types.indexOf("locality") >= 0 || comp.types.indexOf("administrative_area_level_3") >= 0) {
@@ -841,14 +694,12 @@ LANDING_HTML = '''<!DOCTYPE html>
                             break;
                         }
                     }
-
                     selectedPlace = {
                         name: name,
                         address: place.formatted_address,
                         lat: latLng.lat(),
                         lng: latLng.lng()
                     };
-
                     updateLocationUI();
                     fetchLiveData(latLng.lat(), latLng.lng());
                     checkReadyState();
@@ -862,9 +713,8 @@ LANDING_HTML = '''<!DOCTYPE html>
             document.getElementById("location-name").textContent = selectedPlace.name;
             document.getElementById("location-coords").textContent = selectedPlace.lat.toFixed(4) + ", " + selectedPlace.lng.toFixed(4);
             document.getElementById("status-location").classList.add("ready");
-            
-            document.getElementById("result-location").innerHTML = 
-                '<div class="result-icon">📍</div><div class="result-content"><h4>' + selectedPlace.name + '</h4><p>' + selectedPlace.address + '</p></div>';
+            var resultEl = document.getElementById("result-location");
+            resultEl.innerHTML = '<i class="fas fa-map-marker-alt result-icon"></i><div class="result-content"><h4>' + selectedPlace.name + '</h4><p>' + selectedPlace.address + '</p></div>';
         }
 
         function fetchLiveData(lat, lng) {
@@ -873,8 +723,6 @@ LANDING_HTML = '''<!DOCTYPE html>
             document.getElementById("data-aqi").innerHTML = '<span class="loading-spinner"></span>';
             document.getElementById("data-solar").innerHTML = '<span class="loading-spinner"></span>';
             document.getElementById("data-slope").innerHTML = '<span class="loading-spinner"></span>';
-
-            // Fetch Elevation
             if (elevationService) {
                 elevationService.getElevationForLocations({
                     locations: [{ lat: lat, lng: lng }]
@@ -882,8 +730,6 @@ LANDING_HTML = '''<!DOCTYPE html>
                     if (status === "OK" && results[0]) {
                         var elev = Math.round(results[0].elevation);
                         document.getElementById("data-elevation").textContent = elev + " m";
-                        
-                        // Calculate slope from nearby points
                         calculateSlope(lat, lng, elev);
                     } else {
                         document.getElementById("data-elevation").textContent = "N/D";
@@ -891,31 +737,26 @@ LANDING_HTML = '''<!DOCTYPE html>
                     }
                 });
             }
-
-            // Fetch Air Quality
             fetchAirQuality(lat, lng);
-            
-            // Fetch Solar (simulated - requires building data)
             fetchSolarPotential(lat, lng);
         }
 
         function calculateSlope(lat, lng, centerElev) {
-            var offset = 0.001; // ~100m
+            var offset = 0.001;
             var points = [
                 { lat: lat + offset, lng: lng },
                 { lat: lat - offset, lng: lng },
                 { lat: lat, lng: lng + offset },
                 { lat: lat, lng: lng - offset }
             ];
-            
             elevationService.getElevationForLocations({ locations: points }, function(results, status) {
                 if (status === "OK" && results.length === 4) {
                     var maxDiff = 0;
                     for (var i = 0; i < results.length; i++) {
                         var diff = Math.abs(results[i].elevation - centerElev);
-                        if (diff > maxDiff) maxDiff = diff;
+                        if (diff > maxDiff) { maxDiff = diff; }
                     }
-                    var slopePercent = (maxDiff / 111) * 100; // Approx slope
+                    var slopePercent = (maxDiff / 111) * 100;
                     var slopeClass = slopePercent < 5 ? "Plano" : slopePercent < 15 ? "Suave" : slopePercent < 30 ? "Moderado" : "Pronunciado";
                     document.getElementById("data-slope").textContent = Math.round(slopePercent) + "% (" + slopeClass + ")";
                 } else {
@@ -926,13 +767,10 @@ LANDING_HTML = '''<!DOCTYPE html>
 
         function fetchAirQuality(lat, lng) {
             var url = "https://airquality.googleapis.com/v1/currentConditions:lookup?key=" + MAPS_API_KEY;
-            
             fetch(url, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    location: { latitude: lat, longitude: lng }
-                })
+                body: JSON.stringify({ location: { latitude: lat, longitude: lng } })
             })
             .then(function(response) { return response.json(); })
             .then(function(data) {
@@ -944,34 +782,27 @@ LANDING_HTML = '''<!DOCTYPE html>
                     document.getElementById("data-aqi").textContent = "N/D";
                 }
             })
-            .catch(function() {
-                document.getElementById("data-aqi").textContent = "N/D";
-            });
+            .catch(function() { document.getElementById("data-aqi").textContent = "N/D"; });
         }
 
         function fetchSolarPotential(lat, lng) {
             var url = "https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=" + lat + "&location.longitude=" + lng + "&requiredQuality=LOW&key=" + MAPS_API_KEY;
-            
             fetch(url)
             .then(function(response) { return response.json(); })
             .then(function(data) {
                 if (data.solarPotential) {
-                    var potential = data.solarPotential;
-                    var hours = Math.round(potential.maxSunshineHoursPerYear || 0);
-                    document.getElementById("data-solar").textContent = hours + " hrs/anio";
+                    var hours = Math.round(data.solarPotential.maxSunshineHoursPerYear || 0);
+                    document.getElementById("data-solar").textContent = hours + " hrs/yr";
                 } else {
                     document.getElementById("data-solar").textContent = "Sin edificio";
                 }
             })
-            .catch(function() {
-                document.getElementById("data-solar").textContent = "N/D";
-            });
+            .catch(function() { document.getElementById("data-solar").textContent = "N/D"; });
         }
 
         function onApproachChange() {
             var select = document.getElementById("approach-select");
             var value = select.value;
-            
             if (!value) {
                 selectedApproach = null;
                 document.getElementById("indices-panel").classList.remove("active");
@@ -979,30 +810,18 @@ LANDING_HTML = '''<!DOCTYPE html>
                 checkReadyState();
                 return;
             }
-
             selectedApproach = value;
             var config = approaches[value];
             document.getElementById("status-approach").classList.add("ready");
-
             var html = "";
             for (var i = 0; i < config.indices.length; i++) {
                 var idx = config.indices[i];
-                html += '<div class="index-item">' +
-                    '<div class="index-header">' +
-                    '<div class="index-color" style="background:' + idx.color + '"></div>' +
-                    '<span class="index-name">' + idx.name + '</span>' +
-                    '<span class="index-api">' + idx.api + '</span>' +
-                    '</div>' +
-                    '<div class="index-desc">' + idx.desc + '</div>' +
-                    '</div>';
+                html += '<div class="index-item"><div class="index-header"><div class="index-color" style="background:' + idx.color + '"></div><span class="index-name">' + idx.name + '</span><span class="index-api">' + idx.api + '</span></div><div class="index-desc">' + idx.desc + '</div></div>';
             }
-
             document.getElementById("indices-list").innerHTML = html;
             document.getElementById("indices-panel").classList.add("active");
-
-            document.getElementById("result-approach").innerHTML = 
-                '<div class="result-icon">' + config.icon + '</div><div class="result-content"><h4>' + config.name + '</h4><p>' + config.indices.length + ' capas de datos</p></div>';
-
+            var resultEl = document.getElementById("result-approach");
+            resultEl.innerHTML = '<i class="fas fa-' + config.icon + ' result-icon"></i><div class="result-content"><h4>' + config.name + '</h4><p>' + config.indices.length + ' capas de datos</p></div>';
             checkReadyState();
         }
 
@@ -1026,31 +845,17 @@ LANDING_HTML = '''<!DOCTYPE html>
         }
 
         function analyzeTerritory() {
-            if (!selectedPlace || !selectedApproach) return;
-
+            if (!selectedPlace || !selectedApproach) { return; }
             var config = approaches[selectedApproach];
             var indices = [];
             for (var i = 0; i < config.indices.length; i++) {
                 indices.push(config.indices[i].name + " (" + config.indices[i].api + ")");
             }
-
             var elevText = document.getElementById("data-elevation").textContent;
             var aqiText = document.getElementById("data-aqi").textContent;
             var solarText = document.getElementById("data-solar").textContent;
             var slopeText = document.getElementById("data-slope").textContent;
-
-            alert(
-                "ANALISIS: " + config.name + "\n" +
-                "UBICACION: " + selectedPlace.name + "\n" +
-                "COORDENADAS: " + selectedPlace.lat.toFixed(4) + ", " + selectedPlace.lng.toFixed(4) + "\n\n" +
-                "DATOS EN TIEMPO REAL:\n" +
-                "- Elevacion: " + elevText + "\n" +
-                "- Pendiente: " + slopeText + "\n" +
-                "- Calidad Aire: " + aqiText + "\n" +
-                "- Potencial Solar: " + solarText + "\n\n" +
-                "CAPAS A PROCESAR:\n- " + indices.join("\n- ") + "\n\n" +
-                "Siguiente paso: Conectar con Google Earth Engine para procesar indices satelitales."
-            );
+            alert("ANALISIS: " + config.name + "\nUBICACION: " + selectedPlace.name + "\nCOORDENADAS: " + selectedPlace.lat.toFixed(4) + ", " + selectedPlace.lng.toFixed(4) + "\n\nDATOS EN TIEMPO REAL:\n- Elevacion: " + elevText + "\n- Pendiente: " + slopeText + "\n- Calidad Aire: " + aqiText + "\n- Potencial Solar: " + solarText + "\n\nCAPAS A PROCESAR:\n- " + indices.join("\n- ") + "\n\nSiguiente paso: Conectar con Google Earth Engine.");
         }
 
         window.initMap = initMap;
@@ -1084,20 +889,7 @@ def risk_zones():
 
 @app.route('/api/docs')
 def api_docs():
-    return '''<!DOCTYPE html>
-<html><head><title>GeoFeedback API</title>
-<style>body{font-family:sans-serif;max-width:800px;margin:50px auto;padding:20px}
-h1{color:#1e3a5f}.endpoint{background:#f8fafc;padding:20px;border-radius:8px;margin:20px 0;border-left:4px solid #10b981}
-code{background:#e5e7eb;padding:2px 8px;border-radius:4px}.method{background:#10b981;color:white;padding:4px 12px;border-radius:4px}</style>
-</head><body>
-<h1>GeoFeedback API v1</h1>
-<p>APIs integradas: Maps JavaScript, Elevation, Air Quality, Solar, Geocoding</p>
-<div class="endpoint"><span class="method">GET</span> <code>/api/v1/health</code><p>Estado del servicio</p></div>
-<div class="endpoint"><span class="method">GET</span> <code>/api/v1/stats</code><p>Estadisticas</p></div>
-<div class="endpoint"><span class="method">GET</span> <code>/api/v1/infrastructure</code><p>Infraestructura</p></div>
-<div class="endpoint"><span class="method">GET</span> <code>/api/v1/risk-zones</code><p>Zonas de riesgo</p></div>
-<p><a href="/">Volver</a></p>
-</body></html>'''
+    return '''<!DOCTYPE html><html><head><title>GeoFeedback API</title><style>body{font-family:sans-serif;max-width:800px;margin:50px auto;padding:20px}h1{color:#1e3a5f}.endpoint{background:#f8fafc;padding:20px;border-radius:8px;margin:20px 0;border-left:4px solid #10b981}code{background:#e5e7eb;padding:2px 8px;border-radius:4px}.method{background:#10b981;color:white;padding:4px 12px;border-radius:4px}</style></head><body><h1>GeoFeedback API v1</h1><p>APIs integradas: Maps JavaScript, Elevation, Air Quality, Solar, Geocoding</p><div class="endpoint"><span class="method">GET</span> <code>/api/v1/health</code><p>Estado del servicio</p></div><div class="endpoint"><span class="method">GET</span> <code>/api/v1/stats</code><p>Estadisticas</p></div><div class="endpoint"><span class="method">GET</span> <code>/api/v1/infrastructure</code><p>Infraestructura</p></div><div class="endpoint"><span class="method">GET</span> <code>/api/v1/risk-zones</code><p>Zonas de riesgo</p></div><p><a href="/">Volver</a></p></body></html>'''
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
