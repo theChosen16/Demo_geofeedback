@@ -677,11 +677,24 @@ LANDING_HTML = '''<!DOCTYPE html>
 
             // Use the new standard event 'gmp-select'
             autocomplete.addEventListener("gmp-select", async function(e) {
-                await handlePlaceSelect(e.place);
+                console.log("gmp-select event fired", e);
+                let place;
+                if (e.place) {
+                    place = e.place;
+                } else if (e.placePrediction) {
+                    place = e.placePrediction.toPlace();
+                } else if (e.detail && e.detail.place) {
+                    place = e.detail.place;
+                } else if (e.detail && e.detail.placePrediction) {
+                    place = e.detail.placePrediction.toPlace();
+                }
+                
+                await handlePlaceSelect(place);
             });
             
             // Fallback for older versions/behaviors
             autocomplete.addEventListener("gmp-placeselect", async function(e) {
+                console.log("gmp-placeselect event fired", e);
                 await handlePlaceSelect(e.place);
             });
 
