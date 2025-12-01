@@ -650,18 +650,30 @@ LANDING_HTML = '''<!DOCTYPE html>
             container.appendChild(autocomplete);
             
             autocomplete.addEventListener("gmp-placeselect", async function(e) {
-                const place = e.place;
-                await place.fetchFields({ fields: ["displayName", "formattedAddress", "location"] });
-                
-                // Adapt new Place object to legacy structure expected by handlePlaceSelection
-                const compatPlace = {
-                    name: place.displayName,
-                    formatted_address: place.formattedAddress,
-                    geometry: {
-                        location: place.location
+                try {
+                    const place = e.place;
+                    if (!place) {
+                        console.log("No place selected");
+                        return;
                     }
-                };
-                handlePlaceSelection(compatPlace);
+                    
+                    console.log("Place selected, fetching fields...", place);
+                    await place.fetchFields({ fields: ["displayName", "formattedAddress", "location"] });
+                    console.log("Fields fetched:", place.displayName, place.formattedAddress);
+                    
+                    // Adapt new Place object to legacy structure expected by handlePlaceSelection
+                    const compatPlace = {
+                        name: place.displayName,
+                        formatted_address: place.formattedAddress,
+                        geometry: {
+                            location: place.location
+                        }
+                    };
+                    handlePlaceSelection(compatPlace);
+                } catch (error) {
+                    console.error("Error selecting place:", error);
+                    alert("Error al obtener detalles de la ubicación. Por favor verifica que la API 'Places API (New)' esté habilitada en Google Cloud Console.");
+                }
             });
 
             map.addListener("click", function(e) {
