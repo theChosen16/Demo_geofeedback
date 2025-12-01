@@ -649,9 +649,8 @@ LANDING_HTML = '''<!DOCTYPE html>
             const container = document.getElementById("autocomplete-container");
             container.appendChild(autocomplete);
             
-            autocomplete.addEventListener("gmp-placeselect", async function(e) {
+            async function handlePlaceSelect(place) {
                 try {
-                    const place = e.place;
                     if (!place) {
                         console.log("No place selected");
                         return;
@@ -674,6 +673,16 @@ LANDING_HTML = '''<!DOCTYPE html>
                     console.error("Error selecting place:", error);
                     alert("Error al obtener detalles de la ubicación. Por favor verifica que la API 'Places API (New)' esté habilitada en Google Cloud Console.");
                 }
+            }
+
+            // Use the new standard event 'gmp-select'
+            autocomplete.addEventListener("gmp-select", async function(e) {
+                await handlePlaceSelect(e.place);
+            });
+            
+            // Fallback for older versions/behaviors
+            autocomplete.addEventListener("gmp-placeselect", async function(e) {
+                await handlePlaceSelect(e.place);
             });
 
             map.addListener("click", function(e) {
