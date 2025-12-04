@@ -815,7 +815,7 @@ LANDING_HTML = '''<!DOCTYPE html>
 
         async function loadGoogleMaps() {
             var script = document.createElement("script");
-            script.src = "https://maps.googleapis.com/maps/api/js?key=" + MAPS_API_KEY + "&libraries=places,marker&callback=initMap&v=weekly";
+            script.src = "https://maps.googleapis.com/maps/api/js?key=" + MAPS_API_KEY + "&libraries=places,marker&callback=initMap&v=weekly&loading=async";
             script.async = true;
             script.defer = true;
             document.head.appendChild(script);
@@ -827,6 +827,7 @@ LANDING_HTML = '''<!DOCTYPE html>
                 return;
             }
 
+            // Import libraries
             // Import libraries
             // Import libraries
             const { Map } = await google.maps.importLibrary("maps");
@@ -856,6 +857,11 @@ LANDING_HTML = '''<!DOCTYPE html>
             container.appendChild(autocomplete);
 
             autocomplete.addEventListener("gmp-places-select", async ({ place }) => {
+                if (!place) {
+                    console.error("No place selected");
+                    return;
+                }
+
                 await place.fetchFields({ fields: ["displayName", "formattedAddress", "location", "viewport"] });
 
                 if (!place.location) {
@@ -882,6 +888,7 @@ LANDING_HTML = '''<!DOCTYPE html>
                     lng: place.location.lng(),
                     name: place.displayName
                 };
+                console.log("Selected Place updated:", selectedPlace);
 
                 // Update UI
                 document.getElementById("location-name").textContent = place.displayName;
@@ -889,33 +896,8 @@ LANDING_HTML = '''<!DOCTYPE html>
                 document.getElementById("status-location").classList.add("ready");
                 document.getElementById("result-location").innerHTML = '<i class="fas fa-check-circle result-icon" style="color:var(--secondary)"></i><div class="result-content"><h4>' + place.displayName + '</h4><p>Ubicacion confirmada</p></div>';
                 
-                // Check if we can enable analysis (assuming checkReadyState exists or logic is similar)
-                // In previous code it was checkReadyState(). Let's keep it if it exists, or check logic.
-                // The viewed code had checkReadyState().
-                if (typeof checkReadyState === 'function') {
-                    checkReadyState();
-                } else {
-                     // Fallback if checkReadyState is not defined in the snippet I saw
-                     // But it was in the snippet I replaced!
-                     // Wait, I am replacing the block that CALLED checkReadyState.
-                     // I need to make sure checkReadyState is defined elsewhere or I should define/use it.
-                     // Looking at the file, checkReadyState is NOT in the viewed block (830-900). 
-                     // It was called at line 889.
-                     // I will assume it is defined elsewhere or I should implement the logic.
-                     // Actually, looking at previous view (Step 282), I don't see checkReadyState definition.
-                     // But I see `onApproachChange` calls `checkAnalyzeButton` in my memory? 
-                     // Wait, in Step 282 line 710: `onclick="analyzeTerritory()" disabled`.
-                     // In Step 282 line 689: `onchange="onApproachChange()"`.
-                     // I don't see `checkReadyState` defined in the file.
-                     // Ah, in the snippet I am replacing (889), it calls `checkReadyState()`.
-                     // So it MUST be defined somewhere.
-                     // Let's assume it is defined.
-                     // Wait, if I am replacing the call, I should keep the call.
-                }
-                
-                // Re-implementing the call to checkReadyState if it exists, otherwise use inline logic
-                // Since I don't see the definition, I will try to call it.
-                try { checkReadyState(); } catch(e) { console.warn("checkReadyState not found"); }
+                // Enable analysis button
+                checkReadyState();
 
                 // Fetch Live Data
                 fetchElevationAndSlope(selectedPlace.lat, selectedPlace.lng);
