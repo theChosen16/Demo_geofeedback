@@ -916,22 +916,27 @@ LANDING_HTML = '''<!DOCTYPE html>
             autocomplete.setAttribute("name", "place_search");
             container.appendChild(autocomplete);
 
-            // Event listener for selection from dropdown (correct event name)
-            autocomplete.addEventListener("gmp-placeselect", async (event) => {
-                console.log("gmp-placeselect event fired", event);
-                // Try both event.place and destructured place from event
-                const place = event.place || event.detail?.place;
+            // Handler function to process the place selection
+            const onPlaceSelect = async (event) => {
+                console.log("Event fired:", event.type, event);
+                // Try to get the place from various possible properties
+                const place = event.place || event.detail?.place || event.detail;
                 
                 if (!place) {
-                    console.warn("No place object in event");
+                    console.warn("No place object found in event:", event.type);
                     return;
                 }
 
                 try {
-                    // Fetch necessary fields
-                    await place.fetchFields({ fields: ["displayName", "formattedAddress", "location", "viewport"] });
+                    // Check if fetchFields is a function (it should be for a Place object)
+                    if (typeof place.fetchFields === 'function') {
+                        await place.fetchFields({ fields: ["displayName", "formattedAddress", "location", "viewport"] });
+                    } else {
+                        console.warn("place.fetchFields is not a function. Place object might be different than expected:", place);
+                        // If it's a simple object (fallback), it might already have properties
+                    }
                     
-                    console.log("Place details fetched:", {
+                    console.log("Place details:", {
                         name: place.displayName,
                         location: place.location,
                         address: place.formattedAddress
@@ -945,10 +950,15 @@ LANDING_HTML = '''<!DOCTYPE html>
 
                     handlePlaceSelection(place.location, place.displayName || place.formattedAddress, place.viewport);
                 } catch (err) {
-                    console.error("Error fetching place fields:", err);
-                    alert("Error al obtener detalles del lugar: " + err.message);
+                    console.error("Error processing place:", err);
+                    alert("Error al procesar el lugar: " + err.message);
                 }
-            });
+            };
+
+            // Add listeners for ALL potential event names to be safe
+            autocomplete.addEventListener("gmp-places-select", onPlaceSelect);
+            autocomplete.addEventListener("gmp-placeselect", onPlaceSelect);
+            autocomplete.addEventListener("gmp-select", onPlaceSelect);
 
             // Fallback for "Enter" key without selection
             autocomplete.addEventListener("keydown", async (event) => {
