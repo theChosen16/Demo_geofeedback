@@ -668,7 +668,7 @@ LANDING_HTML = '''<!DOCTYPE html>
                     <div class="panel">
                         <div class="panel-header"><i class="fas fa-search"></i> Buscar Ubicacion</div>
                         <div class="search-wrapper">
-                            <input id="pac-input" class="controls" type="text" placeholder="Buscar ubicacion (ej: Papudo, Chile)">
+                            <div id="autocomplete-container"></div>
                         </div>
                         <div class="location-badge" id="location-badge">
                             <h4 id="location-name">-</h4>
