@@ -1,22 +1,15 @@
-from flask import Flask, jsonify
+import os
+import datetime
+from flask import Flask, jsonify, request
 from flask_cors import CORS
-from gee_config import init_gee
 import ee
+from gee_config import init_gee
 
 app = Flask(__name__)
 CORS(app)
 
 # Inicializar Google Earth Engine
 gee_initialized = init_gee()
-
-from flask import Flask, jsonify, request
-from flask_cors import CORS
-from gee_config import init_gee
-import ee
-import datetime
-
-app = Flask(__name__)
-CORS(app)
 
 # Inicializar Google Earth Engine
 gee_initialized = init_gee()
