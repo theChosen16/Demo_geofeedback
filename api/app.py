@@ -120,22 +120,29 @@ def analyze_territory():
             }
             
         # Enfoques Originales (Mantenidos/Mejorados)
+        # Enfoques Originales (Mantenidos/Mejorados)
         elif approach == 'flood-risk':
              stats = s2_indices.select(['NDWI']).addBands(elevation).reduceRegion(
-                reducer=mean_reducer, geometry=roi, scale=30
+                reducer=mean_reducer, geometry=roi, scale=30, maxPixels=1e9
             ).getInfo()
              results = {"NDWI Promedio": f"{stats.get('NDWI', 0):.2f}", "Elevación Media": f"{stats.get('elevation', 0):.0f} m"}
 
         elif approach == 'water-management':
-             stats = s2_indices.select(['NDWI', 'NDMI']).reduceRegion(reducer=mean_reducer, geometry=roi, scale=20).getInfo()
+             stats = s2_indices.select(['NDWI', 'NDMI']).reduceRegion(
+                 reducer=mean_reducer, geometry=roi, scale=20, maxPixels=1e9
+             ).getInfo()
              results = {"Cuerpos de Agua (NDWI)": f"{stats.get('NDWI', 0):.2f}", "Humedad Suelo/Veg (NDMI)": f"{stats.get('NDMI', 0):.2f}"}
 
         elif approach == 'environmental':
-             stats = s2_indices.select(['NDVI']).reduceRegion(reducer=mean_reducer, geometry=roi, scale=20).getInfo()
+             stats = s2_indices.select(['NDVI']).reduceRegion(
+                 reducer=mean_reducer, geometry=roi, scale=20, maxPixels=1e9
+             ).getInfo()
              results = {"Cobertura Vegetal (NDVI)": f"{stats.get('NDVI', 0):.2f}"}
              
         elif approach == 'land-planning':
-             stats = slope.reduceRegion(reducer=mean_reducer, geometry=roi, scale=90).getInfo()
+             stats = slope.reduceRegion(
+                 reducer=mean_reducer, geometry=roi, scale=90, maxPixels=1e9
+             ).getInfo()
              results = {"Pendiente Promedio": f"{stats.get('slope', 0):.1f}°"}
 
         # Generar Visualización (Map ID)
