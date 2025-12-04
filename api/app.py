@@ -919,36 +919,58 @@ LANDING_HTML = '''<!DOCTYPE html>
             // Handler function to process the place selection
             const onPlaceSelect = async (event) => {
                 console.log("Event fired:", event.type, event);
-                // Try to get the place from various possible properties
-                const place = event.place || event.detail?.place || event.detail;
                 
+                // Strategy 1: Get from event
+                let place = event.place || event.detail?.place || event.detail;
+                
+                // Strategy 2: Get from component method (Standard for some versions)
+                if (!place && typeof autocomplete.getPlace === 'function') {
+                    console.log("Trying autocomplete.getPlace()...");
+                    try {
+                        place = autocomplete.getPlace();
+                        console.log("autocomplete.getPlace() result:", place);
+                    } catch (e) {
+                        console.warn("Error calling getPlace():", e);
+                    }
+                }
+
                 if (!place) {
-                    console.warn("No place object found in event:", event.type);
+                    console.warn("No place object found in event or via getPlace(). Event type:", event.type);
+                    // Strategy 3: Check if it's just text in the input (value)
+                    if (autocomplete.value) {
+                        console.log("Input has value but no place object. Value:", autocomplete.value);
+                        // We could trigger geocoding here if we wanted, but let's wait for user confirmation or Enter key
+                    }
                     return;
                 }
 
                 try {
-                    // Check if fetchFields is a function (it should be for a Place object)
+                    // If it's a PlaceResult (from getPlace), it might already have geometry
+                    if (place.geometry && place.geometry.location) {
+                         console.log("Place object has geometry (PlaceResult format)");
+                         handlePlaceSelection(place.geometry.location, place.name || place.formatted_address, place.geometry.viewport);
+                         return;
+                    }
+
+                    // If it's a Place object (from New API), it needs fetchFields
                     if (typeof place.fetchFields === 'function') {
                         await place.fetchFields({ fields: ["displayName", "formattedAddress", "location", "viewport"] });
+                        
+                        console.log("Place details fetched:", {
+                            name: place.displayName,
+                            location: place.location,
+                            address: place.formattedAddress
+                        });
+
+                        if (!place.location) {
+                            console.error("Place has no location");
+                            alert("La ubicación seleccionada no tiene coordenadas válidas.");
+                            return;
+                        }
+                        handlePlaceSelection(place.location, place.displayName || place.formattedAddress, place.viewport);
                     } else {
-                        console.warn("place.fetchFields is not a function. Place object might be different than expected:", place);
-                        // If it's a simple object (fallback), it might already have properties
+                        console.warn("Place object is not a standard Place class:", place);
                     }
-                    
-                    console.log("Place details:", {
-                        name: place.displayName,
-                        location: place.location,
-                        address: place.formattedAddress
-                    });
-
-                    if (!place.location) {
-                        console.error("Place has no location");
-                        alert("La ubicación seleccionada no tiene coordenadas válidas.");
-                        return;
-                    }
-
-                    handlePlaceSelection(place.location, place.displayName || place.formattedAddress, place.viewport);
                 } catch (err) {
                     console.error("Error processing place:", err);
                     alert("Error al procesar el lugar: " + err.message);
