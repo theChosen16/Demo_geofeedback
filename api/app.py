@@ -11,17 +11,26 @@ CORS(app)
 # Inicializar Google Earth Engine
 gee_initialized = init_gee()
 
-# Inicializar Google Earth Engine
-gee_initialized = init_gee()
-
 def get_sentinel2_image(roi):
     """Obtiene la imagen Sentinel-2 más reciente y libre de nubes para la ROI."""
-    return (ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
+    end_date = datetime.datetime.now()
+    start_date = end_date - datetime.timedelta(days=180) # 6 meses
+    
+    col = (ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
             .filterBounds(roi)
-            .filterDate(datetime.datetime.now() - datetime.timedelta(days=90), datetime.datetime.now())
-            .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20))
-            .sort('system:time_start', False)
-            .first())
+            .filterDate(start_date, end_date)
+            .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 30))
+            .sort('system:time_start', False))
+            
+    # Verificar si hay imágenes (evita error 500 si la colección está vacía)
+    try:
+        if col.size().getInfo() == 0:
+            return None
+    except Exception as e:
+        print(f"Error checking collection size: {e}")
+        return None
+        
+    return col.first()
 
 def calculate_indices(image):
     """Calcula índices espectrales comunes."""
@@ -844,6 +853,48 @@ LANDING_HTML = '''<!DOCTYPE html>
                 mapTypeControl: false,
                 streetViewControl: false,
                 fullscreenControl: true
+            });
+
+            // Map Click Listener
+            map.addListener("click", async (e) => {
+                const clickedLat = e.latLng.lat();
+                const clickedLng = e.latLng.lng();
+
+                // Reverse Geocoding to get name
+                const geocoder = new google.maps.Geocoder();
+                const response = await geocoder.geocode({ location: { lat: clickedLat, lng: clickedLng } });
+                
+                let placeName = "Ubicación seleccionada";
+                if (response.results && response.results[0]) {
+                    placeName = response.results[0].formatted_address;
+                }
+
+                if (marker) marker.map = null;
+                marker = new AdvancedMarkerElement({
+                    map: map,
+                    position: { lat: clickedLat, lng: clickedLng },
+                    title: placeName
+                });
+
+                selectedPlace = {
+                    lat: clickedLat,
+                    lng: clickedLng,
+                    name: placeName
+                };
+                console.log("Selected Place from click:", selectedPlace);
+
+                // Update UI
+                document.getElementById("location-name").textContent = placeName;
+                document.getElementById("location-coords").textContent = clickedLat.toFixed(4) + ", " + clickedLng.toFixed(4);
+                document.getElementById("status-location").classList.add("ready");
+                document.getElementById("result-location").innerHTML = '<i class="fas fa-check-circle result-icon" style="color:var(--secondary)"></i><div class="result-content"><h4>' + placeName + '</h4><p>Seleccionado en mapa</p></div>';
+                
+                checkReadyState();
+
+                // Fetch Live Data
+                fetchElevationAndSlope(clickedLat, clickedLng);
+                fetchAirQuality(clickedLat, clickedLng);
+                fetchSolarPotential(clickedLat, clickedLng);
             });
 
             // Autocomplete setup (New Places API)
