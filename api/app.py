@@ -905,44 +905,55 @@ LANDING_HTML = '''<!DOCTYPE html>
                 fetchSolarPotential(clickedLat, clickedLng);
             });
 
-            // Autocomplete setup (Standard Widget)
+            // Autocomplete setup (New Places API)
             const container = document.getElementById("autocomplete-container");
-            container.innerHTML = '<input id="pac-input" name="place_search" type="text" placeholder="Buscar ubicación..." class="controls" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 1rem; box-shadow: var(--shadow);">';
+            container.innerHTML = '';
             
-            const input = document.getElementById("pac-input");
-            const autocomplete = new google.maps.places.Autocomplete(input, {
-                fields: ["formatted_address", "geometry", "name"],
-                strictBounds: false,
-            });
+            const autocomplete = new PlaceAutocompleteElement();
+            autocomplete.id = "pac-input";
+            autocomplete.classList.add("controls");
+            // Set attributes to try to satisfy browser warnings
+            autocomplete.setAttribute("name", "place_search");
+            container.appendChild(autocomplete);
 
-            // Bind the map's bounds (viewport) bias to the autocomplete object,
-            // so that the autocomplete requests use the current map bounds for the
-            // bounds option in the request.
-            autocomplete.bindTo("bounds", map);
-
-            autocomplete.addListener("place_changed", () => {
-                const place = autocomplete.getPlace();
-
-                if (!place.geometry || !place.geometry.location) {
-                    // User entered the name of a Place that was not suggested and
-                    // pressed the Enter key, or the Place Details request failed.
-                    // Let's try Geocoding as a fallback for "Enter" key usage
-                    const geocoder = new google.maps.Geocoder();
-                    geocoder.geocode({ address: input.value }, (results, status) => {
-                        if (status === "OK" && results[0]) {
-                            handlePlaceSelection(results[0].geometry.location, results[0].formatted_address);
-                        } else {
-                            window.alert("No se encontraron detalles para: '" + input.value + "'");
-                        }
-                    });
+            // Event listener for selection from dropdown
+            autocomplete.addEventListener("gmp-places-select", async ({ place }) => {
+                if (!place) {
+                    // This can happen if user clears input
                     return;
                 }
+                await place.fetchFields({ fields: ["displayName", "formattedAddress", "location", "viewport"] });
+                handlePlaceSelection(place.location, place.displayName, place.viewport);
+            });
 
-                handlePlaceSelection(place.geometry.location, place.name || place.formatted_address, place.geometry.viewport);
+            // Fallback for "Enter" key without selection
+            autocomplete.addEventListener("keydown", async (event) => {
+                if (event.key === "Enter") {
+                    const text = autocomplete.value;
+                    // Allow a small delay to see if the select event fires first
+                    setTimeout(() => {
+                        // If no place is selected or the name doesn't match (rough check)
+                        if (!selectedPlace || (selectedPlace.name !== text && text.length > 3)) {
+                            console.log("Enter pressed with custom text, trying Geocoding for:", text);
+                            const geocoder = new google.maps.Geocoder();
+                            geocoder.geocode({ address: text }, (results, status) => {
+                                if (status === "OK" && results[0]) {
+                                    handlePlaceSelection(results[0].geometry.location, results[0].formatted_address, results[0].geometry.viewport);
+                                } else {
+                                    console.log("Geocoding failed for custom text");
+                                }
+                            });
+                        }
+                    }, 300);
+                }
             });
 
             function handlePlaceSelection(location, name, viewport) {
-                // If the place has a geometry, then present it on a map.
+                if (!location) {
+                    window.alert("No se encontraron detalles de ubicación.");
+                    return;
+                }
+
                 if (viewport) {
                     map.fitBounds(viewport);
                 } else {
