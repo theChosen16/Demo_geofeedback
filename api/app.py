@@ -917,34 +917,62 @@ LANDING_HTML = '''<!DOCTYPE html>
             container.appendChild(autocomplete);
 
             // Event listener for selection from dropdown
-            autocomplete.addEventListener("gmp-places-select", async ({ place }) => {
+            autocomplete.addEventListener("gmp-places-select", async (event) => {
+                console.log("gmp-places-select event fired", event);
+                const place = event.place;
+                
                 if (!place) {
-                    // This can happen if user clears input
+                    console.warn("No place object in event");
                     return;
                 }
-                await place.fetchFields({ fields: ["displayName", "formattedAddress", "location", "viewport"] });
-                handlePlaceSelection(place.location, place.displayName, place.viewport);
+
+                try {
+                    // Fetch necessary fields
+                    await place.fetchFields({ fields: ["displayName", "formattedAddress", "location", "viewport"] });
+                    
+                    console.log("Place details fetched:", {
+                        name: place.displayName,
+                        location: place.location,
+                        address: place.formattedAddress
+                    });
+
+                    if (!place.location) {
+                        console.error("Place has no location");
+                        alert("La ubicación seleccionada no tiene coordenadas válidas.");
+                        return;
+                    }
+
+                    handlePlaceSelection(place.location, place.displayName || place.formattedAddress, place.viewport);
+                } catch (err) {
+                    console.error("Error fetching place fields:", err);
+                    alert("Error al obtener detalles del lugar: " + err.message);
+                }
             });
 
             // Fallback for "Enter" key without selection
             autocomplete.addEventListener("keydown", async (event) => {
                 if (event.key === "Enter") {
                     const text = autocomplete.value;
+                    console.log("Enter pressed in search box. Value:", text);
+                    
                     // Allow a small delay to see if the select event fires first
                     setTimeout(() => {
                         // If no place is selected or the name doesn't match (rough check)
+                        // We check if selectedPlace is null OR if the current selected place name is different from input text
+                        // This prevents re-triggering if the user just hit enter on an already selected place
                         if (!selectedPlace || (selectedPlace.name !== text && text.length > 3)) {
-                            console.log("Enter pressed with custom text, trying Geocoding for:", text);
+                            console.log("Triggering manual Geocoding fallback for:", text);
                             const geocoder = new google.maps.Geocoder();
                             geocoder.geocode({ address: text }, (results, status) => {
                                 if (status === "OK" && results[0]) {
+                                    console.log("Geocoding success:", results[0]);
                                     handlePlaceSelection(results[0].geometry.location, results[0].formatted_address, results[0].geometry.viewport);
                                 } else {
-                                    console.log("Geocoding failed for custom text");
+                                    console.warn("Geocoding failed or no results for:", text);
                                 }
                             });
                         }
-                    }, 300);
+                    }, 500); // Increased delay to 500ms to ensure gmp-places-select has time to fire
                 }
             });
 
