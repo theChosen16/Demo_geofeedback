@@ -1083,6 +1083,11 @@ LANDING_HTML = '''<!DOCTYPE html>
 @app.route('/')
 def landing():
     google_maps_key = os.environ.get('GOOGLE_MAPS_API_KEY', '')
+    if not google_maps_key:
+        print("WARNING: GOOGLE_MAPS_API_KEY not found in environment variables.")
+    else:
+        print(f"INFO: GOOGLE_MAPS_API_KEY found (length: {len(google_maps_key)})")
+    
     html = LANDING_HTML.replace('GOOGLE_MAPS_KEY_PLACEHOLDER', google_maps_key)
     return html
 
