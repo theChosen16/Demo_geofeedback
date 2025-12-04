@@ -1,9 +1,35 @@
-import os
 from flask import Flask, jsonify
 from flask_cors import CORS
+from gee_config import init_gee
+import ee
 
 app = Flask(__name__)
 CORS(app)
+
+# Inicializar Google Earth Engine
+gee_initialized = init_gee()
+
+@app.route('/api/v1/gee-test')
+def gee_test():
+    if not gee_initialized:
+        return jsonify({"status": "error", "message": "GEE no pudo inicializarse. Verifica las credenciales."}), 500
+    
+    try:
+        # Prueba simple: Obtener metadatos de una imagen SRTM
+        image = ee.Image('CGIAR/SRTM90_V4')
+        info = image.getInfo()
+        return jsonify({
+            "status": "success",
+            "message": "Conexión a GEE exitosa",
+            "data": {
+                "id": info.get('id'),
+                "bands": [b['id'] for b in info.get('bands', [])],
+                "version": ee.__version__
+            }
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 
 LANDING_HTML = '''<!DOCTYPE html>
 <html lang="es">
