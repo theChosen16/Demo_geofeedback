@@ -741,7 +741,22 @@ LANDING_HTML = '''<!DOCTYPE html>
         var selectedPlace = null;
         var selectedApproach = null;
 
-        var approaches = {
+        // ... approaches object ...
+
+        async function loadGoogleMaps() {
+            var script = document.createElement("script");
+            script.src = "https://maps.googleapis.com/maps/api/js?key=" + MAPS_API_KEY + "&libraries=places,marker&callback=initMap&v=weekly";
+            script.async = true;
+            script.defer = true;
+            document.head.appendChild(script);
+        }
+
+        async function initMap() {
+            if (!MAPS_API_KEY || MAPS_API_KEY.length < 20) {
+                console.error("API Key no configurada o invalida");
+                return;
+            }
+            // ... rest of initMap ...
             "mining": {
                 name: "Mineria Sostenible",
                 icon: "mountain",
@@ -1074,7 +1089,7 @@ LANDING_HTML = '''<!DOCTYPE html>
         }
 
         // Start the map initialization
-        initMap();
+        loadGoogleMaps();
     </script>
 </body>
 </html>
