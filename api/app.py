@@ -916,10 +916,11 @@ LANDING_HTML = '''<!DOCTYPE html>
             autocomplete.setAttribute("name", "place_search");
             container.appendChild(autocomplete);
 
-            // Event listener for selection from dropdown
-            autocomplete.addEventListener("gmp-places-select", async (event) => {
-                console.log("gmp-places-select event fired", event);
-                const place = event.place;
+            // Event listener for selection from dropdown (correct event name)
+            autocomplete.addEventListener("gmp-placeselect", async (event) => {
+                console.log("gmp-placeselect event fired", event);
+                // Try both event.place and destructured place from event
+                const place = event.place || event.detail?.place;
                 
                 if (!place) {
                     console.warn("No place object in event");
