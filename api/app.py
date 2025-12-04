@@ -814,8 +814,8 @@ LANDING_HTML = '''<!DOCTYPE html>
         };
 
         async function initMap() {
-            if (MAPS_API_KEY === "GOOGLE_MAPS_KEY_PLACEHOLDER" || !MAPS_API_KEY) {
-                console.error("API Key no configurada");
+            if (!MAPS_API_KEY || MAPS_API_KEY.length < 20) {
+                console.error("API Key no configurada o invalida");
                 return;
             }
 
