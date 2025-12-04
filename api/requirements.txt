@@ -12,6 +12,7 @@ psycopg2-binary==2.9.9
 
 # Utilities
 python-dotenv==1.0.0
+earthengine-api>=0.1.370
 
 # Producción (instalado en Dockerfile, pero listado aquí para referencia)
 # gunicorn==21.2.0
