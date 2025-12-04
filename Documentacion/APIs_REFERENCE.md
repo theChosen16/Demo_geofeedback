@@ -111,57 +111,85 @@ Todas las siguientes APIs están habilitadas en Google Cloud Platform para el pr
 - **Funciones**: Corrección, completado, verificación
 - **Documentación**: https://developers.google.com/maps/documentation/address-validation
 
+### 14. **Google Earth Engine (GEE)**
+
+- **Propósito**: Análisis satelital a escala planetaria
+- **Datos**: Sentinel-2 (Multiespectral), Sentinel-1 (Radar), SRTM (Topografía), Landsat
+- **Uso**: Cálculo de índices (NDVI, NDWI), detección de cambios, modelos hidrológicos
+- **Integración**: Backend (Python API)
+- **Documentación**: https://developers.google.com/earth-engine
+
 ---
 
 ## 🎯 MAPEO DE APIs POR ENFOQUE
 
-### 🌊 **Enfoque 1: Riesgo de Inundación**
+### ⛏️ **Enfoque 1: Minería Sostenible**
 
-| Índice/Dato                 | API Principal         | APIs Complementarias | Propósito                            |
-| --------------------------- | --------------------- | -------------------- | ------------------------------------ |
-| **Elevación**               | Elevation API         | Map Tiles API        | Altura sobre nivel del mar           |
-| **Pendiente**               | Elevation API         | -                    | Grado de inclinación del terreno     |
-| **NDWI**                    | Google Earth Engine\* | -                    | Detección de cuerpos de agua         |
-| **Flow Accumulation**       | Google Earth Engine\* | Elevation API        | Modelo de acumulación hídrica        |
-| **Infraestructura Crítica** | Places API (New)      | Geocoding API        | Ubicación de instalaciones en riesgo |
-| **Visualización**           | Maps JavaScript API   | Map Tiles API        | Mapa interactivo                     |
+| Índice/Dato                 | API Principal       | APIs Complementarias | Propósito                                      |
+| :-------------------------- | :------------------ | :------------------- | :--------------------------------------------- |
+| **Vegetación (NDVI)**       | **Earth Engine**    | -                    | Monitoreo de impacto en flora circundante      |
+| **Cuerpos de Agua (NDWI)**  | **Earth Engine**    | -                    | Detección de relaves y recursos hídricos       |
+| **Estabilidad (Pendiente)** | **Earth Engine**    | Elevation API        | Análisis topográfico para seguridad de taludes |
+| **Calidad Aire**            | **Air Quality API** | -                    | Monitoreo de material particulado (PM2.5/PM10) |
 
-> \*Google Earth Engine requiere configuración separada (no es parte de Google Maps Platform)
+### 🌾 **Enfoque 2: Agroindustria Inteligente**
 
-### 💧 **Enfoque 2: Gestión Hídrica**
+| Índice/Dato               | API Principal    | APIs Complementarias | Propósito                                   |
+| :------------------------ | :--------------- | :------------------- | :------------------------------------------ |
+| **Salud Cultivo (NDVI)**  | **Earth Engine** | -                    | Vigor vegetal y estimación de rendimiento   |
+| **Estrés Hídrico (NDMI)** | **Earth Engine** | -                    | Contenido de humedad en la vegetación       |
+| **Potencial Solar**       | **Solar API**    | -                    | Energía para sistemas de riego fotovoltaico |
+| **Polen**                 | Pollen API       | -                    | (Futuro) Polinización y alérgenos           |
 
-| Índice/Dato        | API Principal         | APIs Complementarias | Propósito                          |
-| ------------------ | --------------------- | -------------------- | ---------------------------------- |
-| **NDWI Temporal**  | Google Earth Engine\* | -                    | Serie temporal de agua superficial |
-| **NDMI**           | Google Earth Engine\* | -                    | Humedad en vegetación              |
-| **NDVI**           | Google Earth Engine\* | -                    | Vigor vegetal                      |
-| **Elevación**      | Elevation API         | -                    | Modelar escorrentía                |
-| **Cuencas**        | Maps Datasets API     | Elevation API        | Almacenar polígonos de cuencas     |
-| **Pozos/Embalses** | Places API (New)      | Geocoding API        | Infraestructura hídrica            |
+### ⚡ **Enfoque 3: Energías Renovables**
 
-### 🍃 **Enfoque 3: Calidad Ambiental**
+| Índice/Dato            | API Principal    | APIs Complementarias | Propósito                                              |
+| :--------------------- | :--------------- | :------------------- | :----------------------------------------------------- |
+| **Irradiancia Solar**  | **Solar API**    | -                    | Potencial de generación fotovoltaica anual             |
+| **Topografía (Slope)** | **Earth Engine** | Elevation API        | Aptitud del terreno para instalación de paneles/eólica |
+| **Infraestructura**    | Places API (New) | -                    | Proximidad a subestaciones y caminos                   |
+| **Elevación**          | Elevation API    | -                    | Orientación y altura                                   |
 
-| Índice/Dato               | API Principal         | APIs Complementarias | Propósito                            |
-| ------------------------- | --------------------- | -------------------- | ------------------------------------ |
-| **Índice Calidad Aire**   | **Air Quality API**   | -                    | AQI en tiempo real (PM2.5, PM10, O₃) |
-| **Contaminantes**         | **Air Quality API**   | -                    | Concentración de gases y partículas  |
-| **Potencial Solar**       | **Solar API**         | -                    | Radiación solar anual                |
-| **Cobertura Vegetal**     | Google Earth Engine\* | -                    | NDVI para áreas verdes               |
-| **Elevación**             | Elevation API         | -                    | Dispersión de contaminantes          |
-| **Polen**                 | **Pollen API**        | -                    | Niveles de alérgenos                 |
-| **Ubicaciones Sensibles** | Places API (New)      | Geocoding API        | Escuelas, hospitales, parques        |
+### 🏙️ **Enfoque 4: Desarrollo Inmobiliario**
 
-### 🏘️ **Enfoque 4: Planificación Territorial**
+| Índice/Dato           | API Principal       | APIs Complementarias | Propósito                                      |
+| :-------------------- | :------------------ | :------------------- | :--------------------------------------------- |
+| **Constructibilidad** | Elevation API       | **Earth Engine**     | Análisis de pendientes y movimientos de tierra |
+| **Servicios**         | Places API (New)    | -                    | Cercanía a colegios, salud y comercio          |
+| **Calidad de Vida**   | **Air Quality API** | -                    | Evaluación ambiental de la zona                |
+| **Riesgo Inundación** | **Earth Engine**    | -                    | Historial hídrico del terreno (NDWI histórico) |
 
-| Índice/Dato          | API Principal         | APIs Complementarias    | Propósito                  |
-| -------------------- | --------------------- | ----------------------- | -------------------------- |
-| **Modelo Elevación** | Elevation API         | Map Tiles API (Terrain) | DEM de alta precisión      |
-| **Pendientes**       | Elevation API         | -                       | Aptitud constructiva       |
-| **Potencial Solar**  | **Solar API**         | -                       | Planificación energética   |
-| **Uso de Suelo**     | Google Earth Engine\* | Maps Datasets API       | Clasificación territorial  |
-| **Calidad Aire**     | **Air Quality API**   | -                       | Zonificación residencial   |
-| **Infraestructura**  | Places API (New)      | Address Validation API  | Servicios, comercio, salud |
-| **Mapas Base**       | Map Tiles API         | Maps Static API         | Visualización y reportes   |
+### � **Enfoque 5: Riesgo de Inundación (Original)**
+
+| Índice/Dato           | API Principal    | APIs Complementarias | Propósito                     |
+| :-------------------- | :--------------- | :------------------- | :---------------------------- |
+| **Elevación**         | Elevation API    | Map Tiles API        | Altura sobre nivel del mar    |
+| **NDWI**              | **Earth Engine** | -                    | Detección de cuerpos de agua  |
+| **Flow Accumulation** | **Earth Engine** | Elevation API        | Modelo de acumulación hídrica |
+
+### 💧 **Enfoque 6: Gestión Hídrica (Original)**
+
+| Índice/Dato       | API Principal    | APIs Complementarias | Propósito                          |
+| :---------------- | :--------------- | :------------------- | :--------------------------------- |
+| **NDWI Temporal** | **Earth Engine** | -                    | Serie temporal de agua superficial |
+| **NDMI**          | **Earth Engine** | -                    | Humedad en vegetación              |
+| **Elevación**     | Elevation API    | -                    | Modelar escorrentía                |
+
+### 🍃 **Enfoque 7: Calidad Ambiental (Original)**
+
+| Índice/Dato             | API Principal       | APIs Complementarias | Propósito                            |
+| :---------------------- | :------------------ | :------------------- | :----------------------------------- |
+| **Índice Calidad Aire** | **Air Quality API** | -                    | AQI en tiempo real (PM2.5, PM10, O₃) |
+| **Cobertura Vegetal**   | **Earth Engine**    | -                    | NDVI para áreas verdes               |
+| **Potencial Solar**     | **Solar API**       | -                    | Radiación solar anual                |
+
+### 🏘️ **Enfoque 8: Planificación Territorial (Original)**
+
+| Índice/Dato          | API Principal    | APIs Complementarias    | Propósito                  |
+| :------------------- | :--------------- | :---------------------- | :------------------------- |
+| **Modelo Elevación** | Elevation API    | Map Tiles API (Terrain) | DEM de alta precisión      |
+| **Uso de Suelo**     | **Earth Engine** | Maps Datasets API       | Clasificación territorial  |
+| **Infraestructura**  | Places API (New) | Address Validation API  | Servicios, comercio, salud |
 
 ---
 
@@ -536,13 +564,14 @@ gcloud services quotas list --service=maps-backend.googleapis.com
 
 En el archivo `api/app.py`, actualmente se utilizan:
 
-1. ✅ **Maps JavaScript API** - Línea 626-641 (inicialización del mapa)
-2. ✅ **Elevation API** - Línea 649, 788-800 (obtener elevación)
-3. ✅ **Air Quality API** - Línea 830-847 (calidad del aire)
-4. ✅ **Solar API** - Línea 850-862 (potencial solar)
-5. ✅ **Places API (New)** - Línea 652-709 (autocompletado)
-6. ✅ **Geocoding API** - Línea 746-769 (geocodificación inversa)
-7. ✅ **Advanced Markers** - Línea 627, 644-647 (marcadores)
+1. ✅ **Google Earth Engine** - Línea 10-40, 100-150 (análisis satelital backend)
+2. ✅ **Maps JavaScript API** - Línea 626-641 (inicialización del mapa)
+3. ✅ **Elevation API** - Línea 649, 788-800 (obtener elevación)
+4. ✅ **Air Quality API** - Línea 830-847 (calidad del aire)
+5. ✅ **Solar API** - Línea 850-862 (potencial solar)
+6. ✅ **Places API (New)** - Línea 652-709 (autocompletado)
+7. ✅ **Geocoding API** - Línea 746-769 (geocodificación inversa)
+8. ✅ **Advanced Markers** - Línea 627, 644-647 (marcadores)
 
 ### APIs Pendientes de Implementar
 

@@ -9,26 +9,151 @@ CORS(app)
 # Inicializar Google Earth Engine
 gee_initialized = init_gee()
 
-@app.route('/api/v1/gee-test')
-def gee_test():
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+from gee_config import init_gee
+import ee
+import datetime
+
+app = Flask(__name__)
+CORS(app)
+
+# Inicializar Google Earth Engine
+gee_initialized = init_gee()
+
+def get_sentinel2_image(roi):
+    """Obtiene la imagen Sentinel-2 más reciente y libre de nubes para la ROI."""
+    return (ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
+            .filterBounds(roi)
+            .filterDate(datetime.datetime.now() - datetime.timedelta(days=90), datetime.datetime.now())
+            .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20))
+            .sort('system:time_start', False)
+            .first())
+
+def calculate_indices(image):
+    """Calcula índices espectrales comunes."""
+    ndvi = image.normalizedDifference(['B8', 'B4']).rename('NDVI')
+    ndwi = image.normalizedDifference(['B3', 'B8']).rename('NDWI') # McFeeters
+    ndmi = image.normalizedDifference(['B8', 'B11']).rename('NDMI')
+    return image.addBands([ndvi, ndwi, ndmi])
+
+@app.route('/api/v1/analyze', methods=['POST'])
+def analyze_territory():
     if not gee_initialized:
-        return jsonify({"status": "error", "message": "GEE no pudo inicializarse. Verifica las credenciales."}), 500
+        return jsonify({"status": "error", "message": "GEE no está inicializado"}), 500
     
+    data = request.json
+    lat = data.get('lat')
+    lng = data.get('lng')
+    approach = data.get('approach')
+    
+    if not lat or not lng or not approach:
+        return jsonify({"status": "error", "message": "Faltan parámetros"}), 400
+
     try:
-        # Prueba simple: Obtener metadatos de una imagen SRTM
-        image = ee.Image('CGIAR/SRTM90_V4')
-        info = image.getInfo()
+        point = ee.Geometry.Point([lng, lat])
+        roi = point.buffer(1000) # Radio de 1km para análisis
+        
+        # Datos Base
+        srtm = ee.Image('CGIAR/SRTM90_V4')
+        elevation = srtm.select('elevation')
+        slope = ee.Terrain.slope(elevation)
+        
+        s2_image = get_sentinel2_image(roi)
+        if not s2_image:
+            return jsonify({"status": "warning", "message": "No se encontraron imágenes recientes libres de nubes."}), 404
+            
+        s2_indices = calculate_indices(s2_image)
+        
+        # Reducers
+        mean_reducer = ee.Reducer.mean()
+        
+        results = {}
+        
+        # Lógica por Enfoque
+        if approach == 'mining':
+            # Minería: Vegetación (Impacto), Agua (Relaves), Pendiente (Estabilidad)
+            stats = s2_indices.select(['NDVI', 'NDWI']).addBands(slope).reduceRegion(
+                reducer=mean_reducer, geometry=roi, scale=20, maxPixels=1e9
+            ).getInfo()
+            results = {
+                "Vegetación Circundante (NDVI)": f"{stats.get('NDVI', 0):.2f}",
+                "Índice de Agua (NDWI)": f"{stats.get('NDWI', 0):.2f}",
+                "Pendiente Promedio (°)": f"{stats.get('slope', 0):.1f}"
+            }
+            
+        elif approach == 'agriculture':
+            # Agro: Salud Cultivo (NDVI), Estrés Hídrico (NDMI)
+            stats = s2_indices.select(['NDVI', 'NDMI']).reduceRegion(
+                reducer=mean_reducer, geometry=roi, scale=20, maxPixels=1e9
+            ).getInfo()
+            results = {
+                "Vigor Vegetal (NDVI)": f"{stats.get('NDVI', 0):.2f}",
+                "Humedad Vegetación (NDMI)": f"{stats.get('NDMI', 0):.2f}",
+                "Estado": "Saludable" if stats.get('NDVI', 0) > 0.4 else "Atención Requerida"
+            }
+            
+        elif approach == 'energy':
+            # Energía: Pendiente (Solar/Eólica), Elevación
+            stats = srtm.select('elevation').addBands(slope).reduceRegion(
+                reducer=mean_reducer, geometry=roi, scale=90, maxPixels=1e9
+            ).getInfo()
+            avg_slope = stats.get('slope', 0)
+            results = {
+                "Elevación Promedio (msnm)": f"{stats.get('elevation', 0):.0f}",
+                "Pendiente Promedio (°)": f"{avg_slope:.1f}",
+                "Aptitud Solar (Topografía)": "Alta" if avg_slope < 10 else "Media" if avg_slope < 20 else "Baja"
+            }
+
+        elif approach == 'real-estate':
+            # Inmobiliario: Pendiente (Constructibilidad), Riesgo Inundación (NDWI proxy)
+            stats = s2_indices.select(['NDWI']).addBands(slope).reduceRegion(
+                reducer=mean_reducer, geometry=roi, scale=20, maxPixels=1e9
+            ).getInfo()
+            avg_slope = stats.get('slope', 0)
+            results = {
+                "Pendiente Terreno (°)": f"{avg_slope:.1f}",
+                "Índice Agua (NDWI)": f"{stats.get('NDWI', 0):.2f}",
+                "Constructibilidad (Topo)": "Óptima" if avg_slope < 5 else "Buena" if avg_slope < 15 else "Compleja"
+            }
+            
+        # Enfoques Originales (Mantenidos/Mejorados)
+        elif approach == 'flood-risk':
+             stats = s2_indices.select(['NDWI']).addBands(elevation).reduceRegion(
+                reducer=mean_reducer, geometry=roi, scale=30
+            ).getInfo()
+             results = {"NDWI Promedio": f"{stats.get('NDWI', 0):.2f}", "Elevación Media": f"{stats.get('elevation', 0):.0f} m"}
+
+        elif approach == 'water-management':
+             stats = s2_indices.select(['NDWI', 'NDMI']).reduceRegion(reducer=mean_reducer, geometry=roi, scale=20).getInfo()
+             results = {"Cuerpos de Agua (NDWI)": f"{stats.get('NDWI', 0):.2f}", "Humedad Suelo/Veg (NDMI)": f"{stats.get('NDMI', 0):.2f}"}
+
+        elif approach == 'environmental':
+             stats = s2_indices.select(['NDVI']).reduceRegion(reducer=mean_reducer, geometry=roi, scale=20).getInfo()
+             results = {"Cobertura Vegetal (NDVI)": f"{stats.get('NDVI', 0):.2f}"}
+             
+        elif approach == 'land-planning':
+             stats = slope.reduceRegion(reducer=mean_reducer, geometry=roi, scale=90).getInfo()
+             results = {"Pendiente Promedio": f"{stats.get('slope', 0):.1f}°"}
+
+        else:
+            return jsonify({"status": "error", "message": "Enfoque no reconocido"}), 400
+
         return jsonify({
             "status": "success",
-            "message": "Conexión a GEE exitosa",
-            "data": {
-                "id": info.get('id'),
-                "bands": [b['id'] for b in info.get('bands', [])],
-                "version": ee.__version__
+            "approach": approach,
+            "data": results,
+            "meta": {
+                "satellite": "Sentinel-2 MSI (Level-2A)",
+                "terrain": "SRTM v4",
+                "date": datetime.datetime.now().strftime("%Y-%m-%d")
             }
         })
+
     except Exception as e:
+        print(f"Error en análisis GEE: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
+
 
 
 LANDING_HTML = '''<!DOCTYPE html>
@@ -547,10 +672,18 @@ LANDING_HTML = '''<!DOCTYPE html>
                         <div class="panel-header"><i class="fas fa-crosshairs"></i> Seleccionar Enfoque</div>
                         <select id="approach-select" class="approach-select" onchange="onApproachChange()">
                             <option value="">-- Elige un enfoque de analisis --</option>
-                            <option value="flood-risk">Riesgo de Inundacion</option>
-                            <option value="water-management">Gestion Hidrica</option>
-                            <option value="environmental">Calidad Ambiental</option>
-                            <option value="land-planning">Planificacion Territorial</option>
+                            <optgroup label="Sectores Industriales">
+                                <option value="mining">Mineria Sostenible</option>
+                                <option value="agriculture">Agroindustria Inteligente</option>
+                                <option value="energy">Energias Renovables</option>
+                                <option value="real-estate">Desarrollo Inmobiliario</option>
+                            </optgroup>
+                            <optgroup label="Analisis General">
+                                <option value="flood-risk">Riesgo de Inundacion</option>
+                                <option value="water-management">Gestion Hidrica</option>
+                                <option value="environmental">Calidad Ambiental</option>
+                                <option value="land-planning">Planificacion Territorial</option>
+                            </optgroup>
                         </select>
                         <div class="indices-panel" id="indices-panel">
                             <div class="indices-title">Indices y datos del analisis:</div>
@@ -590,256 +723,6 @@ LANDING_HTML = '''<!DOCTYPE html>
         var marker = null;
         var autocomplete = null;
         var selectedPlace = null;
-        var selectedApproach = null;
-        var elevationService = null;
-        var isSatellite = false;
-
-        var approaches = {
-            "flood-risk": {
-                name: "Riesgo de Inundacion",
-                icon: "water",
-                indices: [
-                    { name: "Elevacion", color: "#78716c", api: "Elevation API", desc: "Altura sobre nivel del mar. Zonas bajas son mas susceptibles a inundaciones." },
-                    { name: "Pendiente", color: "#f59e0b", api: "Elevation API", desc: "Grado de inclinacion del terreno calculado desde puntos de elevacion." },
-                    { name: "NDWI", color: "#3b82f6", api: "Earth Engine", desc: "Indice de Agua Normalizado. Detecta cuerpos de agua y humedad superficial." },
-                    { name: "Flow Accumulation", color: "#ef4444", api: "Earth Engine", desc: "Modelo de acumulacion de flujo hidrico basado en topografia." }
-                ]
-            },
-            "water-management": {
-                name: "Gestion Hidrica",
-                icon: "tint",
-                indices: [
-                    { name: "NDWI Temporal", color: "#3b82f6", api: "Earth Engine", desc: "Serie temporal del indice de agua para detectar variaciones estacionales." },
-                    { name: "NDMI", color: "#8b5cf6", api: "Earth Engine", desc: "Indice de Humedad. Mide contenido de agua en vegetacion usando SWIR." },
-                    { name: "NDVI", color: "#10b981", api: "Earth Engine", desc: "Indice de Vegetacion. Indica vigor vegetal, correlaciona con disponibilidad hidrica." },
-                    { name: "Elevacion", color: "#78716c", api: "Elevation API", desc: "Altura del terreno para modelar escorrentia y acumulacion." }
-                ]
-            },
-            "environmental": {
-                name: "Calidad Ambiental",
-                icon: "leaf",
-                indices: [
-                    { name: "Indice Calidad Aire", color: "#10b981", api: "Air Quality API", desc: "AQI en tiempo real. Mide PM2.5, PM10, O3, NO2, CO en resolucion 500m." },
-                    { name: "Contaminantes", color: "#ef4444", api: "Air Quality API", desc: "Concentracion de particulas y gases contaminantes en el aire." },
-                    { name: "Potencial Solar", color: "#f59e0b", api: "Solar API", desc: "Radiacion solar anual y potencial fotovoltaico de la zona." },
-                    { name: "Cobertura Vegetal", color: "#22c55e", api: "Earth Engine", desc: "NDVI para evaluar areas verdes y su efecto en calidad ambiental." },
-                    { name: "Elevacion", color: "#78716c", api: "Elevation API", desc: "Datos de elevación para análisis de dispersión de contaminantes." }
-                ]
-            },
-            "land-planning": {
-                name: "Planificacion Territorial",
-                icon: "building",
-                indices: [
-                    { name: "Modelo Elevacion", color: "#78716c", api: "Elevation API", desc: "DEM de alta precision para analisis topografico del territorio." },
-                    { name: "Pendientes", color: "#f59e0b", api: "Elevation API", desc: "Clasificacion de pendientes para aptitud constructiva y agricola." },
-                    { name: "Potencial Solar", color: "#fbbf24", api: "Solar API", desc: "Horas de sol y potencial para instalaciones fotovoltaicas." },
-                    { name: "Uso de Suelo", color: "#10b981", api: "Earth Engine", desc: "Clasificacion: urbano, agricola, natural, basada en Sentinel-2." },
-                    { name: "Calidad Aire", color: "#10b981", api: "Air Quality API", desc: "Consideración de calidad del aire para zonas residenciales." }
-                ]
-            }
-        };
-
-        // Dynamic Loader
-        (g=>{var h,a,k,p="The Google Maps JavaScript API",c="google",l="importLibrary",q="__ib__",m=document,b=window;b=b[c]||(b[c]={});var d=b.maps||(b.maps={}),r=new Set,e=new URLSearchParams,u=()=>h||(h=new Promise(async(f,n)=>{await (a=m.createElement("script"));e.set("libraries",[...r]+"");for(k in g)e.set(k.replace(/[A-Z]/g,t=>"_"+t[0].toLowerCase()),g[k]);e.set("callback",c+".maps."+q);a.src=`https://maps.${c}apis.com/maps/api/js?`+e;d[q]=f;a.onerror=()=>h=n(Error(p+" could not load."));a.nonce=m.querySelector("script[nonce]")?.nonce||"";m.head.append(a)}));d[l]?console.warn(p+" only loads once. Ignoring:",g):d[l]=(f,...n)=>r.add(f)&&u().then(()=>d[l](f,...n))})({
-            key: "GOOGLE_MAPS_KEY_PLACEHOLDER",
-            v: "weekly",
-        });
-
-        async function initMap() {
-            var placeholder = document.getElementById("map-placeholder");
-            if (placeholder) { placeholder.style.display = "none"; }
-            
-            const { Map } = await google.maps.importLibrary("maps");
-            const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
-            const { PlaceAutocompleteElement } = await google.maps.importLibrary("places");
-
-            var chileCenter = { lat: -33.4489, lng: -70.6693 };
-            map = new Map(document.getElementById("demo-map"), {
-                center: chileCenter,
-                zoom: 5,
-                minZoom: 4,
-                maxZoom: 18,
-                mapId: "3a20a11ffd93a81165e3538d",
-                mapTypeControl: false,
-                streetViewControl: false,
-                fullscreenControl: true,
-                zoomControl: true
-            });
-
-            // Initialize AdvancedMarkerElement (hidden by default)
-            marker = new AdvancedMarkerElement({
-                map: null,
-                position: chileCenter,
-            });
-
-            elevationService = new google.maps.ElevationService();
-            
-            // Initialize PlaceAutocompleteElement
-            const autocomplete = new PlaceAutocompleteElement({
-                componentRestrictions: { country: "cl" }
-            });
-            
-            const container = document.getElementById("autocomplete-container");
-            if (container) {
-                container.innerHTML = ''; // Clear previous if any
-                container.appendChild(autocomplete);
-            }
-            
-            async function handlePlaceSelect(place) {
-                try {
-                    if (!place) {
-                        console.log("No place selected");
-                        return;
-                    }
-                    
-                    console.log("Place selected, fetching fields...", place);
-                    await place.fetchFields({ fields: ["displayName", "formattedAddress", "location"] });
-                    console.log("Fields fetched:", place.displayName, place.formattedAddress);
-                    
-                    // Adapt new Place object to legacy structure expected by handlePlaceSelection
-                    const compatPlace = {
-                        name: place.displayName,
-                        formatted_address: place.formattedAddress,
-                        geometry: {
-                            location: place.location
-                        }
-                    };
-                    handlePlaceSelection(compatPlace);
-                } catch (error) {
-                    console.error("Error selecting place:", error);
-                    alert("Error al obtener detalles de la ubicación. Por favor verifica que la API 'Places API (New)' esté habilitada en Google Cloud Console.");
-                }
-            }
-
-            // Use the new standard event 'gmp-select'
-            autocomplete.addEventListener("gmp-select", async function(e) {
-                console.log("gmp-select event fired", e);
-                let place;
-                if (e.place) {
-                    place = e.place;
-                } else if (e.placePrediction) {
-                    place = e.placePrediction.toPlace();
-                } else if (e.detail && e.detail.place) {
-                    place = e.detail.place;
-                } else if (e.detail && e.detail.placePrediction) {
-                    place = e.detail.placePrediction.toPlace();
-                }
-                
-                await handlePlaceSelect(place);
-            });
-            
-            // Fallback for older versions/behaviors
-            autocomplete.addEventListener("gmp-placeselect", async function(e) {
-                console.log("gmp-placeselect event fired", e);
-                await handlePlaceSelect(e.place);
-            });
-
-            map.addListener("click", function(e) {
-                placeMarker(e.latLng);
-                reverseGeocode(e.latLng);
-            });
-        }
-
-        function handlePlaceSelection(place) {
-            var loc = place.geometry.location;
-            selectedPlace = {
-                name: place.name || "Ubicacion",
-                address: place.formatted_address || "",
-                lat: loc.lat(),
-                lng: loc.lng()
-            };
-            map.setCenter(loc);
-            map.setZoom(14);
-            
-            // Update AdvancedMarkerElement
-            marker.position = loc;
-            marker.map = map;
-            
-            updateLocationUI();
-            fetchLiveData(loc.lat(), loc.lng());
-            checkReadyState();
-        }
-
-        function placeMarker(latLng) {
-            // Update AdvancedMarkerElement
-            marker.position = latLng;
-            marker.map = map;
-            
-            if (map.getZoom() < 12) { map.setZoom(14); }
-            map.panTo(latLng);
-        }
-
-        function reverseGeocode(latLng) {
-            var geocoder = new google.maps.Geocoder();
-            geocoder.geocode({ location: latLng }, function(results, status) {
-                if (status === "OK" && results[0]) {
-                    var place = results[0];
-                    var name = "Ubicacion";
-                    for (var i = 0; i < place.address_components.length; i++) {
-                        var comp = place.address_components[i];
-                        if (comp.types.indexOf("locality") >= 0 || comp.types.indexOf("administrative_area_level_3") >= 0) {
-                            name = comp.long_name;
-                            break;
-                        }
-                    }
-                    selectedPlace = {
-                        name: name,
-                        address: place.formatted_address,
-                        lat: latLng.lat(),
-                        lng: latLng.lng()
-                    };
-                    updateLocationUI();
-                    fetchLiveData(latLng.lat(), latLng.lng());
-                    checkReadyState();
-                }
-            });
-        }
-
-        function updateLocationUI() {
-            var badge = document.getElementById("location-badge");
-            badge.classList.add("active");
-            document.getElementById("location-name").textContent = selectedPlace.name;
-            document.getElementById("location-coords").textContent = selectedPlace.lat.toFixed(4) + ", " + selectedPlace.lng.toFixed(4);
-            document.getElementById("status-location").classList.add("ready");
-            var resultEl = document.getElementById("result-location");
-            resultEl.innerHTML = '<i class="fas fa-map-marker-alt result-icon"></i><div class="result-content"><h4>' + selectedPlace.name + '</h4><p>' + selectedPlace.address + '</p></div>';
-        }
-
-        function fetchLiveData(lat, lng) {
-            document.getElementById("live-data").classList.add("active");
-            document.getElementById("data-elevation").innerHTML = '<span class="loading-spinner"></span>';
-            document.getElementById("data-aqi").innerHTML = '<span class="loading-spinner"></span>';
-            document.getElementById("data-solar").innerHTML = '<span class="loading-spinner"></span>';
-            document.getElementById("data-slope").innerHTML = '<span class="loading-spinner"></span>';
-            if (elevationService) {
-                elevationService.getElevationForLocations({
-                    locations: [{ lat: lat, lng: lng }]
-                }, function(results, status) {
-                    if (status === "OK" && results[0]) {
-                        var elev = Math.round(results[0].elevation);
-                        document.getElementById("data-elevation").textContent = elev + " m";
-                        calculateSlope(lat, lng, elev);
-                    } else {
-                        document.getElementById("data-elevation").textContent = "N/D";
-                        document.getElementById("data-slope").textContent = "N/D";
-                    }
-                });
-            }
-            fetchAirQuality(lat, lng);
-            fetchSolarPotential(lat, lng);
-        }
-
-        function calculateSlope(lat, lng, centerElev) {
-            var offset = 0.001;
-            var points = [
-                { lat: lat + offset, lng: lng },
-                { lat: lat - offset, lng: lng },
-                { lat: lat, lng: lng + offset },
-                { lat: lat, lng: lng - offset }
-            ];
-            elevationService.getElevationForLocations({ locations: points }, function(results, status) {
-                if (status === "OK" && results.length === 4) {
-                    var maxDiff = 0;
                     for (var i = 0; i < results.length; i++) {
                         var diff = Math.abs(results[i].elevation - centerElev);
                         if (diff > maxDiff) { maxDiff = diff; }
