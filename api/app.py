@@ -908,6 +908,33 @@ LANDING_HTML = '''<!DOCTYPE html>
             autocomplete.classList.add("controls");
             container.appendChild(autocomplete);
 
+            // Fix for "Form field element should have an id or name attribute" warning
+            // We access the Shadow DOM to inject the missing attributes into Google's input element
+            setTimeout(() => {
+                try {
+                    const shadow = autocomplete.shadowRoot;
+                    if (shadow) {
+                        const input = shadow.querySelector('input');
+                        if (input) {
+                            input.setAttribute('name', 'place_search');
+                            input.setAttribute('id', 'place_search_input');
+                            // Also try to improve Enter key behavior
+                            input.addEventListener('keydown', (e) => {
+                                if (e.key === 'Enter') {
+                                    console.log("Enter pressed in Places input");
+                                    // If no place selected, we might want to trigger something, 
+                                    // but we can't force selection easily. 
+                                    // At least we log it for debugging.
+                                }
+                            });
+                            console.log("Fixed Google Autocomplete input attributes");
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Could not apply fix to Places input:", e);
+                }
+            }, 1000); // Wait for component to render
+
             autocomplete.addEventListener("gmp-places-select", async ({ place }) => {
                 if (!place) {
                     console.error("No place selected");
