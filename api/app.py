@@ -739,6 +739,80 @@ LANDING_HTML = '''<!DOCTYPE html>
         var marker = null;
         var autocomplete = null;
         var selectedPlace = null;
+        var selectedApproach = null;
+
+        var approaches = {
+            "mining": {
+                name: "Mineria Sostenible",
+                icon: "mountain",
+                indices: [
+                    { name: "Vegetacion (NDVI)", api: "Sentinel-2", desc: "Monitoreo de impacto ambiental en flora.", color: "#2ecc71" },
+                    { name: "Agua (NDWI)", api: "Sentinel-2", desc: "Deteccion de cuerpos de agua y relaves.", color: "#3498db" },
+                    { name: "Pendiente", api: "Elevation", desc: "Analisis de estabilidad de terreno.", color: "#95a5a6" }
+                ]
+            },
+            "agriculture": {
+                name: "Agroindustria Inteligente",
+                icon: "seedling",
+                indices: [
+                    { name: "Salud Cultivo (NDVI)", api: "Sentinel-2", desc: "Vigor y salud de la vegetacion.", color: "#2ecc71" },
+                    { name: "Estres Hidrico (NDMI)", api: "Sentinel-2", desc: "Contenido de humedad en cultivos.", color: "#1abc9c" },
+                    { name: "Solar", api: "Solar API", desc: "Potencial para riego solar.", color: "#f1c40f" }
+                ]
+            },
+            "energy": {
+                name: "Energias Renovables",
+                icon: "solar-panel",
+                indices: [
+                    { name: "Irradiancia", api: "Solar API", desc: "Potencial solar fotovoltaico.", color: "#f1c40f" },
+                    { name: "Topografia", api: "Elevation", desc: "Analisis de sombras y pendiente.", color: "#95a5a6" },
+                    { name: "Infraestructura", api: "Places", desc: "Proximidad a redes electricas.", color: "#e74c3c" }
+                ]
+            },
+            "real-estate": {
+                name: "Desarrollo Inmobiliario",
+                icon: "building",
+                indices: [
+                    { name: "Constructibilidad", api: "Elevation", desc: "Pendientes aptas para construccion.", color: "#95a5a6" },
+                    { name: "Servicios", api: "Places", desc: "Cercania a colegios y salud.", color: "#e74c3c" },
+                    { name: "Calidad Aire", api: "Air Quality", desc: "Indices de contaminacion local.", color: "#1abc9c" },
+                    { name: "Riesgos", api: "Sentinel-2", desc: "Historial de inundaciones (NDWI).", color: "#3498db" }
+                ]
+            },
+            "flood-risk": {
+                name: "Riesgo de Inundacion",
+                icon: "water",
+                indices: [
+                    { name: "Cuerpos de Agua (NDWI)", api: "Sentinel-2", desc: "Deteccion de zonas inundables.", color: "#3498db" },
+                    { name: "Elevacion", api: "Elevation", desc: "Modelado de terreno.", color: "#95a5a6" }
+                ]
+            },
+            "water-management": {
+                name: "Gestion Hidrica",
+                icon: "tint",
+                indices: [
+                    { name: "Humedad Suelo (NDMI)", api: "Sentinel-2", desc: "Retencion de agua en suelo.", color: "#1abc9c" },
+                    { name: "NDWI", api: "Sentinel-2", desc: "Monitoreo de embalses.", color: "#3498db" }
+                ]
+            },
+            "environmental": {
+                name: "Calidad Ambiental",
+                icon: "leaf",
+                indices: [
+                    { name: "Cobertura Vegetal (NDVI)", api: "Sentinel-2", desc: "Densidad de vegetacion.", color: "#2ecc71" },
+                    { name: "Calidad Aire", api: "Air Quality", desc: "Indices AQI en tiempo real.", color: "#e74c3c" }
+                ]
+            },
+            "land-planning": {
+                name: "Planificacion Territorial",
+                icon: "map-marked-alt",
+                indices: [
+                    { name: "Pendiente", api: "Elevation", desc: "Aptitud de uso de suelo.", color: "#95a5a6" },
+                    { name: "Uso Actual", api: "Sentinel-2", desc: "Clasificacion de cobertura.", color: "#f1c40f" }
+                ]
+            }
+        };
+
         async function initMap() {
             if (MAPS_API_KEY === "GOOGLE_MAPS_KEY_PLACEHOLDER" || !MAPS_API_KEY) {
                 console.error("API Key no configurada");
