@@ -712,6 +712,7 @@ LANDING_HTML = '''<!DOCTYPE html>
                         </select>
                         <div class="indices-panel" id="indices-panel">
                             <div class="indices-title">Indices y datos del analisis:</div>
+                            <div id="analysis-results" style="display:none;"></div>
                             <div id="indices-list"></div>
                         </div>
                     </div>
@@ -1017,7 +1018,12 @@ LANDING_HTML = '''<!DOCTYPE html>
         function fetchSolarPotential(lat, lng) {
             var url = "https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=" + lat + "&location.longitude=" + lng + "&requiredQuality=LOW&key=" + MAPS_API_KEY;
             fetch(url)
-            .then(function(response) { return response.json(); })
+            .then(function(response) { 
+                if (response.status === 404) {
+                    throw new Error("No solar data");
+                }
+                return response.json(); 
+            })
             .then(function(data) {
                 if (data.solarPotential) {
                     var hours = Math.round(data.solarPotential.maxSunshineHoursPerYear || 0);
@@ -1026,7 +1032,10 @@ LANDING_HTML = '''<!DOCTYPE html>
                     document.getElementById("data-solar").textContent = "Sin edificio";
                 }
             })
-            .catch(function() { document.getElementById("data-solar").textContent = "N/D"; });
+            .catch(function(err) { 
+                console.log("Solar API info:", err.message);
+                document.getElementById("data-solar").textContent = "N/D"; 
+            });
         }
 
         function onApproachChange() {
@@ -1048,6 +1057,14 @@ LANDING_HTML = '''<!DOCTYPE html>
                 html += '<div class="index-item"><div class="index-header"><div class="index-color" style="background:' + idx.color + '"></div><span class="index-name">' + idx.name + '</span><span class="index-api">' + idx.api + '</span></div><div class="index-desc">' + idx.desc + '</div></div>';
             }
             document.getElementById("indices-list").innerHTML = html;
+            
+            // Hide previous results if any
+            var resultsContainer = document.getElementById("analysis-results");
+            if (resultsContainer) {
+                resultsContainer.style.display = "none";
+                resultsContainer.innerHTML = "";
+            }
+
             document.getElementById("indices-panel").classList.add("active");
             var resultEl = document.getElementById("result-approach");
             resultEl.innerHTML = '<i class="fas fa-' + config.icon + ' result-icon"></i><div class="result-content"><h4>' + config.name + '</h4><p>' + config.indices.length + ' capas de datos</p></div>';
@@ -1099,16 +1116,34 @@ LANDING_HTML = '''<!DOCTYPE html>
                 btn.disabled = false;
 
                 if (data.status === 'success') {
-                    // Mostrar resultados en UI (puedes mejorar esto para que no sea un alert)
-                    var resultHtml = "<ul>";
-                    for (var key in data.data) {
-                        resultHtml += "<li><b>" + key + ":</b> " + data.data[key] + "</li>";
-                    }
-                    resultHtml += "</ul>";
+                    // Create Results Table
+                    var tableHtml = '<table class="results-table" style="width:100%; border-collapse:collapse; margin-top:10px; font-size:0.9rem;">';
+                    tableHtml += '<thead><tr style="background:var(--primary-light); color:white;"><th style="padding:8px; text-align:left;">Métrica</th><th style="padding:8px; text-align:right;">Valor</th></tr></thead><tbody>';
                     
-                    // Actualizar panel de indices con resultados reales
-                    var indicesPanel = document.getElementById("indices-list");
-                    indicesPanel.innerHTML = '<div class="alert alert-success" style="background:#d1fae5; color:#065f46; padding:1rem; border-radius:8px; margin-bottom:1rem;">' + resultHtml + '</div>' + indicesPanel.innerHTML;
+                    for (var key in data.data) {
+                        tableHtml += '<tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">' + key + '</td><td style="padding:8px; text-align:right; font-weight:600;">' + data.data[key] + '</td></tr>';
+                    }
+                    tableHtml += '</tbody></table>';
+                    
+                    // Display in Analysis Results Container
+                    var resultsContainer = document.getElementById("analysis-results");
+                    if (!resultsContainer) {
+                        // Create if not exists (should be added to HTML, but fallback here)
+                        resultsContainer = document.createElement("div");
+                        resultsContainer.id = "analysis-results";
+                        resultsContainer.style.marginBottom = "1rem";
+                        var indicesPanel = document.getElementById("indices-panel");
+                        indicesPanel.insertBefore(resultsContainer, document.getElementById("indices-list"));
+                    }
+                    
+                    resultsContainer.innerHTML = '<div class="result-box" style="background:white; border:1px solid var(--secondary); border-radius:8px; padding:1rem; box-shadow:0 2px 4px rgba(0,0,0,0.05);">' +
+                        '<h4 style="color:var(--primary); margin-top:0; margin-bottom:0.5rem; border-bottom:1px solid #eee; padding-bottom:0.5rem;"><i class="fas fa-chart-bar"></i> Resultados del Análisis</h4>' +
+                        tableHtml + 
+                        '</div>';
+                    resultsContainer.style.display = "block";
+                    
+                    // Scroll to results
+                    resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
                     // Agregar capa al mapa
                     if (data.map_layer && data.map_layer.url) {
