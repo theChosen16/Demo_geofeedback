@@ -716,15 +716,113 @@ LANDING_HTML = '''<!DOCTYPE html>
         var marker = null;
         var autocomplete = null;
         var selectedPlace = null;
-                    for (var i = 0; i < results.length; i++) {
-                        var diff = Math.abs(results[i].elevation - centerElev);
-                        if (diff > maxDiff) { maxDiff = diff; }
-                    }
-                    var slopePercent = (maxDiff / 111) * 100;
-                    var slopeClass = slopePercent < 5 ? "Plano" : slopePercent < 15 ? "Suave" : slopePercent < 30 ? "Moderado" : "Pronunciado";
-                    document.getElementById("data-slope").textContent = Math.round(slopePercent) + "% (" + slopeClass + ")";
+        async function initMap() {
+            if (MAPS_API_KEY === "GOOGLE_MAPS_KEY_PLACEHOLDER" || !MAPS_API_KEY) {
+                console.error("API Key no configurada");
+                return;
+            }
+
+            // Import libraries
+            const { Map } = await google.maps.importLibrary("maps");
+            const { AdvancedMarkerElement } = await google.maps.importLibrary("marker");
+            const { Place } = await google.maps.importLibrary("places");
+
+            map = new Map(document.getElementById("demo-map"), {
+                center: { lat: -33.4489, lng: -70.6693 }, // Santiago
+                zoom: 5,
+                mapId: "DEMO_MAP_ID", // Reemplazar con ID real si existe
+                mapTypeId: "hybrid",
+                disableDefaultUI: false,
+                zoomControl: true,
+                mapTypeControl: false,
+                streetViewControl: false,
+                fullscreenControl: true
+            });
+
+            // Autocomplete setup
+            var input = document.getElementById("pac-input");
+            var options = {
+                fields: ["formatted_address", "geometry", "name"],
+                strictBounds: false,
+            };
+            autocomplete = new google.maps.places.Autocomplete(input, options);
+            autocomplete.bindTo("bounds", map);
+
+            autocomplete.addListener("place_changed", function() {
+                var place = autocomplete.getPlace();
+                if (!place.geometry || !place.geometry.location) {
+                    window.alert("No details available for input: '" + place.name + "'");
+                    return;
+                }
+
+                if (place.geometry.viewport) {
+                    map.fitBounds(place.geometry.viewport);
                 } else {
-                    document.getElementById("data-slope").textContent = "N/D";
+                    map.setCenter(place.geometry.location);
+                    map.setZoom(15);
+                }
+
+                if (marker) marker.map = null;
+                marker = new AdvancedMarkerElement({
+                    map: map,
+                    position: place.geometry.location,
+                    title: place.name
+                });
+
+                selectedPlace = {
+                    lat: place.geometry.location.lat(),
+                    lng: place.geometry.location.lng(),
+                    name: place.name
+                };
+
+                // Update UI
+                document.getElementById("location-name").textContent = place.name;
+                document.getElementById("location-coords").textContent = selectedPlace.lat.toFixed(4) + ", " + selectedPlace.lng.toFixed(4);
+                document.getElementById("status-location").classList.add("ready");
+                document.getElementById("result-location").innerHTML = '<i class="fas fa-check-circle result-icon" style="color:var(--secondary)"></i><div class="result-content"><h4>' + place.name + '</h4><p>Ubicacion confirmada</p></div>';
+                
+                checkReadyState();
+
+                // Fetch Live Data
+                fetchElevationAndSlope(selectedPlace.lat, selectedPlace.lng);
+                fetchAirQuality(selectedPlace.lat, selectedPlace.lng);
+                fetchSolarPotential(selectedPlace.lat, selectedPlace.lng);
+            });
+        }
+
+        function fetchElevationAndSlope(lat, lng) {
+            var elevator = new google.maps.ElevationService();
+            var locations = [];
+            // Center and 4 surrounding points (~100m offset)
+            var offset = 0.001; 
+            locations.push({ lat: lat, lng: lng });
+            locations.push({ lat: lat + offset, lng: lng });
+            locations.push({ lat: lat - offset, lng: lng });
+            locations.push({ lat: lat, lng: lng + offset });
+            locations.push({ lat: lat, lng: lng - offset });
+
+            elevator.getElevationForLocations({ 'locations': locations }, function(results, status) {
+                if (status === 'OK') {
+                    if (results[0]) {
+                        var centerElev = results[0].elevation;
+                        document.getElementById("data-elevation").textContent = Math.round(centerElev) + " m";
+                        
+                        // Calculate max slope
+                        var maxDiff = 0;
+                        for (var i = 1; i < results.length; i++) {
+                            var diff = Math.abs(results[i].elevation - centerElev);
+                            if (diff > maxDiff) { maxDiff = diff; }
+                        }
+                        var slopePercent = (maxDiff / 111) * 100; // Rough approx
+                        var slopeClass = slopePercent < 5 ? "Plano" : slopePercent < 15 ? "Suave" : slopePercent < 30 ? "Moderado" : "Pronunciado";
+                        document.getElementById("data-slope").textContent = Math.round(slopePercent) + "% (" + slopeClass + ")";
+                    } else {
+                        document.getElementById("data-elevation").textContent = "N/D";
+                        document.getElementById("data-slope").textContent = "N/D";
+                    }
+                } else {
+                    document.getElementById("data-elevation").textContent = "Error";
+                    document.getElementById("data-slope").textContent = "Error";
                 }
             });
         }
