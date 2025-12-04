@@ -129,13 +129,36 @@ def analyze_territory():
              stats = slope.reduceRegion(reducer=mean_reducer, geometry=roi, scale=90).getInfo()
              results = {"Pendiente Promedio": f"{stats.get('slope', 0):.1f}°"}
 
+        # Generar Visualización (Map ID)
+        vis_params = {}
+        vis_image = None
+        
+        if approach in ['mining', 'agriculture', 'environmental', 'water-management']:
+            # Visualizar NDVI/NDWI
+            vis_image = s2_indices.select('NDVI')
+            vis_params = {'min': -0.2, 'max': 0.8, 'palette': ['red', 'yellow', 'green']}
+            if approach == 'water-management' or approach == 'flood-risk':
+                 vis_image = s2_indices.select('NDWI')
+                 vis_params = {'min': -0.5, 'max': 0.5, 'palette': ['white', 'blue']}
+        elif approach in ['energy', 'real-estate', 'land-planning']:
+            # Visualizar Pendiente
+            vis_image = slope
+            vis_params = {'min': 0, 'max': 45, 'palette': ['green', 'yellow', 'red']}
         else:
-            return jsonify({"status": "error", "message": "Enfoque no reconocido"}), 400
+            vis_image = s2_indices.select('NDVI') # Fallback
+            vis_params = {'min': 0, 'max': 1, 'palette': ['white', 'green']}
+
+        map_id_dict = vis_image.getMapId(vis_params)
+        tile_url = map_id_dict['tile_fetcher'].url_format
 
         return jsonify({
             "status": "success",
             "approach": approach,
             "data": results,
+            "map_layer": {
+                "url": tile_url,
+                "attribution": "Google Earth Engine"
+            },
             "meta": {
                 "satellite": "Sentinel-2 MSI (Level-2A)",
                 "terrain": "SRTM v4",
@@ -906,18 +929,74 @@ LANDING_HTML = '''<!DOCTYPE html>
             }
         }
 
+        var currentGeeLayer = null;
+
         function analyzeTerritory() {
             if (!selectedPlace || !selectedApproach) { return; }
-            var config = approaches[selectedApproach];
-            var indices = [];
-            for (var i = 0; i < config.indices.length; i++) {
-                indices.push(config.indices[i].name + " (" + config.indices[i].api + ")");
-            }
-            var elevText = document.getElementById("data-elevation").textContent;
-            var aqiText = document.getElementById("data-aqi").textContent;
-            var solarText = document.getElementById("data-solar").textContent;
-            var slopeText = document.getElementById("data-slope").textContent;
-            alert("ANALISIS: " + config.name + "\\nUBICACION: " + selectedPlace.name + "\\nCOORDENADAS: " + selectedPlace.lat.toFixed(4) + ", " + selectedPlace.lng.toFixed(4) + "\\n\\nDATOS EN TIEMPO REAL:\\n- Elevacion: " + elevText + "\\n- Pendiente: " + slopeText + "\\n- Calidad Aire: " + aqiText + "\\n- Potencial Solar: " + solarText + "\\n\\nCAPAS A PROCESAR:\\n- " + indices.join("\\n- ") + "\\n\\nSiguiente paso: Conectar con Google Earth Engine.");
+            
+            var btn = document.getElementById("analyze-btn");
+            btn.innerHTML = '<span class="loading-spinner"></span> Procesando...';
+            btn.disabled = true;
+
+            var payload = {
+                lat: selectedPlace.lat,
+                lng: selectedPlace.lng,
+                approach: selectedApproach
+            };
+
+            fetch('/api/v1/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                btn.innerHTML = '<i class="fas fa-satellite-dish"></i> Iniciar Analisis';
+                btn.disabled = false;
+
+                if (data.status === 'success') {
+                    // Mostrar resultados en UI (puedes mejorar esto para que no sea un alert)
+                    var resultHtml = "<ul>";
+                    for (var key in data.data) {
+                        resultHtml += "<li><b>" + key + ":</b> " + data.data[key] + "</li>";
+                    }
+                    resultHtml += "</ul>";
+                    
+                    // Actualizar panel de indices con resultados reales
+                    var indicesPanel = document.getElementById("indices-list");
+                    indicesPanel.innerHTML = '<div class="alert alert-success" style="background:#d1fae5; color:#065f46; padding:1rem; border-radius:8px; margin-bottom:1rem;">' + resultHtml + '</div>' + indicesPanel.innerHTML;
+
+                    // Agregar capa al mapa
+                    if (data.map_layer && data.map_layer.url) {
+                        if (currentGeeLayer) {
+                            map.overlayMapTypes.removeAt(0);
+                        }
+                        
+                        var geeMapType = new google.maps.ImageMapType({
+                            getTileUrl: function(coord, zoom) {
+                                var url = data.map_layer.url;
+                                url = url.replace('{x}', coord.x).replace('{y}', coord.y).replace('{z}', zoom);
+                                return url;
+                            },
+                            tileSize: new google.maps.Size(256, 256),
+                            name: "GEE Layer",
+                            opacity: 0.7
+                        });
+
+                        map.overlayMapTypes.insertAt(0, geeMapType);
+                        currentGeeLayer = geeMapType;
+                        console.log("Capa GEE agregada: " + data.map_layer.url);
+                    }
+                } else {
+                    alert("Error en el analisis: " + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                btn.innerHTML = '<i class="fas fa-satellite-dish"></i> Iniciar Analisis';
+                btn.disabled = false;
+                alert("Error de conexión con el servidor de análisis.");
+            });
         }
 
         // Start the map initialization
