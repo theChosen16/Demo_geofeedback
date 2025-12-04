@@ -920,56 +920,57 @@ LANDING_HTML = '''<!DOCTYPE html>
             const onPlaceSelect = async (event) => {
                 console.log("Event fired:", event.type, event);
                 
-                // Strategy 1: Get from event
-                let place = event.place || event.detail?.place || event.detail;
-                
-                // Strategy 2: Get from component method (Standard for some versions)
-                if (!place && typeof autocomplete.getPlace === 'function') {
-                    console.log("Trying autocomplete.getPlace()...");
+                let place = null;
+
+                // Case 1: New PlaceAutocompleteElement (gmp-select) returns placePrediction
+                if (event.placePrediction) {
+                    console.log("Found placePrediction, converting to Place...");
+                    place = event.placePrediction.toPlace();
+                } 
+                // Case 2: Some versions might return event.place directly
+                else if (event.place) {
+                    console.log("Found event.place");
+                    place = event.place;
+                }
+                // Case 3: Fallback to details
+                else if (event.detail?.place) {
+                    place = event.detail.place;
+                }
+                // Case 4: Last resort, try getPlace()
+                else if (typeof autocomplete.getPlace === 'function') {
                     try {
                         place = autocomplete.getPlace();
-                        console.log("autocomplete.getPlace() result:", place);
-                    } catch (e) {
-                        console.warn("Error calling getPlace():", e);
-                    }
+                        console.log("Retrieved via getPlace():", place);
+                    } catch(e) { console.warn("getPlace failed", e); }
                 }
 
                 if (!place) {
-                    console.warn("No place object found in event or via getPlace(). Event type:", event.type);
-                    // Strategy 3: Check if it's just text in the input (value)
-                    if (autocomplete.value) {
-                        console.log("Input has value but no place object. Value:", autocomplete.value);
-                        // We could trigger geocoding here if we wanted, but let's wait for user confirmation or Enter key
-                    }
+                    console.warn("Could not retrieve Place object from event.");
                     return;
                 }
 
                 try {
-                    // If it's a PlaceResult (from getPlace), it might already have geometry
-                    if (place.geometry && place.geometry.location) {
-                         console.log("Place object has geometry (PlaceResult format)");
-                         handlePlaceSelection(place.geometry.location, place.name || place.formatted_address, place.geometry.viewport);
-                         return;
-                    }
-
-                    // If it's a Place object (from New API), it needs fetchFields
+                    // If it's a Place object from the new API, we MUST fetch fields
+                    // We check for fetchFields method to distinguish from legacy PlaceResult
                     if (typeof place.fetchFields === 'function') {
+                        console.log("Fetching fields for Place object...");
                         await place.fetchFields({ fields: ["displayName", "formattedAddress", "location", "viewport"] });
                         
-                        console.log("Place details fetched:", {
-                            name: place.displayName,
-                            location: place.location,
-                            address: place.formattedAddress
-                        });
-
                         if (!place.location) {
-                            console.error("Place has no location");
+                            console.error("Place has no location after fetchFields");
                             alert("La ubicación seleccionada no tiene coordenadas válidas.");
                             return;
                         }
-                        handlePlaceSelection(place.location, place.displayName || place.formattedAddress, place.viewport);
-                    } else {
-                        console.warn("Place object is not a standard Place class:", place);
+                        
+                        handlePlaceSelection(place.location, place.displayName, place.viewport);
+                    } 
+                    // Legacy PlaceResult object (has geometry property directly)
+                    else if (place.geometry && place.geometry.location) {
+                        console.log("Using legacy PlaceResult object");
+                        handlePlaceSelection(place.geometry.location, place.name || place.formatted_address, place.geometry.viewport);
+                    }
+                    else {
+                        console.error("Unknown Place object structure:", place);
                     }
                 } catch (err) {
                     console.error("Error processing place:", err);
