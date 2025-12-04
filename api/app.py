@@ -905,82 +905,70 @@ LANDING_HTML = '''<!DOCTYPE html>
                 fetchSolarPotential(clickedLat, clickedLng);
             });
 
-            // Autocomplete setup (New Places API)
-            // Clear previous content if any
+            // Autocomplete setup (Standard Widget)
             const container = document.getElementById("autocomplete-container");
-            container.innerHTML = '';
+            container.innerHTML = '<input id="pac-input" name="place_search" type="text" placeholder="Buscar ubicación..." class="controls" style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; font-size: 1rem; box-shadow: var(--shadow);">';
             
-            const autocomplete = new PlaceAutocompleteElement();
-            autocomplete.id = "pac-input";
-            autocomplete.classList.add("controls");
-            container.appendChild(autocomplete);
+            const input = document.getElementById("pac-input");
+            const autocomplete = new google.maps.places.Autocomplete(input, {
+                fields: ["formatted_address", "geometry", "name"],
+                strictBounds: false,
+            });
 
-            // Fix for "Form field element should have an id or name attribute" warning
-            // We access the Shadow DOM to inject the missing attributes into Google's input element
-            setTimeout(() => {
-                try {
-                    const shadow = autocomplete.shadowRoot;
-                    if (shadow) {
-                        const input = shadow.querySelector('input');
-                        if (input) {
-                            input.setAttribute('name', 'place_search');
-                            input.setAttribute('id', 'place_search_input');
-                            // Also try to improve Enter key behavior
-                            input.addEventListener('keydown', (e) => {
-                                if (e.key === 'Enter') {
-                                    console.log("Enter pressed in Places input");
-                                    // If no place selected, we might want to trigger something, 
-                                    // but we can't force selection easily. 
-                                    // At least we log it for debugging.
-                                }
-                            });
-                            console.log("Fixed Google Autocomplete input attributes");
+            // Bind the map's bounds (viewport) bias to the autocomplete object,
+            // so that the autocomplete requests use the current map bounds for the
+            // bounds option in the request.
+            autocomplete.bindTo("bounds", map);
+
+            autocomplete.addListener("place_changed", () => {
+                const place = autocomplete.getPlace();
+
+                if (!place.geometry || !place.geometry.location) {
+                    // User entered the name of a Place that was not suggested and
+                    // pressed the Enter key, or the Place Details request failed.
+                    // Let's try Geocoding as a fallback for "Enter" key usage
+                    const geocoder = new google.maps.Geocoder();
+                    geocoder.geocode({ address: input.value }, (results, status) => {
+                        if (status === "OK" && results[0]) {
+                            handlePlaceSelection(results[0].geometry.location, results[0].formatted_address);
+                        } else {
+                            window.alert("No se encontraron detalles para: '" + input.value + "'");
                         }
-                    }
-                } catch (e) {
-                    console.warn("Could not apply fix to Places input:", e);
-                }
-            }, 1000); // Wait for component to render
-
-            autocomplete.addEventListener("gmp-places-select", async ({ place }) => {
-                if (!place) {
-                    console.error("No place selected");
+                    });
                     return;
                 }
 
-                await place.fetchFields({ fields: ["displayName", "formattedAddress", "location", "viewport"] });
+                handlePlaceSelection(place.geometry.location, place.name || place.formatted_address, place.geometry.viewport);
+            });
 
-                if (!place.location) {
-                    window.alert("No details available for input: '" + place.displayName + "'");
-                    return;
-                }
-
-                if (place.viewport) {
-                    map.fitBounds(place.viewport);
+            function handlePlaceSelection(location, name, viewport) {
+                // If the place has a geometry, then present it on a map.
+                if (viewport) {
+                    map.fitBounds(viewport);
                 } else {
-                    map.setCenter(place.location);
+                    map.setCenter(location);
                     map.setZoom(15);
                 }
 
                 if (marker) marker.map = null;
                 marker = new AdvancedMarkerElement({
                     map: map,
-                    position: place.location,
-                    title: place.displayName
+                    position: location,
+                    title: name
                 });
 
                 selectedPlace = {
-                    lat: place.location.lat(),
-                    lng: place.location.lng(),
-                    name: place.displayName
+                    lat: location.lat(),
+                    lng: location.lng(),
+                    name: name
                 };
                 console.log("Selected Place updated:", selectedPlace);
 
                 // Update UI
-                document.getElementById("location-name").textContent = place.displayName;
+                document.getElementById("location-name").textContent = name;
                 document.getElementById("location-coords").textContent = selectedPlace.lat.toFixed(4) + ", " + selectedPlace.lng.toFixed(4);
                 document.getElementById("status-location").classList.add("ready");
-                document.getElementById("result-location").innerHTML = '<i class="fas fa-check-circle result-icon" style="color:var(--secondary)"></i><div class="result-content"><h4>' + place.displayName + '</h4><p>Ubicacion confirmada</p></div>';
+                document.getElementById("result-location").innerHTML = '<i class="fas fa-check-circle result-icon" style="color:var(--secondary)"></i><div class="result-content"><h4>' + name + '</h4><p>Ubicacion confirmada</p></div>';
                 
                 // Enable analysis button
                 checkReadyState();
@@ -989,7 +977,7 @@ LANDING_HTML = '''<!DOCTYPE html>
                 fetchElevationAndSlope(selectedPlace.lat, selectedPlace.lng);
                 fetchAirQuality(selectedPlace.lat, selectedPlace.lng);
                 fetchSolarPotential(selectedPlace.lat, selectedPlace.lng);
-            });
+            }
         }
 
         function fetchElevationAndSlope(lat, lng) {
