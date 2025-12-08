@@ -1,9 +1,26 @@
 import os
 import datetime
+import json
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import ee
 from gee_config import init_gee
+
+# Gemini AI Integration
+try:
+    import google.generativeai as genai
+    GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+    if GEMINI_API_KEY:
+        genai.configure(api_key=GEMINI_API_KEY)
+        gemini_model = genai.GenerativeModel('gemini-1.5-flash')
+        gemini_available = True
+        print("Gemini AI inicializado correctamente.")
+    else:
+        gemini_available = False
+        print("WARNING: GEMINI_API_KEY no configurada.")
+except ImportError:
+    gemini_available = False
+    print("WARNING: google-generativeai no instalado.")
 
 app = Flask(__name__)
 CORS(app)
@@ -186,6 +203,107 @@ def analyze_territory():
         print(f"Error en análisis GEE: {e}")
         return jsonify({"status": "error", "message": str(e)}), 500
 
+
+# ============================================================================
+# AI INTERPRETATION AND CHAT ENDPOINTS
+# ============================================================================
+
+@app.route('/api/v1/interpret', methods=['POST'])
+def interpret_analysis():
+    """Generate AI interpretation of analysis results."""
+    if not gemini_available:
+        return jsonify({"status": "error", "message": "Gemini AI no disponible"}), 503
+    
+    try:
+        data = request.json
+        results = data.get('results', {})
+        approach = data.get('approach', '')
+        location = data.get('location', 'ubicación seleccionada')
+        
+        approach_names = {
+            'mining': 'Minería Sostenible',
+            'agriculture': 'Agroindustria Inteligente',
+            'energy': 'Energías Renovables',
+            'real-estate': 'Desarrollo Inmobiliario',
+            'flood-risk': 'Riesgo de Inundación',
+            'water-management': 'Gestión Hídrica',
+            'environmental': 'Calidad Ambiental',
+            'land-planning': 'Planificación Territorial'
+        }
+        
+        prompt = f"""Eres el asistente de IA de GeoFeedback Chile, una plataforma de inteligencia territorial.
+        
+Analiza estos resultados de un estudio de {approach_names.get(approach, approach)} para {location}:
+
+{json.dumps(results, indent=2, ensure_ascii=False)}
+
+Proporciona una interpretación profesional en español que incluya:
+1. Un resumen ejecutivo (2-3 oraciones)
+2. Significado de cada métrica y su implicancia práctica
+3. Recomendaciones específicas basadas en los datos
+4. Posibles riesgos o consideraciones a tener en cuenta
+
+Mantén un tono profesional pero accesible. Máximo 300 palabras."""
+
+        response = gemini_model.generate_content(prompt)
+        
+        return jsonify({
+            "status": "success",
+            "interpretation": response.text,
+            "model": "gemini-1.5-flash"
+        })
+        
+    except Exception as e:
+        print(f"Error en interpretación AI: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route('/api/v1/chat', methods=['POST'])
+def chat_with_assistant():
+    """Chat with GeoFeedback AI assistant."""
+    if not gemini_available:
+        return jsonify({"status": "error", "message": "Gemini AI no disponible"}), 503
+    
+    try:
+        data = request.json
+        message = data.get('message', '')
+        context = data.get('context', {})
+        history = data.get('history', [])
+        
+        # Build conversation history for context
+        chat_history = ""
+        for msg in history[-5:]:  # Last 5 messages for context
+            role = "Usuario" if msg.get('role') == 'user' else "Asistente"
+            chat_history += f"{role}: {msg.get('content', '')}\n"
+        
+        prompt = f"""Eres el asistente de IA de GeoFeedback Chile, experto en análisis geoespacial y territorial.
+
+Contexto del análisis actual:
+{json.dumps(context, indent=2, ensure_ascii=False) if context else "No hay análisis activo."}
+
+Historial de conversación:
+{chat_history}
+
+Nueva pregunta del usuario: {message}
+
+Responde de forma útil, profesional y en español. Si la pregunta es sobre:
+- Índices satelitales (NDVI, NDWI, NDMI): explica su significado y cómo interpretar valores
+- Análisis territorial: proporciona insights basados en los datos
+- GeoFeedback en general: explica las capacidades de la plataforma
+
+Mantén respuestas concisas (máximo 150 palabras) a menos que se requiera más detalle."""
+
+        response = gemini_model.generate_content(prompt)
+        
+        return jsonify({
+            "status": "success",
+            "response": response.text,
+            "model": "gemini-1.5-flash"
+        })
+        
+    except Exception as e:
+        print(f"Error en chat AI: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
 LANDING_HTML = '''<!DOCTYPE html>
@@ -690,6 +808,153 @@ LANDING_HTML = '''<!DOCTYPE html>
             font-size: 0.85rem;
             margin-left: 0.5rem;
         }
+        
+        /* Chat Sidebar Styles */
+        .chat-toggle-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 1500;
+            transition: transform 0.3s ease;
+        }
+        .chat-toggle-btn:hover { transform: scale(1.1); }
+        
+        .chat-sidebar {
+            position: fixed;
+            right: -420px;
+            top: 0;
+            width: 400px;
+            height: 100vh;
+            background: white;
+            box-shadow: -5px 0 30px rgba(0,0,0,0.2);
+            z-index: 2000;
+            transition: right 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-sidebar.open { right: 0; }
+        
+        .chat-header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chat-header h4 { margin: 0; font-size: 1.1rem; }
+        .chat-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            background: #f8fafc;
+        }
+        
+        .chat-message {
+            margin-bottom: 1rem;
+            max-width: 85%;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .chat-message.user {
+            margin-left: auto;
+            text-align: right;
+        }
+        .chat-message.user .message-bubble {
+            background: var(--primary);
+            color: white;
+            border-radius: 16px 16px 4px 16px;
+        }
+        .chat-message.assistant .message-bubble {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px 16px 16px 4px;
+        }
+        .message-bubble {
+            padding: 0.75rem 1rem;
+            display: inline-block;
+        }
+        .message-time {
+            font-size: 0.7rem;
+            color: var(--text-light);
+            margin-top: 0.25rem;
+        }
+        
+        .chat-input-wrapper {
+            padding: 1rem;
+            border-top: 1px solid #e2e8f0;
+            background: white;
+            display: flex;
+            gap: 0.5rem;
+        }
+        .chat-input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 24px;
+            font-size: 0.9rem;
+            outline: none;
+        }
+        .chat-input:focus { border-color: var(--secondary); }
+        .chat-send {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--secondary);
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .chat-send:disabled { background: #ccc; }
+        
+        .ai-interpretation {
+            background: linear-gradient(135deg, #f0fdf4, #ecfeff);
+            border-left: 4px solid var(--secondary);
+            padding: 1rem;
+            margin-top: 1rem;
+            border-radius: 0 8px 8px 0;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+        .ai-interpretation h5 {
+            margin: 0 0 0.5rem 0;
+            color: var(--primary);
+        }
+        .ai-loading {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-light);
+        }
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--secondary);
+            display: inline-block;
+            animation: typing 1s infinite;
+        }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
     </style>
 </head>
 <body>
@@ -771,6 +1036,43 @@ LANDING_HTML = '''<!DOCTYPE html>
             </div>
         </div>
     </section>
+    
+    <!-- Sentinel-2 Indices Section -->
+    <section id="indices" class="section section-dark">
+        <div class="container">
+            <div class="section-header">
+                <h2>Indices Satelitales Sentinel-2</h2>
+                <p>Comprendiendo los datos que analizamos</p>
+            </div>
+            <div class="cards-grid">
+                <div class="card">
+                    <i class="fas fa-leaf"></i>
+                    <h3>NDVI - Indice de Vegetacion</h3>
+                    <p><strong>Formula:</strong> (NIR - Rojo) / (NIR + Rojo)</p>
+                    <p><strong>Bandas:</strong> (B8 - B4) / (B8 + B4)</p>
+                    <p><strong>Rango:</strong> -1 a +1</p>
+                    <p>Valores &gt; 0.3 indican vegetacion saludable. Usado para monitorear salud de cultivos y cobertura vegetal.</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-water"></i>
+                    <h3>NDWI - Indice de Agua</h3>
+                    <p><strong>Formula:</strong> (Verde - NIR) / (Verde + NIR)</p>
+                    <p><strong>Bandas:</strong> (B3 - B8) / (B3 + B8)</p>
+                    <p><strong>Rango:</strong> -1 a +1</p>
+                    <p>Valores &gt; 0.3 indican presencia de agua. Detecta cuerpos de agua, inundaciones y humedad superficial.</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-tint"></i>
+                    <h3>NDMI - Indice de Humedad</h3>
+                    <p><strong>Formula:</strong> (NIR - SWIR) / (NIR + SWIR)</p>
+                    <p><strong>Bandas:</strong> (B8 - B11) / (B8 + B11)</p>
+                    <p><strong>Rango:</strong> -1 a +1</p>
+                    <p>Valores &gt; 0.2 indican alta humedad. Evalua estres hidrico en vegetacion y contenido de agua en plantas.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
     <section id="demo" class="demo-section">
         <div class="demo-container">
             <div class="section-header">
@@ -879,6 +1181,31 @@ LANDING_HTML = '''<!DOCTYPE html>
             </div>
         </div>
     </div>
+    
+    <!-- Chat Toggle Button -->
+    <button class="chat-toggle-btn" onclick="toggleChat()" title="Hablar con Asistente IA">
+        <i class="fas fa-robot"></i>
+    </button>
+    
+    <!-- Chat Sidebar -->
+    <div id="chat-sidebar" class="chat-sidebar">
+        <div class="chat-header">
+            <h4><i class="fas fa-robot"></i> Asistente GeoFeedback</h4>
+            <button class="chat-close" onclick="toggleChat()">&times;</button>
+        </div>
+        <div id="chat-messages" class="chat-messages">
+            <div class="chat-message assistant">
+                <div class="message-bubble">
+                    Hola! Soy el asistente de IA de GeoFeedback. Puedo ayudarte a entender los analisis territoriales, explicar indices satelitales como NDVI o NDWI, o responder preguntas sobre la plataforma. ¿En que puedo ayudarte?
+                </div>
+            </div>
+        </div>
+        <div class="chat-input-wrapper">
+            <input type="text" id="chat-input" class="chat-input" placeholder="Escribe tu pregunta..." onkeypress="if(event.key==='Enter')sendChatMessage()">
+            <button class="chat-send" onclick="sendChatMessage()"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+    
     <script>
         var MAPS_API_KEY = "GOOGLE_MAPS_KEY_PLACEHOLDER";
         var map = null;
@@ -886,6 +1213,9 @@ LANDING_HTML = '''<!DOCTYPE html>
         var autocomplete = null;
         var selectedPlace = null;
         var selectedApproach = null;
+        var isSatellite = true;
+        var chatHistory = [];
+        var analysisContext = {};
 
         var approaches = {
             "mining": {
@@ -1505,6 +1835,17 @@ LANDING_HTML = '''<!DOCTYPE html>
             
             modalBody.innerHTML = html;
             document.getElementById('interpretation-modal').classList.add('active');
+            
+            // Store context for chat
+            var locationName = selectedPlace ? selectedPlace.name : 'ubicación seleccionada';
+            analysisContext = {
+                approach: approach,
+                results: data,
+                location: locationName
+            };
+            
+            // Fetch AI interpretation
+            fetchAIInterpretation(data, approach, locationName);
         }
         
         function closeModal() {
@@ -1515,6 +1856,116 @@ LANDING_HTML = '''<!DOCTYPE html>
         document.getElementById('interpretation-modal').addEventListener('click', function(e) {
             if (e.target === this) closeModal();
         });
+        
+        // ============================================================================
+        // CHAT AND AI FUNCTIONS
+        // ============================================================================
+        
+        function toggleChat() {
+            var sidebar = document.getElementById('chat-sidebar');
+            sidebar.classList.toggle('open');
+        }
+        
+        function sendChatMessage() {
+            var input = document.getElementById('chat-input');
+            var message = input.value.trim();
+            if (!message) return;
+            
+            // Add user message to UI
+            addChatMessage(message, 'user');
+            input.value = '';
+            
+            // Add to history
+            chatHistory.push({ role: 'user', content: message });
+            
+            // Show typing indicator
+            var typingHtml = '<div class="chat-message assistant" id="typing-indicator">' +
+                '<div class="message-bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div></div>';
+            document.getElementById('chat-messages').insertAdjacentHTML('beforeend', typingHtml);
+            scrollChatToBottom();
+            
+            // Send to API
+            fetch('/api/v1/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: message,
+                    context: analysisContext,
+                    history: chatHistory
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Remove typing indicator
+                var typing = document.getElementById('typing-indicator');
+                if (typing) typing.remove();
+                
+                if (data.status === 'success') {
+                    addChatMessage(data.response, 'assistant');
+                    chatHistory.push({ role: 'assistant', content: data.response });
+                } else {
+                    addChatMessage('Lo siento, hubo un error. Intenta de nuevo.', 'assistant');
+                }
+            })
+            .catch(error => {
+                var typing = document.getElementById('typing-indicator');
+                if (typing) typing.remove();
+                addChatMessage('Error de conexion. Verifica tu internet.', 'assistant');
+            });
+        }
+        
+        function addChatMessage(text, role) {
+            var messagesContainer = document.getElementById('chat-messages');
+            var time = new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+            var html = '<div class="chat-message ' + role + '">' +
+                '<div class="message-bubble">' + text.replace(/\\n/g, '<br>') + '</div>' +
+                '<div class="message-time">' + time + '</div></div>';
+            messagesContainer.insertAdjacentHTML('beforeend', html);
+            scrollChatToBottom();
+        }
+        
+        function scrollChatToBottom() {
+            var container = document.getElementById('chat-messages');
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        function fetchAIInterpretation(results, approach, locationName) {
+            // Show loading in modal
+            var modalBody = document.getElementById('modal-body');
+            var existingContent = modalBody.innerHTML;
+            
+            var loadingHtml = '<div class="ai-loading" id="ai-loading">' +
+                '<div class="typing-indicator"><span></span><span></span><span></span></div>' +
+                '<span>Generando interpretacion con IA...</span></div>';
+            modalBody.insertAdjacentHTML('beforeend', loadingHtml);
+            
+            fetch('/api/v1/interpret', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    results: results,
+                    approach: approach,
+                    location: locationName
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                var loading = document.getElementById('ai-loading');
+                if (loading) loading.remove();
+                
+                if (data.status === 'success') {
+                    var aiHtml = '<div class="ai-interpretation">' +
+                        '<h5><i class="fas fa-robot"></i> Interpretacion del Asistente IA</h5>' +
+                        '<div>' + data.interpretation.replace(/\\n/g, '<br>') + '</div>' +
+                        '</div>';
+                    modalBody.insertAdjacentHTML('beforeend', aiHtml);
+                }
+            })
+            .catch(error => {
+                var loading = document.getElementById('ai-loading');
+                if (loading) loading.remove();
+            });
+        }
 
         // Start the map initialization
         loadGoogleMaps();
