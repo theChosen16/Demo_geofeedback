@@ -1342,6 +1342,7 @@ LANDING_HTML = '''<!DOCTYPE html>
             map = new Map(document.getElementById("demo-map"), {
                 center: { lat: -33.4489, lng: -70.6693 }, // Santiago
                 zoom: 5,
+                mapId: "3a20a11ffd93a81165e3538d", // GeoFeedback Demo Map ID
                 mapTypeId: "hybrid",
                 disableDefaultUI: false,
                 zoomControl: true,
