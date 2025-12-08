@@ -1,3 +1,12 @@
+# =============================================================================
+# GeoFeedback Chile - Plataforma de Inteligencia Territorial
+# Copyright (c) 2025 Alejandro Olivares Verdugo
+# TODOS LOS DERECHOS RESERVADOS / ALL RIGHTS RESERVED
+# 
+# Este código es propiedad exclusiva del autor y se proporciona únicamente
+# con fines de demostración técnica. Prohibido copiar, modificar o distribuir.
+# =============================================================================
+
 import os
 import datetime
 import json
