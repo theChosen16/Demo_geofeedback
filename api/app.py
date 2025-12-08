@@ -171,32 +171,37 @@ def analyze_territory():
              ).getInfo()
              results = {"Pendiente Promedio": f"{stats.get('slope', 0):.1f}°"}
 
-        # Generar Visualización (Map ID)
+        # Generar Visualización (Map ID) - CLIPPED to ROI
         vis_params = {}
         vis_image = None
         
         if approach in ['mining', 'agriculture', 'environmental', 'water-management']:
             # Visualizar NDVI/NDWI
-            vis_image = s2_indices.select('NDVI')
+            vis_image = s2_indices.select('NDVI').clip(roi)
             vis_params = {'min': -0.2, 'max': 0.8, 'palette': ['red', 'yellow', 'green']}
             if approach == 'water-management' or approach == 'flood-risk':
-                 vis_image = s2_indices.select('NDWI')
+                 vis_image = s2_indices.select('NDWI').clip(roi)
                  vis_params = {'min': -0.5, 'max': 0.5, 'palette': ['white', 'blue']}
         elif approach in ['energy', 'real-estate', 'land-planning']:
             # Visualizar Pendiente
-            vis_image = slope
+            vis_image = slope.clip(roi)
             vis_params = {'min': 0, 'max': 45, 'palette': ['green', 'yellow', 'red']}
         else:
-            vis_image = s2_indices.select('NDVI') # Fallback
+            vis_image = s2_indices.select('NDVI').clip(roi)  # Fallback
             vis_params = {'min': 0, 'max': 1, 'palette': ['white', 'green']}
 
         map_id_dict = vis_image.getMapId(vis_params)
         tile_url = map_id_dict['tile_fetcher'].url_format
+        
+        # Calculate analysis area (buffer radius = 1km, so area = π * r²)
+        # 1km radius = 1000m, area ≈ 3.14159 km² ≈ 3,141,593 m²
+        area_m2 = 3141593  # π * 1000² for 1km buffer
 
         return jsonify({
             "status": "success",
             "approach": approach,
             "data": results,
+            "area_m2": area_m2,
             "map_layer": {
                 "url": tile_url,
                 "attribution": "Google Earth Engine"
@@ -204,7 +209,8 @@ def analyze_territory():
             "meta": {
                 "satellite": "Sentinel-2 MSI (Level-2A)",
                 "terrain": "SRTM v4",
-                "date": datetime.datetime.now().strftime("%Y-%m-%d")
+                "date": datetime.datetime.now().strftime("%Y-%m-%d"),
+                "buffer_radius_m": 1000
             }
         })
 
@@ -1688,6 +1694,12 @@ LANDING_HTML = '''<!DOCTYPE html>
                     }
                     tableHtml += '</tbody></table>';
                     
+                    // Add area info
+                    var areaKm2 = (data.area_m2 / 1000000).toFixed(2);
+                    var areaInfo = '<div style="margin-top:0.5rem; padding:0.5rem; background:#f8fafc; border-radius:6px; font-size:0.8rem; color:var(--text-light);">' +
+                        '<i class="fas fa-ruler-combined"></i> Area de analisis: <strong>' + data.area_m2.toLocaleString() + ' m²</strong> (' + areaKm2 + ' km²) | Radio: ' + (data.meta.buffer_radius_m || 1000) + 'm' +
+                        '</div>';
+                    
                     // Display in Analysis Results Container
                     var resultsContainer = document.getElementById("analysis-results");
                     if (!resultsContainer) {
@@ -1700,14 +1712,16 @@ LANDING_HTML = '''<!DOCTYPE html>
                     
                     resultsContainer.innerHTML = '<div class="result-box" style="background:white; border:1px solid var(--secondary); border-radius:8px; padding:1rem; box-shadow:0 2px 4px rgba(0,0,0,0.05);">' +
                         '<h4 style="color:var(--primary); margin-top:0; margin-bottom:0.5rem; border-bottom:1px solid #eee; padding-bottom:0.5rem;"><i class="fas fa-chart-bar"></i> Resultados del Análisis</h4>' +
-                        tableHtml + 
-                        '<button onclick="showInterpretationModal()" style="margin-top:1rem; width:100%;" class="btn btn-secondary"><i class="fas fa-info-circle"></i> Ver Interpretacion</button>' +
+                        tableHtml + areaInfo +
+                        '<button onclick="showInterpretationModal()" style="margin-top:1rem; width:100%;" class="btn btn-secondary"><i class="fas fa-info-circle"></i> Ver Escalas</button>' +
                         '</div>';
                     resultsContainer.style.display = "block";
                     
-                    // Store data for modal
+                    // Store FULL data for AI interpretation
                     window.lastAnalysisData = data.data;
                     window.lastApproach = selectedApproach;
+                    window.lastAnalysisMeta = data.meta;
+                    window.lastAnalysisArea = data.area_m2;
                     
                     // Scroll to results
                     resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1734,8 +1748,19 @@ LANDING_HTML = '''<!DOCTYPE html>
                         console.log("Capa GEE agregada: " + data.map_layer.url);
                     }
                     
-                    // Show interpretation modal automatically
-                    showInterpretationModal();
+                    // Open Chat Sidebar with AI Interpretation
+                    var locationName = selectedPlace ? selectedPlace.name : 'la ubicación seleccionada';
+                    analysisContext = {
+                        approach: selectedApproach,
+                        results: data.data,
+                        meta: data.meta,
+                        area_m2: data.area_m2,
+                        location: locationName
+                    };
+                    
+                    // Open chat and send automatic interpretation request
+                    document.getElementById('chat-sidebar').classList.add('open');
+                    requestAIInterpretation(data.data, selectedApproach, locationName, data.area_m2, data.meta);
                     
                 } else if (data.status === 'warning') {
                     alert("Aviso: " + data.message);
@@ -1936,6 +1961,93 @@ LANDING_HTML = '''<!DOCTYPE html>
         function scrollChatToBottom() {
             var container = document.getElementById('chat-messages');
             container.scrollTop = container.scrollHeight;
+        }
+        
+        function requestAIInterpretation(results, approach, locationName, areaM2, meta) {
+            // Show typing indicator in chat
+            var typingHtml = '<div class="chat-message assistant" id="interpretation-typing">' +
+                '<div class="message-bubble"><div class="typing-indicator"><span></span><span></span><span></span></div> Analizando datos...</div></div>';
+            document.getElementById('chat-messages').insertAdjacentHTML('beforeend', typingHtml);
+            scrollChatToBottom();
+            
+            // Prepare comprehensive interpretation request
+            var approachNames = {
+                'mining': 'Minería Sostenible',
+                'agriculture': 'Agroindustria Inteligente',
+                'energy': 'Energías Renovables',
+                'real-estate': 'Desarrollo Inmobiliario',
+                'flood-risk': 'Riesgo de Inundación',
+                'water-management': 'Gestión Hídrica',
+                'environmental': 'Calidad Ambiental',
+                'land-planning': 'Planificación Territorial'
+            };
+            
+            var areaKm2 = (areaM2 / 1000000).toFixed(2);
+            
+            // Create comprehensive prompt
+            var interpretationPrompt = '🛰️ **Análisis de ' + approachNames[approach] + '**\\n' +
+                '📍 Ubicación: ' + locationName + '\\n' +
+                '📐 Área analizada: ' + areaM2.toLocaleString() + ' m² (' + areaKm2 + ' km²)\\n' +
+                '📅 Datos: ' + (meta ? meta.satellite : 'Sentinel-2') + '\\n\\n' +
+                'Resultados:\\n' + JSON.stringify(results) + '\\n\\n' +
+                'Por favor interpreta estos resultados explicando: \\n' +
+                '1. El significado de cada valor y su implicancia práctica\\n' +
+                '2. Si los valores son buenos, regulares o preocupantes\\n' +
+                '3. Recomendaciones específicas basadas en el enfoque ' + approachNames[approach];
+            
+            // Call chat API for interpretation
+            fetch('/api/v1/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: interpretationPrompt,
+                    context: analysisContext,
+                    history: []
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                var typing = document.getElementById('interpretation-typing');
+                if (typing) typing.remove();
+                
+                if (data.status === 'success') {
+                    // Format and display interpretation
+                    var formattedResponse = data.response
+                        .replace(/\\n/g, '<br>')
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                        .replace(/\*(.*?)\*/g, '<em>$1</em>');
+                    
+                    var interpretationHtml = '<div class="chat-message assistant">' +
+                        '<div class="message-bubble" style="background: linear-gradient(135deg, #f0fdf4, #ecfeff); border-left: 3px solid var(--secondary);">' +
+                        '<div style="font-weight:600; color:var(--primary); margin-bottom:0.5rem;"><i class="fas fa-robot"></i> Interpretación del Análisis</div>' +
+                        '<div style="line-height:1.6;">' + formattedResponse + '</div>' +
+                        '</div>' +
+                        '<div class="message-time">' + new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }) + '</div>' +
+                        '</div>';
+                    
+                    document.getElementById('chat-messages').insertAdjacentHTML('beforeend', interpretationHtml);
+                    scrollChatToBottom();
+                    
+                    // Add to history
+                    chatHistory.push({ role: 'user', content: 'Interpreta los resultados del análisis' });
+                    chatHistory.push({ role: 'assistant', content: data.response });
+                    
+                    // Add follow-up suggestion
+                    var followUp = '<div class="chat-message assistant">' +
+                        '<div class="message-bubble" style="font-size:0.85rem;">' +
+                        '💡 ¿Tienes alguna duda sobre estos resultados? Puedes preguntarme sobre los indices, valores o significados.' +
+                        '</div></div>';
+                    document.getElementById('chat-messages').insertAdjacentHTML('beforeend', followUp);
+                    scrollChatToBottom();
+                } else {
+                    addChatMessage('No pude generar la interpretación. Por favor intenta de nuevo.', 'assistant');
+                }
+            })
+            .catch(error => {
+                var typing = document.getElementById('interpretation-typing');
+                if (typing) typing.remove();
+                addChatMessage('Error al conectar con el asistente. Verifica tu conexión.', 'assistant');
+            });
         }
         
         function fetchAIInterpretation(results, approach, locationName) {
