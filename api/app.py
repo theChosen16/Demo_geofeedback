@@ -347,6 +347,74 @@ Responde de forma útil y amigable:"""
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
+@app.route('/api/v1/contact', methods=['POST'])
+def contact_form():
+    """Handle contact form submissions."""
+    try:
+        data = request.json
+        name = data.get('name', '').strip()
+        company = data.get('company', '').strip()
+        email = data.get('email', '').strip()
+        message = data.get('message', '').strip()
+        
+        # Validate required fields
+        if not name or not email or not message:
+            return jsonify({"status": "error", "message": "Campos requeridos incompletos"}), 400
+        
+        # Log the contact request
+        print(f"=== NUEVO CONTACTO ===")
+        print(f"Nombre: {name}")
+        print(f"Empresa: {company if company else 'No especificada'}")
+        print(f"Email: {email}")
+        print(f"Mensaje: {message}")
+        print(f"======================")
+        
+        # Try to send email if SMTP is configured
+        try:
+            import smtplib
+            from email.mime.text import MIMEText
+            from email.mime.multipart import MIMEMultipart
+            
+            smtp_user = os.environ.get('SMTP_USER')
+            smtp_pass = os.environ.get('SMTP_PASS')
+            
+            if smtp_user and smtp_pass:
+                msg = MIMEMultipart()
+                msg['From'] = smtp_user
+                msg['To'] = 'GeoFeedback.cl@gmail.com'
+                msg['Subject'] = f'[GeoFeedback] Nuevo contacto de {name}'
+                
+                body = f"""
+Nuevo mensaje de contacto desde GeoFeedback.cl:
+
+Nombre: {name}
+Empresa: {company if company else 'No especificada'}
+Email: {email}
+
+Mensaje:
+{message}
+                """
+                msg.attach(MIMEText(body, 'plain'))
+                
+                server = smtplib.SMTP('smtp.gmail.com', 587)
+                server.starttls()
+                server.login(smtp_user, smtp_pass)
+                server.send_message(msg)
+                server.quit()
+                print("Email enviado exitosamente")
+        except Exception as email_error:
+            print(f"No se pudo enviar email (SMTP no configurado): {email_error}")
+        
+        return jsonify({
+            "status": "success",
+            "message": "Mensaje recibido correctamente"
+        })
+        
+    except Exception as e:
+        print(f"Error en formulario de contacto: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
 LANDING_HTML = '''<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -727,6 +795,138 @@ LANDING_HTML = '''<!DOCTYPE html>
             color: white;
         }
         .social-links a:hover { background: var(--secondary); }
+        
+        /* Team Section */
+        .team-section {
+            padding: 4rem 2rem;
+            background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 100%);
+        }
+        .team-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .section-title {
+            text-align: center;
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+        .section-subtitle {
+            text-align: center;
+            color: var(--text-light);
+            margin-bottom: 3rem;
+        }
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            justify-items: center;
+        }
+        .team-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+            transition: transform 0.3s;
+            max-width: 320px;
+        }
+        .team-card:hover { transform: translateY(-5px); }
+        .team-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 2.5rem;
+            color: white;
+        }
+        .team-name { font-size: 1.25rem; font-weight: 600; color: var(--primary); margin-bottom: 0.25rem; }
+        .team-role { color: var(--secondary); font-weight: 500; margin-bottom: 1rem; }
+        .team-linkedin {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #0077B5;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: background 0.3s;
+        }
+        .team-linkedin:hover { background: #005885; }
+        
+        /* Contact Section */
+        .contact-section {
+            padding: 4rem 2rem;
+            background: var(--primary);
+        }
+        .contact-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .contact-section .section-title { color: white; }
+        .contact-section .section-subtitle { color: rgba(255,255,255,0.7); }
+        .contact-form {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 2rem;
+        }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label {
+            display: block;
+            color: white;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        .form-group input::placeholder, .form-group textarea::placeholder {
+            color: rgba(255,255,255,0.5);
+        }
+        .form-group input:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: var(--secondary);
+        }
+        .form-group textarea { min-height: 120px; resize: vertical; }
+        .btn-submit {
+            width: 100%;
+            padding: 1rem;
+            background: var(--secondary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .btn-submit:hover { background: var(--secondary-light); }
+        .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+        .form-success {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid var(--secondary);
+            padding: 1rem;
+            border-radius: 8px;
+            color: white;
+            text-align: center;
+            margin-top: 1rem;
+            display: none;
+        }
+        
         @media (max-width: 1024px) {
             .demo-layout { grid-template-columns: 1fr; }
             .sidebar { order: -1; }
@@ -1207,6 +1407,65 @@ LANDING_HTML = '''<!DOCTYPE html>
             </div>
         </div>
     </section>
+    
+    <!-- Team Section -->
+    <section class="team-section" id="equipo">
+        <div class="team-container">
+            <h2 class="section-title"><i class="fas fa-users"></i> Nuestro Equipo</h2>
+            <p class="section-subtitle">Conoce a los fundadores de GeoFeedback Chile</p>
+            <div class="team-grid">
+                <div class="team-card">
+                    <div class="team-avatar"><i class="fas fa-user"></i></div>
+                    <h3 class="team-name">Alejandro Hernandez Aguirre</h3>
+                    <p class="team-role">Co-Fundador</p>
+                    <a href="https://www.linkedin.com/in/alejandro-hern%C3%A1ndez-aguirre-bb8967246/" target="_blank" rel="noopener noreferrer" class="team-linkedin">
+                        <i class="fab fa-linkedin"></i> Ver LinkedIn
+                    </a>
+                </div>
+                <div class="team-card">
+                    <div class="team-avatar"><i class="fas fa-user"></i></div>
+                    <h3 class="team-name">Consuelo Sebastian Silva</h3>
+                    <p class="team-role">Fundadora</p>
+                    <a href="https://www.linkedin.com/in/consuelo-sebastian-silva-b15407342/" target="_blank" rel="noopener noreferrer" class="team-linkedin">
+                        <i class="fab fa-linkedin"></i> Ver LinkedIn
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Contact Section -->
+    <section class="contact-section" id="contacto">
+        <div class="contact-container">
+            <h2 class="section-title"><i class="fas fa-envelope"></i> Contactanos</h2>
+            <p class="section-subtitle">Tienes alguna pregunta o propuesta? Escribenos</p>
+            <form class="contact-form" id="contact-form">
+                <div class="form-group">
+                    <label for="contact-name">Nombre *</label>
+                    <input type="text" id="contact-name" name="name" placeholder="Tu nombre completo" required>
+                </div>
+                <div class="form-group">
+                    <label for="contact-company">Empresa (opcional)</label>
+                    <input type="text" id="contact-company" name="company" placeholder="Nombre de tu empresa">
+                </div>
+                <div class="form-group">
+                    <label for="contact-email">Correo electronico *</label>
+                    <input type="email" id="contact-email" name="email" placeholder="tu@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="contact-message">Mensaje *</label>
+                    <textarea id="contact-message" name="message" placeholder="Describe tu solicitud o consulta..." required></textarea>
+                </div>
+                <button type="submit" class="btn-submit" id="contact-submit">
+                    <i class="fas fa-paper-plane"></i> Enviar Mensaje
+                </button>
+                <div class="form-success" id="contact-success">
+                    <i class="fas fa-check-circle"></i> Mensaje enviado exitosamente. Nos pondremos en contacto pronto.
+                </div>
+            </form>
+        </div>
+    </section>
+    
     <footer>
         <div class="footer-content">
             <div class="footer-logo"><i class="fas fa-globe-americas"></i>GeoFeedback Chile</div>
@@ -2139,6 +2398,47 @@ LANDING_HTML = '''<!DOCTYPE html>
             });
         }
 
+        // Contact Form Handler
+        document.getElementById('contact-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            var btn = document.getElementById('contact-submit');
+            var originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+            btn.disabled = true;
+            
+            var formData = {
+                name: document.getElementById('contact-name').value,
+                company: document.getElementById('contact-company').value,
+                email: document.getElementById('contact-email').value,
+                message: document.getElementById('contact-message').value
+            };
+            
+            fetch('/api/v1/contact', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                if (data.status === 'success') {
+                    document.getElementById('contact-success').style.display = 'block';
+                    document.getElementById('contact-form').reset();
+                    setTimeout(() => {
+                        document.getElementById('contact-success').style.display = 'none';
+                    }, 5000);
+                } else {
+                    alert('Error al enviar: ' + (data.message || 'Intenta nuevamente'));
+                }
+            })
+            .catch(error => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                alert('Error de conexion. Intenta nuevamente.');
+            });
+        });
+
         // Start the map initialization
         loadGoogleMaps();
     </script>
@@ -2175,7 +2475,111 @@ def risk_zones():
 
 @app.route('/api/docs')
 def api_docs():
-    return '''<!DOCTYPE html><html><head><title>GeoFeedback API</title><style>body{font-family:sans-serif;max-width:800px;margin:50px auto;padding:20px}h1{color:#1e3a5f}.endpoint{background:#f8fafc;padding:20px;border-radius:8px;margin:20px 0;border-left:4px solid #10b981}code{background:#e5e7eb;padding:2px 8px;border-radius:4px}.method{background:#10b981;color:white;padding:4px 12px;border-radius:4px}</style></head><body><h1>GeoFeedback API v1</h1><p>APIs integradas: Maps JavaScript, Elevation, Air Quality, Solar, Geocoding</p><div class="endpoint"><span class="method">GET</span> <code>/api/v1/health</code><p>Estado del servicio</p></div><div class="endpoint"><span class="method">GET</span> <code>/api/v1/stats</code><p>Estadisticas</p></div><div class="endpoint"><span class="method">GET</span> <code>/api/v1/infrastructure</code><p>Infraestructura</p></div><div class="endpoint"><span class="method">GET</span> <code>/api/v1/risk-zones</code><p>Zonas de riesgo</p></div><p><a href="/">Volver</a></p></body></html>'''
+    return '''<!DOCTYPE html>
+<html lang="es">
+<head>
+    <title>GeoFeedback API Documentation</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1f2937; line-height: 1.6; }
+        .container { max-width: 900px; margin: 0 auto; padding: 2rem; }
+        header { background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); color: white; padding: 3rem 2rem; margin-bottom: 2rem; }
+        header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+        header p { opacity: 0.8; }
+        .section { background: white; border-radius: 12px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .section h2 { color: #1e3a5f; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+        .endpoint { background: #f8fafc; border-radius: 8px; padding: 1.25rem; margin: 1rem 0; border-left: 4px solid #10b981; }
+        .method { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 4px; font-weight: 600; font-size: 0.8rem; margin-right: 0.5rem; }
+        .get { background: #10b981; color: white; }
+        .post { background: #3b82f6; color: white; }
+        code { background: #e5e7eb; padding: 0.2rem 0.5rem; border-radius: 4px; font-family: monospace; }
+        .endpoint-path { font-weight: 600; color: #1e3a5f; }
+        .endpoint-desc { color: #6b7280; margin-top: 0.5rem; font-size: 0.95rem; }
+        .api-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem; }
+        .api-item { background: #f0fdf4; padding: 1rem; border-radius: 8px; text-align: center; }
+        .api-item i { font-size: 1.5rem; color: #10b981; margin-bottom: 0.5rem; display: block; }
+        .back-link { display: inline-flex; align-items: center; gap: 0.5rem; color: #1e3a5f; text-decoration: none; margin-top: 2rem; }
+        .back-link:hover { color: #10b981; }
+        .note { background: #fef3c7; border: 1px solid #f59e0b; padding: 1rem; border-radius: 8px; margin-top: 1rem; }
+        .note strong { color: #92400e; }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><i class="fas fa-code"></i> GeoFeedback API v1</h1>
+            <p>Documentacion de la API de inteligencia territorial</p>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="section">
+            <h2><i class="fas fa-plug"></i> APIs Integradas</h2>
+            <p>GeoFeedback integra multiples APIs de Google Cloud Platform:</p>
+            <div class="api-list">
+                <div class="api-item"><i class="fas fa-map"></i>Maps JavaScript API</div>
+                <div class="api-item"><i class="fas fa-mountain"></i>Elevation API</div>
+                <div class="api-item"><i class="fas fa-wind"></i>Air Quality API</div>
+                <div class="api-item"><i class="fas fa-sun"></i>Solar API</div>
+                <div class="api-item"><i class="fas fa-map-marker-alt"></i>Geocoding API</div>
+                <div class="api-item"><i class="fas fa-satellite"></i>Earth Engine</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2><i class="fas fa-server"></i> Endpoints Publicos</h2>
+            
+            <div class="endpoint">
+                <span class="method get">GET</span>
+                <span class="endpoint-path">/api/v1/health</span>
+                <p class="endpoint-desc">Verifica el estado del servicio y componentes.</p>
+            </div>
+            
+            <div class="endpoint">
+                <span class="method get">GET</span>
+                <span class="endpoint-path">/api/v1/stats</span>
+                <p class="endpoint-desc">Estadisticas generales de la plataforma.</p>
+            </div>
+            
+            <div class="endpoint">
+                <span class="method post">POST</span>
+                <span class="endpoint-path">/api/v1/analyze</span>
+                <p class="endpoint-desc">Ejecuta analisis geoespacial con Google Earth Engine.</p>
+            </div>
+            
+            <div class="endpoint">
+                <span class="method post">POST</span>
+                <span class="endpoint-path">/api/v1/interpret</span>
+                <p class="endpoint-desc">Genera interpretacion con IA de los resultados.</p>
+            </div>
+            
+            <div class="endpoint">
+                <span class="method post">POST</span>
+                <span class="endpoint-path">/api/v1/contact</span>
+                <p class="endpoint-desc">Envia mensaje de contacto al equipo.</p>
+            </div>
+            
+            <div class="note">
+                <strong><i class="fas fa-info-circle"></i> Nota:</strong> 
+                Algunos endpoints requieren autenticacion y no estan disponibles publicamente. 
+                Para acceso a la API completa, contactanos.
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2><i class="fas fa-envelope"></i> Contacto</h2>
+            <p>Para consultas sobre la API o integraciones comerciales:</p>
+            <p style="margin-top: 1rem;"><strong>Email:</strong> <a href="mailto:GeoFeedback.cl@gmail.com">GeoFeedback.cl@gmail.com</a></p>
+        </div>
+        
+        <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Volver al inicio</a>
+    </div>
+</body>
+</html>'''
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
