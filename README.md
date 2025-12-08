@@ -13,12 +13,14 @@ Sistema simplificado de análisis de riesgo de inundación para la comuna de Pap
 ### Componentes Principales
 
 1. **API Flask** (`api/`)
+
    - Servidor REST con datos estáticos embebidos
    - Endpoints de consulta sin dependencia de PostgreSQL
    - Landing page HTML inline con estadísticas visuales
    - Desplegado en Railway
 
 2. **Visor Web** (`web/`)
+
    - Interfaz de mapa interactivo con Leaflet.js
    - Visualización de instalaciones críticas
    - Filtros por nivel de riesgo y categoría
@@ -38,6 +40,7 @@ Sistema simplificado de análisis de riesgo de inundación para la comuna de Pap
 La API está desplegada en: `https://demogeofeedback-production.up.railway.app`
 
 **Endpoints disponibles**:
+
 - `GET /` - Landing page HTML con estadísticas
 - `GET /api/v1/health` - Health check del servicio
 - `GET /api/v1/stats` - Estadísticas generales (20 instalaciones)
@@ -45,6 +48,7 @@ La API está desplegada en: `https://demogeofeedback-production.up.railway.app`
 - `GET /api/docs` - Documentación de la API
 
 **Desplegar cambios**:
+
 ```bash
 cd c:\Users\alean\Desktop\Geofeedback\Demo
 git add .
@@ -57,6 +61,7 @@ git push origin main  # Railway auto-deploya
 URL pública: `https://thechosen16.github.io/Demo_geofeedback/`
 
 **Actualizar**:
+
 ```bash
 git add web/
 git commit -m "Update web viewer"
@@ -170,6 +175,7 @@ curl http://localhost:8080/api/v1/infrastructure
 Se eliminaron los siguientes archivos obsoletos relacionados con PostgreSQL/PostGIS:
 
 ### Archivos Eliminados de `/api`:
+
 - ❌ `config.py` - Configuración de base de datos
 - ❌ `cache_helper.py` - Sistema de caché para queries SQL
 - ❌ `test_api.py` - Tests que requerían BD
@@ -177,6 +183,7 @@ Se eliminaron los siguientes archivos obsoletos relacionados con PostgreSQL/Post
 - ❌ `static/` - Archivos estáticos CSS/JS (no usados)
 
 ### Archivos Eliminados de raíz:
+
 - ❌ `setup_database.sql` - Script de creación de esquemas PostgreSQL
 - ❌ `ARREGLOS_RAILWAY.md` - Guía de troubleshooting obsoleta
 - ❌ `QUICK_DEPLOY_RAILWAY.md` - Guía de deploy con BD
@@ -185,6 +192,7 @@ Se eliminaron los siguientes archivos obsoletos relacionados con PostgreSQL/Post
 - ❌ `deployment/` - Carpeta completa de deployment con BD
 
 ### Archivos Movidos a `/backups`:
+
 - 📦 `app.py.backup` - Versión anterior con PostgreSQL (539 líneas)
 - 📦 `Dockerfile.backup` - Dockerfile con dependencias de BD
 - 📦 `requirements.txt.backup` - Requirements con psycopg2
@@ -216,21 +224,40 @@ git push origin main
 ## ⏭️ Roadmap Futuro
 
 ### Fase 1: Deploy Mínimo ✅ (COMPLETADO)
+
 - [x] API con datos estáticos sin BD
 - [x] Dockerfile optimizado para Railway
 - [x] Landing page HTML inline
 - [x] Limpieza de archivos obsoletos
 
 ### Fase 2: Datos Dinámicos (Próximamente)
+
 - [ ] Reconectar PostgreSQL/PostGIS con manejo robusto de errores
 - [ ] Implementar connection pooling optimizado
 - [ ] Cargar datos GeoJSON completos desde BD
 
 ### Fase 3: Análisis Avanzado (Futuro)
+
 - [ ] Integración con Google Earth Engine
 - [ ] Análisis de series temporales de inundaciones
 - [ ] Predicciones basadas en datos históricos
 - [ ] Sistema de alertas automáticas
+
+---
+
+## 📝 Changelog Reciente
+
+### 8 de Diciembre de 2025
+
+- **SEO Mejorado**: Agregados meta tags de Open Graph y Twitter Cards para mejor compartibilidad en redes sociales
+- **Menú Móvil Funcional**: Implementada funcionalidad JavaScript para abrir/cerrar el menú en dispositivos móviles
+- **URL API Corregida**: Actualizado el enlace de documentación API al endpoint correcto de Railway
+- **Keywords SEO**: Agregadas palabras clave relevantes para mejor indexación
+
+### 26 de Noviembre de 2025
+
+- Limpieza de archivos obsoletos relacionados con PostgreSQL
+- Deploy mínimo sin base de datos funcionando
 
 ---
 
@@ -248,4 +275,4 @@ Este proyecto es parte de una demostración técnica de GeoFeedback Chile.
 
 ---
 
-*Última actualización: 26 de noviembre de 2025*
+_Última actualización: 8 de diciembre de 2025_
