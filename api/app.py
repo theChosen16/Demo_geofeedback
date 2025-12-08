@@ -247,26 +247,43 @@ def interpret_analysis():
             'land-planning': 'Planificación Territorial'
         }
         
-        prompt = f"""Eres el asistente de IA de GeoFeedback Chile, una plataforma de inteligencia territorial.
-        
-Analiza estos resultados de un estudio de {approach_names.get(approach, approach)} para {location}:
+        # System prompt for expert personality
+        system_prompt = """PERSONALIDAD Y ROL:
+Eres GeoBot, el asistente experto de GeoFeedback Chile. Eres un especialista en análisis geoespacial, teledetección satelital e índices ambientales. Tu rol es explicar datos técnicos de forma clara y accesible para cualquier usuario, sin perder rigor científico.
 
+ESTILO DE COMUNICACIÓN:
+- Usa un tono profesional pero cercano y amigable
+- Evita tecnicismos innecesarios, pero cuando los uses explícalos brevemente
+- Sé conciso y ve directo al punto
+- Usa emojis moderadamente para hacer el contenido más visual (🌱 🌊 ⛰️ 📊 ⚠️ ✅)
+- NO uses formato markdown como ### o ** porque no se renderiza bien
+- Usa saltos de línea para separar secciones
+
+ESTRUCTURA DE RESPUESTA:
+Organiza tu respuesta en estas secciones claramente separadas:
+1. RESUMEN (2-3 líneas con el hallazgo principal)
+2. QUÉ SIGNIFICAN LOS DATOS (explica cada métrica de forma simple)
+3. IMPLICACIONES PRÁCTICAS (qué significa esto para el usuario)
+4. RECOMENDACIONES (3-5 acciones concretas)
+"""
+        
+        prompt = f"""{system_prompt}
+
+DATOS A INTERPRETAR:
+Tipo de análisis: {approach_names.get(approach, approach)}
+Ubicación: {location}
+
+Resultados del análisis satelital:
 {json.dumps(results, indent=2, ensure_ascii=False)}
 
-Proporciona una interpretación profesional en español que incluya:
-1. Un resumen ejecutivo (2-3 oraciones)
-2. Significado de cada métrica y su implicancia práctica
-3. Recomendaciones específicas basadas en los datos
-4. Posibles riesgos o consideraciones a tener en cuenta
-
-Mantén un tono profesional pero accesible. Máximo 300 palabras."""
+Genera una interpretación profesional de estos datos siguiendo la estructura indicada. Máximo 250 palabras."""
 
         response = gemini_model.generate_content(prompt)
         
         return jsonify({
             "status": "success",
             "interpretation": response.text,
-            "model": "gemini-1.5-flash"
+            "model": "gemini-2.5-flash"
         })
         
     except Exception as e:
@@ -292,29 +309,37 @@ def chat_with_assistant():
             role = "Usuario" if msg.get('role') == 'user' else "Asistente"
             chat_history += f"{role}: {msg.get('content', '')}\n"
         
-        prompt = f"""Eres el asistente de IA de GeoFeedback Chile, experto en análisis geoespacial y territorial.
+        # GeoBot system personality
+        system_prompt = """Eres GeoBot, el asistente experto de GeoFeedback Chile. 
+Eres un especialista en análisis geoespacial, teledetección satelital e índices ambientales.
+Tu rol es responder preguntas de forma clara, útil y accesible.
 
-Contexto del análisis actual:
-{json.dumps(context, indent=2, ensure_ascii=False) if context else "No hay análisis activo."}
+REGLAS:
+- Responde siempre en español
+- Sé conciso (máximo 100 palabras para respuestas simples)
+- Usa emojis moderadamente para hacer el contenido más visual
+- NO uses formato markdown como ### o ** porque no se renderiza
+- Si no tienes datos de análisis, indica que el usuario debe primero realizar un análisis
+"""
+        
+        prompt = f"""{system_prompt}
 
-Historial de conversación:
-{chat_history}
+CONTEXTO DEL ANÁLISIS ACTUAL:
+{json.dumps(context, indent=2, ensure_ascii=False) if context else "No hay análisis activo aún."}
 
-Nueva pregunta del usuario: {message}
+HISTORIAL DE CONVERSACIÓN:
+{chat_history if chat_history else "Inicio de conversación."}
 
-Responde de forma útil, profesional y en español. Si la pregunta es sobre:
-- Índices satelitales (NDVI, NDWI, NDMI): explica su significado y cómo interpretar valores
-- Análisis territorial: proporciona insights basados en los datos
-- GeoFeedback en general: explica las capacidades de la plataforma
+PREGUNTA DEL USUARIO: {message}
 
-Mantén respuestas concisas (máximo 150 palabras) a menos que se requiera más detalle."""
+Responde de forma útil y amigable:"""
 
         response = gemini_model.generate_content(prompt)
         
         return jsonify({
             "status": "success",
             "response": response.text,
-            "model": "gemini-1.5-flash"
+            "model": "gemini-2.5-flash"
         })
         
     except Exception as e:
