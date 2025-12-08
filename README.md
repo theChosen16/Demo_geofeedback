@@ -1,32 +1,25 @@
-# GeoFeedback Papudo - Demo Simplificado
+# GeoFeedback Chile - Plataforma de Inteligencia Territorial
 
 ## 🌊 Descripción
 
-Sistema simplificado de análisis de riesgo de inundación para la comuna de Papudo, Región de Valparaíso, Chile.
+Plataforma open source de análisis geoespacial que transforma datos satelitales en mapas de riesgo y herramientas de gestión hídrica para Chile.
 
-**Versión actual**: 2.0 - Deploy Mínimo (sin base de datos)
+**Sitio en producción**: [https://geofeedback.cl](https://demogeofeedback-production.up.railway.app)
 
 ---
 
-## 🎯 Arquitectura Actual
+## 🎯 Arquitectura
 
 ### Componentes Principales
 
 1. **API Flask** (`api/`)
 
-   - Servidor REST con datos estáticos embebidos
-   - Endpoints de consulta sin dependencia de PostgreSQL
-   - Landing page HTML inline con estadísticas visuales
+   - Servidor REST con integración a Google Earth Engine
+   - Landing page HTML con demo interactivo
+   - Análisis de índices satelitales (NDVI, NDWI, NDMI)
    - Desplegado en Railway
 
-2. **Visor Web** (`web/`)
-
-   - Interfaz de mapa interactivo con Leaflet.js
-   - Visualización de instalaciones críticas
-   - Filtros por nivel de riesgo y categoría
-   - Desplegado en GitHub Pages
-
-3. **Datos Estáticos** (`data/`)
+2. **Datos** (`data/`)
    - GeoJSON procesados de infraestructura
    - Archivos de zonas de riesgo
    - Scripts de procesamiento (Python)
@@ -37,14 +30,13 @@ Sistema simplificado de análisis de riesgo de inundación para la comuna de Pap
 
 ### API en Railway
 
-La API está desplegada en: `https://demogeofeedback-production.up.railway.app`
+URL: `https://demogeofeedback-production.up.railway.app`
 
 **Endpoints disponibles**:
 
-- `GET /` - Landing page HTML con estadísticas
-- `GET /api/v1/health` - Health check del servicio
-- `GET /api/v1/stats` - Estadísticas generales (20 instalaciones)
-- `GET /api/v1/infrastructure` - Lista de infraestructura crítica
+- `GET /` - Landing page con demo interactivo
+- `GET /api/v1/health` - Health check
+- `POST /api/v1/analyze` - Análisis territorial con GEE
 - `GET /api/docs` - Documentación de la API
 
 **Desplegar cambios**:
@@ -53,19 +45,7 @@ La API está desplegada en: `https://demogeofeedback-production.up.railway.app`
 cd c:\Users\alean\Desktop\Geofeedback\Demo
 git add .
 git commit -m "Tu mensaje"
-git push origin main  # Railway auto-deploya
-```
-
-### Visor Web en GitHub Pages
-
-URL pública: `https://thechosen16.github.io/Demo_geofeedback/`
-
-**Actualizar**:
-
-```bash
-git add web/
-git commit -m "Update web viewer"
-git push origin main
+git push origin master  # Railway auto-deploya
 ```
 
 ---
@@ -74,36 +54,23 @@ git push origin main
 
 ```
 Demo_geofeedback/
-├── api/                        # API Flask simplificada
-│   ├── app.py                  # Aplicación principal (datos estáticos)
-│   ├── Dockerfile              # Configuración Docker optimizada
-│   ├── requirements.txt        # Dependencias (Flask, CORS, Gunicorn)
-│   └── README.md               # Documentación de la API
-│
-├── web/                        # Visor web (GitHub Pages)
-│   ├── index.html              # Página principal
-│   ├── css/
-│   │   └── styles.css
-│   └── js/
-│       └── map.js              # Lógica del mapa
+├── api/                        # API Flask + Google Earth Engine
+│   ├── app.py                  # Aplicación principal con landing HTML
+│   ├── gee_config.py           # Configuración de Earth Engine
+│   ├── Dockerfile              # Configuración Docker
+│   └── requirements.txt        # Dependencias Python
 │
 ├── data/                       # Datos GeoJSON procesados
 │   ├── processed/              # Archivos listos para usar
 │   └── raw/                    # Datos originales
 │
 ├── scripts/                    # Scripts de procesamiento
-│   ├── 03_vectorize_amenaza.py
-│   ├── 07_download_infrastructure.py
+│
+├── Documentacion/              # Documentación técnica
+│   ├── APIs_REFERENCE.md       # Referencia de APIs de Google
 │   └── ...
 │
-├── backups/                    # Backups de versiones anteriores
-│   ├── app.py.backup           # Versión con PostgreSQL
-│   ├── Dockerfile.backup
-│   └── requirements.txt.backup
-│
-├── Documentacion/              # Documentación del proyecto
-│   ├── 00_INDICE_Y_RESUMEN.md
-│   └── ...
+├── backups/                    # Versiones anteriores
 │
 └── README.md                   # Este archivo
 ```
@@ -116,6 +83,7 @@ Demo_geofeedback/
 
 - Python 3.11+
 - Git
+- Credenciales de Google Earth Engine (service-account-key.json)
 
 ### Instalación
 
@@ -124,28 +92,39 @@ Demo_geofeedback/
 git clone https://github.com/theChosen16/Demo_geofeedback.git
 cd Demo_geofeedback
 
-# Instalar dependencias de la API
+# Instalar dependencias
 cd api
 pip install -r requirements.txt
 
-# Ejecutar API localmente
+# Configurar credenciales GEE (copiar tu archivo de credenciales)
+# cp /path/to/service-account-key.json ./
+
+# Ejecutar localmente
 python app.py
 ```
 
-La API estará disponible en: `http://localhost:8080`
+La API estará disponible en: `http://localhost:5000`
 
-### Probar Endpoints
+---
 
-```bash
-# Health check
-curl http://localhost:8080/api/v1/health
+## 🛰️ APIs Integradas
 
-# Estadísticas
-curl http://localhost:8080/api/v1/stats
+### Google Maps Platform
 
-# Infraestructura
-curl http://localhost:8080/api/v1/infrastructure
-```
+- **Maps JavaScript API** - Mapas interactivos
+- **Elevation API** - Datos topográficos
+- **Air Quality API** - Calidad del aire
+- **Solar API** - Potencial fotovoltaico
+- **Geocoding API** - Conversión dirección ↔ coordenadas
+- **Geolocation API** - Ubicación del usuario
+- **Places API** - Búsqueda de lugares
+- **Pollen API** - Niveles de polen
+
+### Google Earth Engine
+
+- **Sentinel-2** - Imágenes satelitales multiespectrales
+- **SRTM** - Modelo digital de elevación
+- **Índices calculados**: NDVI, NDWI, NDMI
 
 ---
 
@@ -160,104 +139,44 @@ curl http://localhost:8080/api/v1/infrastructure
   - 🟡 Medio: 8 instalaciones (40%)
   - 🟢 Bajo: 7 instalaciones (35%)
 
-### Categorías de Infraestructura
-
-- Salud (hospitales, centros de salud)
-- Educación (escuelas, colegios)
-- Emergencias (bomberos, carabineros)
-- Gobierno (municipalidad, servicios públicos)
-- Comercio (supermercados, farmacias)
-
 ---
 
-## 🗑️ Limpieza Realizada (26 Nov 2025)
+## ⏭️ Roadmap
 
-Se eliminaron los siguientes archivos obsoletos relacionados con PostgreSQL/PostGIS:
+### Fase 1: MVP ✅ (COMPLETADO)
 
-### Archivos Eliminados de `/api`:
+- [x] API con Google Earth Engine
+- [x] Landing page interactiva
+- [x] Múltiples enfoques de análisis (8 tipos)
+- [x] Integración con APIs de Google Maps
 
-- ❌ `config.py` - Configuración de base de datos
-- ❌ `cache_helper.py` - Sistema de caché para queries SQL
-- ❌ `test_api.py` - Tests que requerían BD
-- ❌ `templates/` - Carpeta de plantillas HTML (ahora inline)
-- ❌ `static/` - Archivos estáticos CSS/JS (no usados)
+### Fase 2: Mejoras UX (En progreso)
 
-### Archivos Eliminados de raíz:
-
-- ❌ `setup_database.sql` - Script de creación de esquemas PostgreSQL
-- ❌ `ARREGLOS_RAILWAY.md` - Guía de troubleshooting obsoleta
-- ❌ `QUICK_DEPLOY_RAILWAY.md` - Guía de deploy con BD
-- ❌ `RAILWAY_CLI_SETUP_STEPS.md` - Configuración CLI obsoleta
-- ❌ `railway.toml.backup` - Configuración antigua
-- ❌ `deployment/` - Carpeta completa de deployment con BD
-
-### Archivos Movidos a `/backups`:
-
-- 📦 `app.py.backup` - Versión anterior con PostgreSQL (539 líneas)
-- 📦 `Dockerfile.backup` - Dockerfile con dependencias de BD
-- 📦 `requirements.txt.backup` - Requirements con psycopg2
-
-**Resultado**: Proyecto más limpio y enfocado en la arquitectura actual sin base de datos.
-
----
-
-## 🔄 Migración desde Versión con BD
-
-Si necesitas volver a la versión con PostgreSQL/PostGIS:
-
-```bash
-# Restaurar desde backups
-cd api
-Copy-Item "..\backups\app.py.backup" -Destination "app.py" -Force
-Copy-Item "..\backups\Dockerfile.backup" -Destination "Dockerfile" -Force
-Copy-Item "..\backups\requirements.txt.backup" -Destination "requirements.txt" -Force
-
-# Commit y push
-cd ..
-git add api/
-git commit -m "Restore PostgreSQL version"
-git push origin main
-```
-
----
-
-## ⏭️ Roadmap Futuro
-
-### Fase 1: Deploy Mínimo ✅ (COMPLETADO)
-
-- [x] API con datos estáticos sin BD
-- [x] Dockerfile optimizado para Railway
-- [x] Landing page HTML inline
-- [x] Limpieza de archivos obsoletos
-
-### Fase 2: Datos Dinámicos (Próximamente)
-
-- [ ] Reconectar PostgreSQL/PostGIS con manejo robusto de errores
-- [ ] Implementar connection pooling optimizado
-- [ ] Cargar datos GeoJSON completos desde BD
+- [x] Panel de interpretación de datos con escalas
+- [ ] Modal explicativo de índices
+- [ ] Todas las APIs visibles en sección Solución
 
 ### Fase 3: Análisis Avanzado (Futuro)
 
-- [ ] Integración con Google Earth Engine
-- [ ] Análisis de series temporales de inundaciones
+- [ ] Análisis de series temporales
 - [ ] Predicciones basadas en datos históricos
 - [ ] Sistema de alertas automáticas
 
 ---
 
-## 📝 Changelog Reciente
+## 📝 Changelog
 
 ### 8 de Diciembre de 2025
 
-- **SEO Mejorado**: Agregados meta tags de Open Graph y Twitter Cards para mejor compartibilidad en redes sociales
-- **Menú Móvil Funcional**: Implementada funcionalidad JavaScript para abrir/cerrar el menú en dispositivos móviles
-- **URL API Corregida**: Actualizado el enlace de documentación API al endpoint correcto de Railway
-- **Keywords SEO**: Agregadas palabras clave relevantes para mejor indexación
+- **Eliminada carpeta web/**: Consolidado todo en API Flask
+- **13 APIs integradas**: Mostradas por categoría
+- **Modal de interpretación**: Explicación de índices y escalas
+- **Mejor manejo de errores GEE**: Mensajes amigables al usuario
 
 ### 26 de Noviembre de 2025
 
-- Limpieza de archivos obsoletos relacionados con PostgreSQL
-- Deploy mínimo sin base de datos funcionando
+- Deploy mínimo en Railway funcionando
+- Integración inicial con Google Earth Engine
 
 ---
 
@@ -270,8 +189,7 @@ Este proyecto es parte de una demostración técnica de GeoFeedback Chile.
 ## 👥 Contacto
 
 - **Repositorio**: [github.com/theChosen16/Demo_geofeedback](https://github.com/theChosen16/Demo_geofeedback)
-- **Demo en vivo**: [thechosen16.github.io/Demo_geofeedback](https://thechosen16.github.io/Demo_geofeedback/)
-- **API**: [demogeofeedback-production.up.railway.app](https://demogeofeedback-production.up.railway.app)
+- **Demo en vivo**: [geofeedback.cl](https://demogeofeedback-production.up.railway.app)
 
 ---
 
