@@ -2038,9 +2038,9 @@ LANDING_HTML = '''<!DOCTYPE html>
                 if (data.status === 'success') {
                     // Format and display interpretation
                     var formattedResponse = data.interpretation
-                        .replace(/\n/g, '<br>')
-                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                        .replace(/\*(.*?)\*/g, '<em>$1</em>');
+                        .replace(/\\n/g, '<br>')
+                        .replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>')
+                        .replace(/\\*(.*?)\\*/g, '<em>$1</em>');
                     
                     var interpretationHtml = '<div class="chat-message assistant">' +
                         '<div class="message-bubble" style="background: linear-gradient(135deg, #f0fdf4, #ecfeff); border-left: 3px solid var(--secondary);">' +
