@@ -1161,9 +1161,9 @@ LANDING_HTML = '''<!DOCTYPE html>
                         <div class="panel-header"><i class="fas fa-ruler-combined"></i> Radio de Analisis</div>
                         <select id="radius-select" class="approach-select" onchange="onRadiusChange()">
                             <option value="">-- Selecciona el radio --</option>
-                            <option value="500">500 metros (~0.79 km²)</option>
-                            <option value="1000" selected>1 kilometro (~3.14 km²)</option>
-                            <option value="2000">2 kilometros (~12.57 km²)</option>
+                            <option value="2000" selected>2 kilometros (~12.57 km²)</option>
+                            <option value="5000">5 kilometros (~78.54 km²)</option>
+                            <option value="10000">10 kilometros (~314.16 km²)</option>
                         </select>
                         <div style="font-size:0.75rem; color:var(--text-light); margin-top:0.5rem;">
                             <i class="fas fa-info-circle"></i> El radio define el area circular alrededor del punto para el analisis.
@@ -1241,7 +1241,7 @@ LANDING_HTML = '''<!DOCTYPE html>
         var autocomplete = null;
         var selectedPlace = null;
         var selectedApproach = null;
-        var selectedRadius = 1000;  // Default 1km
+        var selectedRadius = 2000;  // Default 2km
         var isSatellite = true;
         var chatHistory = [];
         var analysisContext = {};
