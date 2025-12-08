@@ -13,6 +13,7 @@ psycopg2-binary==2.9.9
 # Utilities
 python-dotenv==1.0.0
 earthengine-api>=0.1.370
+google-generativeai>=0.3.0
 
 # Producción (instalado en Dockerfile, pero listado aquí para referencia)
 # gunicorn==21.2.0
@@ -21,5 +22,6 @@ earthengine-api>=0.1.370
 # Notas:
 # - gunicorn se instala en Dockerfile para mantener requirements.txt limpio
 # - psycopg2-binary es preferido sobre psycopg2 para evitar compilación
+# - google-generativeai para integración con Gemini AI
 # - Actualizar versiones periódicamente: pip list --outdated
 # ============================================================================
