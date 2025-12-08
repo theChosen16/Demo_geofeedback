@@ -601,6 +601,95 @@ LANDING_HTML = '''<!DOCTYPE html>
             animation: spin 0.8s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
+        
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            max-width: 700px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            padding: 1.5rem;
+            border-radius: 16px 16px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h3 { margin: 0; font-size: 1.3rem; }
+        .modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            opacity: 0.8;
+        }
+        .modal-close:hover { opacity: 1; }
+        .modal-body { padding: 1.5rem; }
+        .scale-section {
+            background: var(--background);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .scale-title {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .scale-bar {
+            height: 20px;
+            border-radius: 10px;
+            margin: 0.5rem 0;
+        }
+        .scale-bar.ndvi { background: linear-gradient(to right, #8B0000, #FF6B6B, #FFFF00, #90EE90, #006400); }
+        .scale-bar.ndwi { background: linear-gradient(to right, #8B4513, #FFD700, #90EE90, #87CEEB, #000080); }
+        .scale-bar.slope { background: linear-gradient(to right, #22c55e, #ffd700, #ff6b6b); }
+        .scale-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-light);
+        }
+        .interpretation-text {
+            background: white;
+            border-left: 4px solid var(--secondary);
+            padding: 0.75rem 1rem;
+            margin-top: 0.75rem;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        .value-badge {
+            display: inline-block;
+            background: var(--secondary);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-left: 0.5rem;
+        }
     </style>
 </head>
 <body>
@@ -622,7 +711,7 @@ LANDING_HTML = '''<!DOCTYPE html>
                 <p>Plataforma open source que transforma datos satelitales en mapas de riesgo y herramientas de gestion hidrica para Chile.</p>
                 <div class="hero-buttons">
                     <a href="#demo" class="btn btn-primary"><i class="fas fa-map-marked-alt"></i> Explorar Demo</a>
-                    <a href="https://github.com/theChosen16/Demo_geofeedback" target="_blank" class="btn btn-secondary"><i class="fab fa-github"></i> GitHub</a>
+                    <a href="https://github.com/theChosen16/Demo_geofeedback" target="_blank" rel="noopener noreferrer" class="btn btn-secondary"><i class="fab fa-github"></i> GitHub</a>
                 </div>
             </div>
             <div class="hero-visual"><i class="fas fa-satellite satellite-icon"></i></div>
@@ -647,11 +736,38 @@ LANDING_HTML = '''<!DOCTYPE html>
                 <h2>Nuestra Solucion</h2>
                 <p>Inteligencia territorial con APIs de Google Maps Platform + Google Earth Engine</p>
             </div>
-            <div class="cards-grid">
-                <div class="card card-light"><i class="fab fa-google"></i><h3>Google Earth Engine</h3><p>Procesamiento de datos satelitales Sentinel-2</p></div>
+            
+            <!-- API Category: Satellite -->
+            <h3 style="color: var(--primary); margin-bottom: 1rem; font-size: 1.2rem;"><i class="fas fa-satellite" style="color: var(--secondary);"></i> Analisis Satelital</h3>
+            <div class="cards-grid" style="margin-bottom: 2rem;">
+                <div class="card card-light"><i class="fab fa-google"></i><h3>Google Earth Engine</h3><p>Procesamiento de Sentinel-2 (NDVI, NDWI, NDMI)</p></div>
+                <div class="card card-light"><i class="fas fa-th"></i><h3>Map Tiles API</h3><p>Tiles de mapas personalizados y overlays</p></div>
+            </div>
+            
+            <!-- API Category: Location -->
+            <h3 style="color: var(--primary); margin-bottom: 1rem; font-size: 1.2rem;"><i class="fas fa-location-dot" style="color: var(--secondary);"></i> Ubicacion y Lugares</h3>
+            <div class="cards-grid" style="margin-bottom: 2rem;">
+                <div class="card card-light"><i class="fas fa-location-arrow"></i><h3>Geocoding API</h3><p>Conversion direccion a coordenadas</p></div>
+                <div class="card card-light"><i class="fas fa-location-crosshairs"></i><h3>Geolocation API</h3><p>Ubicacion del usuario en tiempo real</p></div>
+                <div class="card card-light"><i class="fas fa-building"></i><h3>Places API (New)</h3><p>Busqueda de lugares e infraestructura</p></div>
+                <div class="card card-light"><i class="fas fa-check-circle"></i><h3>Address Validation</h3><p>Validacion de direcciones postales</p></div>
+            </div>
+            
+            <!-- API Category: Analysis -->
+            <h3 style="color: var(--primary); margin-bottom: 1rem; font-size: 1.2rem;"><i class="fas fa-chart-line" style="color: var(--secondary);"></i> APIs de Analisis</h3>
+            <div class="cards-grid" style="margin-bottom: 2rem;">
                 <div class="card card-light"><i class="fas fa-mountain"></i><h3>Elevation API</h3><p>Datos topograficos en tiempo real</p></div>
                 <div class="card card-light"><i class="fas fa-wind"></i><h3>Air Quality API</h3><p>Calidad del aire resolucion 500m</p></div>
                 <div class="card card-light"><i class="fas fa-sun"></i><h3>Solar API</h3><p>Potencial fotovoltaico de cubiertas</p></div>
+                <div class="card card-light"><i class="fas fa-leaf"></i><h3>Pollen API</h3><p>Niveles de polen y alergenos</p></div>
+            </div>
+            
+            <!-- API Category: Visualization -->
+            <h3 style="color: var(--primary); margin-bottom: 1rem; font-size: 1.2rem;"><i class="fas fa-map" style="color: var(--secondary);"></i> Visualizacion</h3>
+            <div class="cards-grid">
+                <div class="card card-light"><i class="fas fa-map-marked-alt"></i><h3>Maps JavaScript API</h3><p>Mapas interactivos web</p></div>
+                <div class="card card-light"><i class="fas fa-image"></i><h3>Maps Static API</h3><p>Mapas estaticos para reportes PDF</p></div>
+                <div class="card card-light"><i class="fas fa-database"></i><h3>Maps Datasets API</h3><p>Gestion de datasets geoespaciales</p></div>
             </div>
         </div>
     </section>
@@ -742,14 +858,27 @@ LANDING_HTML = '''<!DOCTYPE html>
             <div class="footer-links">
                 <a href="#demo">Demo</a>
                 <a href="/api/docs">API</a>
-                <a href="https://github.com/theChosen16/Demo_geofeedback" target="_blank">GitHub</a>
+                <a href="https://github.com/theChosen16/Demo_geofeedback" target="_blank" rel="noopener noreferrer">GitHub</a>
             </div>
             <div class="social-links">
-                <a href="https://github.com/theChosen16/Demo_geofeedback" target="_blank"><i class="fab fa-github"></i></a>
-                <a href="https://www.linkedin.com/in/alejandro-olivares-verdugo/" target="_blank"><i class="fab fa-linkedin-in"></i></a>
+                <a href="https://github.com/theChosen16/Demo_geofeedback" target="_blank" rel="noopener noreferrer"><i class="fab fa-github"></i></a>
+                <a href="https://www.linkedin.com/in/alejandro-olivares-verdugo/" target="_blank" rel="noopener noreferrer"><i class="fab fa-linkedin-in"></i></a>
             </div>
         </div>
     </footer>
+    
+    <!-- Interpretation Modal -->
+    <div class="modal-overlay" id="interpretation-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-info-circle"></i> Interpretacion de Resultados</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Content injected by JS -->
+            </div>
+        </div>
+    </div>
     <script>
         var MAPS_API_KEY = "GOOGLE_MAPS_KEY_PLACEHOLDER";
         var map = null;
@@ -1223,7 +1352,6 @@ LANDING_HTML = '''<!DOCTYPE html>
                     // Display in Analysis Results Container
                     var resultsContainer = document.getElementById("analysis-results");
                     if (!resultsContainer) {
-                        // Create if not exists (should be added to HTML, but fallback here)
                         resultsContainer = document.createElement("div");
                         resultsContainer.id = "analysis-results";
                         resultsContainer.style.marginBottom = "1rem";
@@ -1234,13 +1362,18 @@ LANDING_HTML = '''<!DOCTYPE html>
                     resultsContainer.innerHTML = '<div class="result-box" style="background:white; border:1px solid var(--secondary); border-radius:8px; padding:1rem; box-shadow:0 2px 4px rgba(0,0,0,0.05);">' +
                         '<h4 style="color:var(--primary); margin-top:0; margin-bottom:0.5rem; border-bottom:1px solid #eee; padding-bottom:0.5rem;"><i class="fas fa-chart-bar"></i> Resultados del Análisis</h4>' +
                         tableHtml + 
+                        '<button onclick="showInterpretationModal()" style="margin-top:1rem; width:100%;" class="btn btn-secondary"><i class="fas fa-info-circle"></i> Ver Interpretacion</button>' +
                         '</div>';
                     resultsContainer.style.display = "block";
+                    
+                    // Store data for modal
+                    window.lastAnalysisData = data.data;
+                    window.lastApproach = selectedApproach;
                     
                     // Scroll to results
                     resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-                    // Agregar capa al mapa
+                    // Add GEE layer to map
                     if (data.map_layer && data.map_layer.url) {
                         if (currentGeeLayer) {
                             map.overlayMapTypes.removeAt(0);
@@ -1261,6 +1394,12 @@ LANDING_HTML = '''<!DOCTYPE html>
                         currentGeeLayer = geeMapType;
                         console.log("Capa GEE agregada: " + data.map_layer.url);
                     }
+                    
+                    // Show interpretation modal automatically
+                    showInterpretationModal();
+                    
+                } else if (data.status === 'warning') {
+                    alert("Aviso: " + data.message);
                 } else {
                     alert("Error en el analisis: " + data.message);
                 }
@@ -1269,9 +1408,113 @@ LANDING_HTML = '''<!DOCTYPE html>
                 console.error('Error:', error);
                 btn.innerHTML = '<i class="fas fa-satellite-dish"></i> Iniciar Analisis';
                 btn.disabled = false;
-                alert("Error de conexión con el servidor de análisis.");
+                alert("Error de conexión. Por favor intenta de nuevo.");
             });
         }
+        
+        function showInterpretationModal() {
+            var data = window.lastAnalysisData || {};
+            var approach = window.lastApproach || '';
+            var modalBody = document.getElementById('modal-body');
+            var html = '';
+            
+            // Extract numeric values for interpretation
+            var ndvi = parseFloat(Object.values(data).find(v => v && v.toString().match(/^-?\d+\.\d+$/) && parseFloat(v) >= -1 && parseFloat(v) <= 1) || 0);
+            
+            // NDVI Scale (if applicable)
+            if (approach === 'mining' || approach === 'agriculture' || approach === 'environmental') {
+                var ndviVal = 0;
+                for (var k in data) {
+                    if (k.toLowerCase().includes('ndvi') || k.toLowerCase().includes('vegetac')) {
+                        ndviVal = parseFloat(data[k]) || 0;
+                        break;
+                    }
+                }
+                var ndviInterp = ndviVal > 0.6 ? 'Vegetacion densa y saludable. Excelente cobertura vegetal.' :
+                                 ndviVal > 0.3 ? 'Vegetacion moderada. Cobertura vegetal aceptable.' :
+                                 ndviVal > 0.1 ? 'Vegetacion escasa o con estres. Requiere atencion.' :
+                                 'Sin vegetacion significativa o superficie construida/agua.';
+                
+                html += '<div class="scale-section">' +
+                    '<div class="scale-title"><i class="fas fa-leaf" style="color:#22c55e"></i> Indice de Vegetacion (NDVI) <span class="value-badge">' + ndviVal.toFixed(2) + '</span></div>' +
+                    '<div class="scale-bar ndvi"></div>' +
+                    '<div class="scale-labels"><span>-1 (Agua)</span><span>0 (Suelo)</span><span>+1 (Vegetacion densa)</span></div>' +
+                    '<div class="interpretation-text">' + ndviInterp + '</div>' +
+                '</div>';
+            }
+            
+            // NDWI Scale (if applicable)
+            if (approach === 'flood-risk' || approach === 'water-management' || approach === 'mining') {
+                var ndwiVal = 0;
+                for (var k in data) {
+                    if (k.toLowerCase().includes('ndwi') || k.toLowerCase().includes('agua')) {
+                        ndwiVal = parseFloat(data[k]) || 0;
+                        break;
+                    }
+                }
+                var ndwiInterp = ndwiVal > 0.3 ? 'Alta presencia de agua. Zona de cuerpo de agua o saturacion.' :
+                                 ndwiVal > 0 ? 'Humedad moderada. Suelo humedo o vegetacion con agua.' :
+                                 ndwiVal > -0.3 ? 'Baja humedad. Suelo seco o vegetacion seca.' :
+                                 'Muy seco. Suelo arido o superficie urbana.';
+                
+                html += '<div class="scale-section">' +
+                    '<div class="scale-title"><i class="fas fa-water" style="color:#3b82f6"></i> Indice de Agua (NDWI) <span class="value-badge">' + ndwiVal.toFixed(2) + '</span></div>' +
+                    '<div class="scale-bar ndwi"></div>' +
+                    '<div class="scale-labels"><span>-1 (Seco)</span><span>0</span><span>+1 (Agua)</span></div>' +
+                    '<div class="interpretation-text">' + ndwiInterp + '</div>' +
+                '</div>';
+            }
+            
+            // Slope Scale (if applicable)
+            if (approach === 'real-estate' || approach === 'energy' || approach === 'land-planning' || approach === 'mining') {
+                var slopeVal = 0;
+                for (var k in data) {
+                    if (k.toLowerCase().includes('pendiente') || k.toLowerCase().includes('slope')) {
+                        slopeVal = parseFloat(data[k]) || 0;
+                        break;
+                    }
+                }
+                var slopeInterp = slopeVal < 5 ? 'Terreno plano. Ideal para construccion y agricultura mecanizada.' :
+                                  slopeVal < 15 ? 'Pendiente suave. Apto para la mayoria de usos con algunas consideraciones.' :
+                                  slopeVal < 30 ? 'Pendiente moderada. Requiere terrazas o muros de contencion.' :
+                                  'Pendiente pronunciada. Alto riesgo de erosion, no apto para construccion convencional.';
+                
+                html += '<div class="scale-section">' +
+                    '<div class="scale-title"><i class="fas fa-mountain" style="color:#8b5cf6"></i> Pendiente del Terreno <span class="value-badge">' + slopeVal.toFixed(1) + '°</span></div>' +
+                    '<div class="scale-bar slope"></div>' +
+                    '<div class="scale-labels"><span>0° (Plano)</span><span>15° (Suave)</span><span>45°+ (Escarpado)</span></div>' +
+                    '<div class="interpretation-text">' + slopeInterp + '</div>' +
+                '</div>';
+            }
+            
+            // Generic interpretation if no specific scales
+            if (html === '') {
+                html = '<div class="scale-section">' +
+                    '<div class="scale-title"><i class="fas fa-chart-bar"></i> Resumen del Analisis</div>' +
+                    '<p style="color:var(--text-light)">Los resultados muestran los valores calculados para la ubicacion seleccionada. ' +
+                    'Valores positivos en indices de vegetacion indican mayor cobertura vegetal. ' +
+                    'Pendientes bajas son mejores para construccion.</p>' +
+                '</div>';
+            }
+            
+            // Add satellite info
+            html += '<div style="margin-top:1rem; padding:1rem; background:#f0fdf4; border-radius:8px; font-size:0.85rem; color:var(--text-light);">' +
+                '<i class="fas fa-satellite" style="color:var(--secondary)"></i> <strong>Fuente:</strong> Sentinel-2 MSI + SRTM | ' +
+                '<i class="fas fa-calendar"></i> Imagen mas reciente disponible (ultimos 6 meses)' +
+                '</div>';
+            
+            modalBody.innerHTML = html;
+            document.getElementById('interpretation-modal').classList.add('active');
+        }
+        
+        function closeModal() {
+            document.getElementById('interpretation-modal').classList.remove('active');
+        }
+        
+        // Close modal on outside click
+        document.getElementById('interpretation-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
 
         // Start the map initialization
         loadGoogleMaps();
