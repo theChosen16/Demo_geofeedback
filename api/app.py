@@ -1342,7 +1342,6 @@ LANDING_HTML = '''<!DOCTYPE html>
             map = new Map(document.getElementById("demo-map"), {
                 center: { lat: -33.4489, lng: -70.6693 }, // Santiago
                 zoom: 5,
-                mapId: "DEMO_MAP_ID", // Reemplazar con ID real si existe
                 mapTypeId: "hybrid",
                 disableDefaultUI: false,
                 zoomControl: true,
