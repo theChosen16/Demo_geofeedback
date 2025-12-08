@@ -74,13 +74,14 @@ def analyze_territory():
     lat = data.get('lat')
     lng = data.get('lng')
     approach = data.get('approach')
+    radius = data.get('radius', 1000)  # Default 1km
     
     if not lat or not lng or not approach:
         return jsonify({"status": "error", "message": "Faltan parámetros"}), 400
 
     try:
         point = ee.Geometry.Point([lng, lat])
-        roi = point.buffer(1000) # Radio de 1km para análisis
+        roi = point.buffer(radius)  # Dynamic radius from frontend
         
         # Datos Base
         srtm = ee.Image('CGIAR/SRTM90_V4')
@@ -193,9 +194,9 @@ def analyze_territory():
         map_id_dict = vis_image.getMapId(vis_params)
         tile_url = map_id_dict['tile_fetcher'].url_format
         
-        # Calculate analysis area (buffer radius = 1km, so area = π * r²)
-        # 1km radius = 1000m, area ≈ 3.14159 km² ≈ 3,141,593 m²
-        area_m2 = 3141593  # π * 1000² for 1km buffer
+        # Calculate analysis area dynamically (area = π * r²)
+        import math
+        area_m2 = int(math.pi * radius * radius)
 
         return jsonify({
             "status": "success",
@@ -210,7 +211,7 @@ def analyze_territory():
                 "satellite": "Sentinel-2 MSI (Level-2A)",
                 "terrain": "SRTM v4",
                 "date": datetime.datetime.now().strftime("%Y-%m-%d"),
-                "buffer_radius_m": 1000
+                "buffer_radius_m": radius
             }
         })
 
@@ -1157,6 +1158,18 @@ LANDING_HTML = '''<!DOCTYPE html>
                         </div>
                     </div>
                     <div class="panel">
+                        <div class="panel-header"><i class="fas fa-ruler-combined"></i> Radio de Analisis</div>
+                        <select id="radius-select" class="approach-select" onchange="onRadiusChange()">
+                            <option value="">-- Selecciona el radio --</option>
+                            <option value="500">500 metros (~0.79 km²)</option>
+                            <option value="1000" selected>1 kilometro (~3.14 km²)</option>
+                            <option value="2000">2 kilometros (~12.57 km²)</option>
+                        </select>
+                        <div style="font-size:0.75rem; color:var(--text-light); margin-top:0.5rem;">
+                            <i class="fas fa-info-circle"></i> El radio define el area circular alrededor del punto para el analisis.
+                        </div>
+                    </div>
+                    <div class="panel">
                         <button class="btn btn-primary" id="analyze-btn" onclick="analyzeTerritory()" disabled><i class="fas fa-satellite-dish"></i> Iniciar Analisis</button>
                         <p style="font-size: 0.8rem; color: var(--text-light); margin-top: 0.5rem; text-align: center;">Requiere ubicacion y enfoque seleccionados</p>
                     </div>
@@ -1228,6 +1241,7 @@ LANDING_HTML = '''<!DOCTYPE html>
         var autocomplete = null;
         var selectedPlace = null;
         var selectedApproach = null;
+        var selectedRadius = 1000;  // Default 1km
         var isSatellite = true;
         var chatHistory = [];
         var analysisContext = {};
@@ -1640,9 +1654,36 @@ LANDING_HTML = '''<!DOCTYPE html>
             checkReadyState();
         }
 
+        function onRadiusChange() {
+            var select = document.getElementById("radius-select");
+            var value = select.value;
+            if (!value) {
+                selectedRadius = null;
+            } else {
+                selectedRadius = parseInt(value);
+            }
+            checkReadyState();
+        }
+
         function checkReadyState() {
             var btn = document.getElementById("analyze-btn");
-            btn.disabled = !(selectedPlace && selectedApproach);
+            btn.disabled = !(selectedPlace && selectedApproach && selectedRadius);
+            
+            // Update button text to show what's missing
+            var missing = [];
+            if (!selectedPlace) missing.push("ubicación");
+            if (!selectedApproach) missing.push("enfoque");
+            if (!selectedRadius) missing.push("radio");
+            
+            var hint = document.querySelector("#analyze-btn + p");
+            if (hint) {
+                if (missing.length > 0) {
+                    hint.textContent = "Requiere: " + missing.join(", ");
+                } else {
+                    hint.textContent = "✓ Listo para analizar";
+                    hint.style.color = "var(--secondary)";
+                }
+            }
         }
 
         function centerMap() {
@@ -1671,7 +1712,8 @@ LANDING_HTML = '''<!DOCTYPE html>
             var payload = {
                 lat: selectedPlace.lat,
                 lng: selectedPlace.lng,
-                approach: selectedApproach
+                approach: selectedApproach,
+                radius: selectedRadius
             };
 
             fetch('/api/v1/analyze', {
@@ -1970,39 +2012,22 @@ LANDING_HTML = '''<!DOCTYPE html>
             document.getElementById('chat-messages').insertAdjacentHTML('beforeend', typingHtml);
             scrollChatToBottom();
             
-            // Prepare comprehensive interpretation request
-            var approachNames = {
-                'mining': 'Minería Sostenible',
-                'agriculture': 'Agroindustria Inteligente',
-                'energy': 'Energías Renovables',
-                'real-estate': 'Desarrollo Inmobiliario',
-                'flood-risk': 'Riesgo de Inundación',
-                'water-management': 'Gestión Hídrica',
-                'environmental': 'Calidad Ambiental',
-                'land-planning': 'Planificación Territorial'
-            };
-            
             var areaKm2 = (areaM2 / 1000000).toFixed(2);
+            var radiusM = meta ? meta.buffer_radius_m : 1000;
             
-            // Create comprehensive prompt
-            var interpretationPrompt = '🛰️ **Análisis de ' + approachNames[approach] + '**\\n' +
-                '📍 Ubicación: ' + locationName + '\\n' +
-                '📐 Área analizada: ' + areaM2.toLocaleString() + ' m² (' + areaKm2 + ' km²)\\n' +
-                '📅 Datos: ' + (meta ? meta.satellite : 'Sentinel-2') + '\\n\\n' +
-                'Resultados:\\n' + JSON.stringify(results) + '\\n\\n' +
-                'Por favor interpreta estos resultados explicando: \\n' +
-                '1. El significado de cada valor y su implicancia práctica\\n' +
-                '2. Si los valores son buenos, regulares o preocupantes\\n' +
-                '3. Recomendaciones específicas basadas en el enfoque ' + approachNames[approach];
+            // Add area info to results for context
+            var enrichedResults = Object.assign({}, results);
+            enrichedResults['Área analizada'] = areaM2.toLocaleString() + ' m² (' + areaKm2 + ' km²)';
+            enrichedResults['Radio de análisis'] = radiusM + ' metros';
             
-            // Call chat API for interpretation
-            fetch('/api/v1/chat', {
+            // Call interpret API (designed for analysis interpretation)
+            fetch('/api/v1/interpret', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    message: interpretationPrompt,
-                    context: analysisContext,
-                    history: []
+                    results: enrichedResults,
+                    approach: approach,
+                    location: locationName
                 })
             })
             .then(response => response.json())
@@ -2012,8 +2037,8 @@ LANDING_HTML = '''<!DOCTYPE html>
                 
                 if (data.status === 'success') {
                     // Format and display interpretation
-                    var formattedResponse = data.response
-                        .replace(/\\n/g, '<br>')
+                    var formattedResponse = data.interpretation
+                        .replace(/\n/g, '<br>')
                         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                         .replace(/\*(.*?)\*/g, '<em>$1</em>');
                     
@@ -2030,7 +2055,7 @@ LANDING_HTML = '''<!DOCTYPE html>
                     
                     // Add to history
                     chatHistory.push({ role: 'user', content: 'Interpreta los resultados del análisis' });
-                    chatHistory.push({ role: 'assistant', content: data.response });
+                    chatHistory.push({ role: 'assistant', content: data.interpretation });
                     
                     // Add follow-up suggestion
                     var followUp = '<div class="chat-message assistant">' +
@@ -2040,10 +2065,11 @@ LANDING_HTML = '''<!DOCTYPE html>
                     document.getElementById('chat-messages').insertAdjacentHTML('beforeend', followUp);
                     scrollChatToBottom();
                 } else {
-                    addChatMessage('No pude generar la interpretación. Por favor intenta de nuevo.', 'assistant');
+                    addChatMessage('No pude generar la interpretación: ' + (data.message || 'Error desconocido'), 'assistant');
                 }
             })
             .catch(error => {
+                console.error('Interpretation error:', error);
                 var typing = document.getElementById('interpretation-typing');
                 if (typing) typing.remove();
                 addChatMessage('Error al conectar con el asistente. Verifica tu conexión.', 'assistant');
