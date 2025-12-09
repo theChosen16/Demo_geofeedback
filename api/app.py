@@ -1,6 +1,6 @@
 # =============================================================================
 # GeoFeedback Chile - Plataforma de Inteligencia Territorial
-# Copyright (c) 2025 Alejandro Olivares Verdugo
+# Copyright (c) 2025 Alejandro Hernández Aguirre
 # TODOS LOS DERECHOS RESERVADOS / ALL RIGHTS RESERVED
 # 
 # Este código es propiedad exclusiva del autor y se proporciona únicamente

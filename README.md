@@ -37,7 +37,7 @@ Ver [DOCS.md](./DOCS.md) para documentación técnica completa:
 
 ## 🔒 Licencia
 
-**© 2025 Alejandro Olivares Verdugo - Todos los derechos reservados**
+**© 2025 Alejandro Hernández Aguirre - Todos los derechos reservados**
 
 Este proyecto es una demo técnica. Ver [LICENSE](./LICENSE) para detalles.
 
@@ -45,11 +45,11 @@ Este proyecto es una demo técnica. Ver [LICENSE](./LICENSE) para detalles.
 
 ## 👤 Autor
 
-**Alejandro Olivares Verdugo**
+**Alejandro Hernández Aguirre**
 
-- [LinkedIn](https://www.linkedin.com/in/alejandro-olivares-verdugo/)
+- [LinkedIn](https://www.linkedin.com/in/alejandro-hern%C3%A1ndez-aguirre-bb8967246/)
 - [GitHub](https://github.com/theChosen16)
 
 ---
 
-_Última actualización: Diciembre 2025_
+_Última actualización: 8 de Diciembre de 2025_
