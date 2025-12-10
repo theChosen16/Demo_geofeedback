@@ -347,51 +347,27 @@ Responde de forma útil y amigable:"""
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
-@app.route('/api/v1/contact', methods=['POST'])
-def contact_form():
-    """Handle contact form submissions."""
+def send_email_async(name, company, email, message):
+    """Envía email en segundo plano para no bloquear la respuesta."""
+    import smtplib
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+    
     try:
-        data = request.json
-        name = data.get('name', '').strip()
-        company = data.get('company', '').strip()
-        email = data.get('email', '').strip()
-        message = data.get('message', '').strip()
+        smtp_user = os.environ.get('SMTP_USER')
+        smtp_pass = os.environ.get('SMTP_PASS')
         
-        # Validate required fields
-        if not name or not email or not message:
-            return jsonify({"status": "error", "message": "Campos requeridos incompletos"}), 400
+        if not smtp_user or not smtp_pass:
+            print("⚠ SMTP no configurado (faltan credenciales)")
+            return
         
-        # Log the contact request
-        print(f"=== NUEVO CONTACTO ===")
-        print(f"Nombre: {name}")
-        print(f"Empresa: {company if company else 'No especificada'}")
-        print(f"Email: {email}")
-        print(f"Mensaje: {message}")
-        print(f"======================")
+        msg = MIMEMultipart()
+        msg['From'] = smtp_user
+        msg['To'] = smtp_user
+        msg['Reply-To'] = email
+        msg['Subject'] = f'[GeoFeedback] Nuevo contacto de {name}'
         
-        # Track email send status
-        email_sent = False
-        email_error_msg = None
-        
-        # Try to send email if SMTP is configured
-        try:
-            import smtplib
-            from email.mime.text import MIMEText
-            from email.mime.multipart import MIMEMultipart
-            
-            smtp_user = os.environ.get('SMTP_USER')
-            smtp_pass = os.environ.get('SMTP_PASS')
-            
-            print(f"SMTP Config: user={smtp_user}, pass_length={len(smtp_pass) if smtp_pass else 0}")
-            
-            if smtp_user and smtp_pass:
-                msg = MIMEMultipart()
-                msg['From'] = smtp_user
-                msg['To'] = smtp_user  # Enviar al mismo correo configurado
-                msg['Reply-To'] = email  # Para poder responder al usuario
-                msg['Subject'] = f'[GeoFeedback] Nuevo contacto de {name}'
-                
-                body = f"""
+        body = f"""
 Nuevo mensaje de contacto desde GeoFeedback.cl:
 
 Nombre: {name}
@@ -403,49 +379,57 @@ Mensaje:
 
 ---
 Responde directamente a este correo para contactar al usuario.
-                """
-                msg.attach(MIMEText(body, 'plain', 'utf-8'))
-                
-                print("Conectando a SMTP Gmail...")
-                server = smtplib.SMTP('smtp.gmail.com', 587, timeout=30)
-                server.set_debuglevel(1)  # Enable debug output
-                print("Iniciando TLS...")
-                server.starttls()
-                print("Autenticando...")
-                server.login(smtp_user, smtp_pass)
-                print("Enviando mensaje...")
-                server.send_message(msg)
-                server.quit()
-                print("✓ Email enviado exitosamente")
-                email_sent = True
-            else:
-                email_error_msg = "SMTP no configurado (faltan credenciales)"
-                print(f"⚠ {email_error_msg}")
-                
-        except smtplib.SMTPAuthenticationError as auth_error:
-            email_error_msg = f"Error de autenticación SMTP: {auth_error}"
-            print(f"✗ {email_error_msg}")
-        except smtplib.SMTPException as smtp_error:
-            email_error_msg = f"Error SMTP: {smtp_error}"
-            print(f"✗ {email_error_msg}")
-        except Exception as email_error:
-            email_error_msg = f"Error general al enviar email: {email_error}"
-            print(f"✗ {email_error_msg}")
+        """
+        msg.attach(MIMEText(body, 'plain', 'utf-8'))
         
-        # Always return success to the user (message was received and logged)
-        response_data = {
+        print("📧 [Background] Conectando a SMTP Gmail...")
+        server = smtplib.SMTP('smtp.gmail.com', 587, timeout=30)
+        server.starttls()
+        server.login(smtp_user, smtp_pass)
+        server.send_message(msg)
+        server.quit()
+        print("✓ [Background] Email enviado exitosamente")
+        
+    except Exception as e:
+        print(f"✗ [Background] Error al enviar email: {e}")
+
+@app.route('/api/v1/contact', methods=['POST'])
+def contact_form():
+    """Handle contact form submissions."""
+    import threading
+    
+    try:
+        data = request.json
+        name = data.get('name', '').strip()
+        company = data.get('company', '').strip()
+        email = data.get('email', '').strip()
+        message = data.get('message', '').strip()
+        
+        # Validate required fields
+        if not name or not email or not message:
+            return jsonify({"status": "error", "message": "Campos requeridos incompletos"}), 400
+        
+        # Log the contact request immediately
+        print(f"=== NUEVO CONTACTO ===")
+        print(f"Nombre: {name}")
+        print(f"Empresa: {company if company else 'No especificada'}")
+        print(f"Email: {email}")
+        print(f"Mensaje: {message}")
+        print(f"======================")
+        
+        # Send email in background thread (non-blocking)
+        email_thread = threading.Thread(
+            target=send_email_async,
+            args=(name, company, email, message)
+        )
+        email_thread.daemon = True
+        email_thread.start()
+        
+        # Return success immediately (email will be sent in background)
+        return jsonify({
             "status": "success",
             "message": "Mensaje recibido correctamente"
-        }
-        
-        # Add email status for debugging (optional)
-        if email_sent:
-            response_data["email_status"] = "sent"
-        elif email_error_msg:
-            response_data["email_status"] = "failed"
-            print(f"Nota: El mensaje fue registrado pero el email no se pudo enviar: {email_error_msg}")
-        
-        return jsonify(response_data)
+        })
         
     except Exception as e:
         print(f"Error en formulario de contacto: {e}")
@@ -2464,9 +2448,7 @@ LANDING_HTML = '''<!DOCTYPE html>
                 if (data.status === 'success') {
                     document.getElementById('contact-success').style.display = 'block';
                     document.getElementById('contact-form').reset();
-                    setTimeout(() => {
-                        document.getElementById('contact-success').style.display = 'none';
-                    }, 5000);
+                    // El mensaje de éxito permanece visible
                 } else {
                     alert('Error al enviar: ' + (data.message || 'Intenta nuevamente'));
                 }
