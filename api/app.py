@@ -1481,19 +1481,19 @@ LANDING_HTML = '''<!DOCTYPE html>
             <form class="contact-form" id="contact-form">
                 <div class="form-group">
                     <label for="contact-name">Nombre *</label>
-                    <input type="text" id="contact-name" name="name" placeholder="Tu nombre completo" required>
+                    <input type="text" id="contact-name" name="name" placeholder="Tu nombre completo" required autocomplete="name">
                 </div>
                 <div class="form-group">
                     <label for="contact-company">Empresa (opcional)</label>
-                    <input type="text" id="contact-company" name="company" placeholder="Nombre de tu empresa">
+                    <input type="text" id="contact-company" name="company" placeholder="Nombre de tu empresa" autocomplete="organization">
                 </div>
                 <div class="form-group">
                     <label for="contact-email">Correo electronico *</label>
-                    <input type="email" id="contact-email" name="email" placeholder="tu@email.com" required>
+                    <input type="email" id="contact-email" name="email" placeholder="tu@email.com" required autocomplete="email">
                 </div>
                 <div class="form-group">
                     <label for="contact-message">Mensaje *</label>
-                    <textarea id="contact-message" name="message" placeholder="Describe tu solicitud o consulta..." required></textarea>
+                    <textarea id="contact-message" name="message" placeholder="Describe tu solicitud o consulta..." required autocomplete="off"></textarea>
                 </div>
                 <button type="submit" class="btn-submit" id="contact-submit">
                     <i class="fas fa-paper-plane"></i> Enviar Mensaje
