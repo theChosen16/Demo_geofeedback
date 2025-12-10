@@ -1229,6 +1229,7 @@ LANDING_HTML = '''<!DOCTYPE html>
                 <a href="#problema">Problema</a>
                 <a href="#solucion">Solucion</a>
                 <a href="#demo">Demo</a>
+                <a href="#servicios">Servicios</a>
                 <a href="/api/docs" class="btn btn-primary"><i class="fas fa-code"></i> API</a>
             </div>
         </div>
@@ -1427,6 +1428,148 @@ LANDING_HTML = '''<!DOCTYPE html>
                 <div class="result-card" id="result-location"><i class="fas fa-map-marker-alt result-icon"></i><div class="result-content"><h4>Ubicacion</h4><p>Busca o haz clic en el mapa</p></div></div>
                 <div class="result-card" id="result-approach"><i class="fas fa-crosshairs result-icon"></i><div class="result-content"><h4>Enfoque</h4><p>Selecciona el tipo de analisis</p></div></div>
                 <div class="result-card"><i class="fas fa-satellite result-icon"></i><div class="result-content"><h4>APIs Integradas</h4><p>Elevation, Air Quality, Solar, Geocoding</p></div></div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Servicios Premium Section -->
+    <section id="servicios" class="section section-dark">
+        <div class="container">
+            <div class="section-header">
+                <h2><i class="fas fa-rocket" style="color:var(--accent)"></i> Servicios Premium</h2>
+                <p>Soluciones profesionales de inteligencia territorial para tu organizacion</p>
+            </div>
+            
+            <!-- Planes de Suscripcion -->
+            <h3 style="color:white; margin-bottom:1.5rem; font-size:1.3rem;"><i class="fas fa-tags" style="color:var(--secondary)"></i> Planes de Suscripcion</h3>
+            <div class="cards-grid" style="margin-bottom:3rem;">
+                <div class="card" style="border:2px solid rgba(255,255,255,0.1);">
+                    <div style="text-align:center;">
+                        <span style="background:var(--secondary); color:white; padding:0.25rem 0.75rem; border-radius:20px; font-size:0.8rem; font-weight:600;">STARTER</span>
+                        <div style="font-size:2.5rem; font-weight:800; margin:1rem 0;">$99<span style="font-size:1rem; font-weight:400;">/mes</span></div>
+                    </div>
+                    <ul style="list-style:none; padding:0; margin:1rem 0; color:rgba(255,255,255,0.8);">
+                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>5 analisis satelitales/mes</li>
+                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>Alertas basicas por email</li>
+                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>Dashboard limitado</li>
+                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>Soporte por email</li>
+                    </ul>
+                    <a href="#contacto" class="btn btn-primary" style="width:100%; justify-content:center;">Comenzar</a>
+                </div>
+                
+                <div class="card" style="border:2px solid var(--secondary); transform:scale(1.05); position:relative;">
+                    <div style="position:absolute; top:-12px; left:50%; transform:translateX(-50%); background:var(--accent); color:var(--primary); padding:0.25rem 1rem; border-radius:20px; font-size:0.75rem; font-weight:700;">MAS POPULAR</div>
+                    <div style="text-align:center;">
+                        <span style="background:linear-gradient(135deg, var(--secondary), var(--accent)); color:white; padding:0.25rem 0.75rem; border-radius:20px; font-size:0.8rem; font-weight:600;">PROFESSIONAL</span>
+                        <div style="font-size:2.5rem; font-weight:800; margin:1rem 0;">$299<span style="font-size:1rem; font-weight:400;">/mes</span></div>
+                    </div>
+                    <ul style="list-style:none; padding:0; margin:1rem 0; color:rgba(255,255,255,0.8);">
+                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>50 analisis satelitales/mes</li>
+                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>Alertas en tiempo real (email + SMS)</li>
+                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>Dashboard completo con graficos</li>
+                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>Reportes PDF automaticos</li>
+                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>Soporte prioritario</li>
+                    </ul>
+                    <a href="#contacto" class="btn btn-primary" style="width:100%; justify-content:center;">Elegir Plan</a>
+                </div>
+                
+                <div class="card" style="border:2px solid rgba(255,255,255,0.1);">
+                    <div style="text-align:center;">
+                        <span style="background:var(--primary-light); color:white; padding:0.25rem 0.75rem; border-radius:20px; font-size:0.8rem; font-weight:600;">ENTERPRISE</span>
+                        <div style="font-size:2.5rem; font-weight:800; margin:1rem 0;">Custom</div>
+                    </div>
+                    <ul style="list-style:none; padding:0; margin:1rem 0; color:rgba(255,255,255,0.8);">
+                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>Analisis ilimitados</li>
+                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>API dedicada</li>
+                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>Integraciones personalizadas</li>
+                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>SLA garantizado</li>
+                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>Gestor de cuenta dedicado</li>
+                    </ul>
+                    <a href="#contacto" class="btn btn-secondary" style="width:100%; justify-content:center;">Contactar</a>
+                </div>
+            </div>
+            
+            <!-- Servicios Profesionales -->
+            <h3 style="color:white; margin-bottom:1.5rem; font-size:1.3rem;"><i class="fas fa-leaf" style="color:var(--secondary)"></i> Servicios de Ingenieria Ambiental</h3>
+            <div class="cards-grid" style="margin-bottom:3rem;">
+                <div class="card">
+                    <i class="fas fa-file-alt"></i>
+                    <h3>Evaluacion de Impacto Ambiental</h3>
+                    <p>Estudios de linea base con imagenes satelitales. Analisis de vegetacion, recursos hidricos y uso de suelo para EIA y DIA.</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-clipboard-check"></i>
+                    <h3>Monitoreo de Cumplimiento</h3>
+                    <p>Seguimiento de RCA y normativas SEIA. Deteccion temprana de incumplimientos mediante analisis temporal de indices.</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3>Gestion de Riesgos Naturales</h3>
+                    <p>Mapas de riesgo hidrico, incendios forestales y deslizamientos. Modelos predictivos con datos topograficos y climaticos.</p>
+                </div>
+                <div class="card">
+                    <i class="fas fa-project-diagram"></i>
+                    <h3>Consultoria GIS Personalizada</h3>
+                    <p>Desarrollo de soluciones geoespaciales a medida. Dashboards, reportes automatizados e integraciones con sistemas existentes.</p>
+                </div>
+            </div>
+            
+            <!-- Dashboard Demo -->
+            <h3 style="color:white; margin-bottom:1.5rem; font-size:1.3rem;"><i class="fas fa-chart-line" style="color:var(--secondary)"></i> Dashboard y Alertas en Tiempo Real</h3>
+            <div style="background:rgba(255,255,255,0.05); border-radius:16px; padding:2rem; border:1px solid rgba(255,255,255,0.1);">
+                <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:1rem; margin-bottom:1.5rem;">
+                    <div style="background:rgba(16,185,129,0.2); padding:1.25rem; border-radius:12px; text-align:center;">
+                        <div style="font-size:0.8rem; color:rgba(255,255,255,0.7); margin-bottom:0.5rem;">Areas Monitoreadas</div>
+                        <div style="font-size:2rem; font-weight:700; color:var(--secondary);">147</div>
+                    </div>
+                    <div style="background:rgba(59,130,246,0.2); padding:1.25rem; border-radius:12px; text-align:center;">
+                        <div style="font-size:0.8rem; color:rgba(255,255,255,0.7); margin-bottom:0.5rem;">Alertas Activas</div>
+                        <div style="font-size:2rem; font-weight:700; color:#3b82f6;">12</div>
+                    </div>
+                    <div style="background:rgba(245,158,11,0.2); padding:1.25rem; border-radius:12px; text-align:center;">
+                        <div style="font-size:0.8rem; color:rgba(255,255,255,0.7); margin-bottom:0.5rem;">NDVI Promedio</div>
+                        <div style="font-size:2rem; font-weight:700; color:#f59e0b;">0.42</div>
+                    </div>
+                    <div style="background:rgba(239,68,68,0.2); padding:1.25rem; border-radius:12px; text-align:center;">
+                        <div style="font-size:0.8rem; color:rgba(255,255,255,0.7); margin-bottom:0.5rem;">Zonas de Riesgo</div>
+                        <div style="font-size:2rem; font-weight:700; color:#ef4444;">8</div>
+                    </div>
+                </div>
+                
+                <!-- Alertas Demo -->
+                <div style="border-top:1px solid rgba(255,255,255,0.1); padding-top:1.5rem;">
+                    <h4 style="color:white; margin-bottom:1rem; font-size:1rem;"><i class="fas fa-bell" style="color:var(--accent);"></i> Ultimas Alertas</h4>
+                    <div style="display:flex; flex-direction:column; gap:0.75rem;">
+                        <div style="display:flex; align-items:center; gap:1rem; background:rgba(239,68,68,0.15); padding:0.75rem 1rem; border-radius:8px; border-left:3px solid #ef4444;">
+                            <i class="fas fa-exclamation-circle" style="color:#ef4444;"></i>
+                            <div style="flex:1;">
+                                <div style="font-weight:600; color:white; font-size:0.9rem;">Caida de NDVI detectada - Sector Norte</div>
+                                <div style="font-size:0.8rem; color:rgba(255,255,255,0.6);">Hace 2 horas - Posible sequia o tala</div>
+                            </div>
+                            <span style="background:#ef4444; color:white; padding:0.2rem 0.5rem; border-radius:4px; font-size:0.7rem;">CRITICO</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:1rem; background:rgba(245,158,11,0.15); padding:0.75rem 1rem; border-radius:8px; border-left:3px solid #f59e0b;">
+                            <i class="fas fa-water" style="color:#f59e0b;"></i>
+                            <div style="flex:1;">
+                                <div style="font-weight:600; color:white; font-size:0.9rem;">Incremento NDWI - Quebrada El Frances</div>
+                                <div style="font-size:0.8rem; color:rgba(255,255,255,0.6);">Hace 5 horas - Posible acumulacion de agua</div>
+                            </div>
+                            <span style="background:#f59e0b; color:white; padding:0.2rem 0.5rem; border-radius:4px; font-size:0.7rem;">MODERADO</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:1rem; background:rgba(16,185,129,0.15); padding:0.75rem 1rem; border-radius:8px; border-left:3px solid var(--secondary);">
+                            <i class="fas fa-check-circle" style="color:var(--secondary);"></i>
+                            <div style="flex:1;">
+                                <div style="font-weight:600; color:white; font-size:0.9rem;">Monitoreo completado - Area Costera</div>
+                                <div style="font-size:0.8rem; color:rgba(255,255,255,0.6);">Hace 1 dia - Sin anomalias detectadas</div>
+                            </div>
+                            <span style="background:var(--secondary); color:white; padding:0.2rem 0.5rem; border-radius:4px; font-size:0.7rem;">OK</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align:center; margin-top:2rem;">
+                <a href="#contacto" class="btn btn-primary" style="font-size:1.1rem; padding:1rem 2rem;"><i class="fas fa-envelope"></i> Solicitar Demo Completa</a>
             </div>
         </div>
     </section>
