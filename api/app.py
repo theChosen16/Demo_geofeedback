@@ -448,23 +448,27 @@ LANDING_HTML = '''<!DOCTYPE html>
     <link rel="canonical" href="https://geofeedback.cl/">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --primary: #1e3a5f;
-            --primary-light: #2d5a87;
-            --secondary: #10b981;
-            --secondary-light: #34d399;
-            --accent: #f59e0b;
-            --danger: #ef4444;
-            --text: #1f2937;
-            --text-light: #6b7280;
-            --background: #f8fafc;
+            /* Elegant Natural Color Palette */
+            --primary: #2D5A4A;
+            --primary-light: #3D7A5F;
+            --secondary: #A68B5B;
+            --secondary-light: #C4A46D;
+            --accent: #E8B86D;
+            --danger: #C45B5B;
+            --text: #2C3E2D;
+            --text-light: #5A6B5C;
+            --background: #FAFAF8;
             --white: #ffffff;
-            --border: #e5e7eb;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --border: #D4CFC4;
+            --shadow: 0 4px 6px -1px rgba(45, 90, 74, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(45, 90, 74, 0.15);
+            /* California Script Typography */
+            --font-script: 'Dancing Script', cursive;
+            --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html { scroll-behavior: smooth; }
@@ -962,7 +966,120 @@ LANDING_HTML = '''<!DOCTYPE html>
             .hero-buttons { justify-content: center; }
             .hero-visual { display: none; }
             .nav-links { display: none; }
+            
+            /* Mobile Tab Navigation */
+            .mobile-tabs {
+                display: flex !important;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: linear-gradient(135deg, var(--primary), var(--primary-light));
+                z-index: 2000;
+                box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+                padding: 0.5rem 0;
+                padding-bottom: env(safe-area-inset-bottom, 0.5rem);
+            }
+            .mobile-tab {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                padding: 0.5rem;
+                color: rgba(255,255,255,0.7);
+                text-decoration: none;
+                font-size: 0.7rem;
+                transition: all 0.3s ease;
+                border: none;
+                background: transparent;
+                cursor: pointer;
+            }
+            .mobile-tab i { font-size: 1.25rem; margin-bottom: 0.25rem; }
+            .mobile-tab.active, .mobile-tab:hover {
+                color: var(--accent);
+                transform: translateY(-2px);
+            }
+            .mobile-tab.active i { transform: scale(1.1); }
+            
+            /* Tab Content Sections */
+            .tab-section {
+                display: none;
+                animation: fadeSlideIn 0.4s ease;
+            }
+            .tab-section.active { display: block; }
+            
+            /* Hide desktop sections on mobile when tabs are active */
+            body.mobile-tab-mode .desktop-section { display: none !important; }
+            body.mobile-tab-mode .tab-section.active { display: block !important; }
+            body.mobile-tab-mode { padding-bottom: 70px; }
+            body.mobile-tab-mode .navbar { display: none; }
+            
+            /* Mobile header */
+            .mobile-header {
+                display: block !important;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                background: linear-gradient(135deg, var(--primary), var(--primary-light));
+                padding: 1rem;
+                z-index: 1999;
+                text-align: center;
+            }
+            .mobile-header .logo {
+                color: white;
+                font-size: 1.25rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.5rem;
+            }
+            .mobile-header .logo i { color: var(--accent); }
+            body.mobile-tab-mode .tab-section { padding-top: 70px; }
+            
+            /* California Script Typography */
+            .script-title {
+                font-family: var(--font-script) !important;
+                font-size: 2.5rem !important;
+                font-weight: 600;
+            }
+            .hero-text h1 span {
+                font-family: var(--font-script);
+                font-size: 3rem;
+            }
+            
+            /* Card animations */
+            .card, .team-card, .result-card {
+                animation: slideUp 0.5s ease forwards;
+                opacity: 0;
+            }
+            .card:nth-child(1) { animation-delay: 0.1s; }
+            .card:nth-child(2) { animation-delay: 0.2s; }
+            .card:nth-child(3) { animation-delay: 0.3s; }
+            .card:nth-child(4) { animation-delay: 0.4s; }
         }
+        
+        /* Animations */
+        @keyframes fadeSlideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideFromRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        /* California Script for desktop too */
+        .script-title {
+            font-family: var(--font-script);
+        }
+        
+        /* Hide mobile elements on desktop */
+        .mobile-tabs, .mobile-header { display: none; }
         .pac-container {
             border-radius: 8px;
             border: 1px solid var(--border);
@@ -1222,6 +1339,30 @@ LANDING_HTML = '''<!DOCTYPE html>
     </style>
 </head>
 <body>
+    <!-- Mobile Header (visible only on mobile) -->
+    <div class="mobile-header">
+        <div class="logo"><i class="fas fa-globe-americas"></i><span class="script-title">GeoFeedback</span></div>
+    </div>
+    
+    <!-- Mobile Tab Navigation (visible only on mobile) -->
+    <nav class="mobile-tabs">
+        <button class="mobile-tab active" onclick="switchTab('inicio')" data-tab="inicio">
+            <i class="fas fa-home"></i>
+            <span>Inicio</span>
+        </button>
+        <button class="mobile-tab" onclick="switchTab('demo')" data-tab="demo">
+            <i class="fas fa-map-marked-alt"></i>
+            <span>Demo</span>
+        </button>
+        <button class="mobile-tab" onclick="switchTab('servicios')" data-tab="servicios">
+            <i class="fas fa-rocket"></i>
+            <span>Servicios</span>
+        </button>
+        <button class="mobile-tab" onclick="switchTab('contacto')" data-tab="contacto">
+            <i class="fas fa-envelope"></i>
+            <span>Contacto</span>
+        </button>
+    </nav>
     <nav class="navbar">
         <div class="navbar-content">
             <a href="#" class="logo"><i class="fas fa-globe-americas"></i>GeoFeedback</a>
@@ -1582,17 +1723,17 @@ LANDING_HTML = '''<!DOCTYPE html>
             <div class="team-grid">
                 <div class="team-card">
                     <div class="team-avatar"><i class="fas fa-user"></i></div>
-                    <h3 class="team-name">Alejandro Hernandez Aguirre</h3>
-                    <p class="team-role">Co-Fundador</p>
-                    <a href="https://www.linkedin.com/in/alejandro-hern%C3%A1ndez-aguirre-bb8967246/" target="_blank" rel="noopener noreferrer" class="team-linkedin">
+                    <h3 class="team-name">Consuelo Sebastian Silva</h3>
+                    <p class="team-role">Fundadora</p>
+                    <a href="https://www.linkedin.com/in/consuelo-sebastian-silva-b15407342/" target="_blank" rel="noopener noreferrer" class="team-linkedin">
                         <i class="fab fa-linkedin"></i> Ver LinkedIn
                     </a>
                 </div>
                 <div class="team-card">
                     <div class="team-avatar"><i class="fas fa-user"></i></div>
-                    <h3 class="team-name">Consuelo Sebastian Silva</h3>
-                    <p class="team-role">Fundadora</p>
-                    <a href="https://www.linkedin.com/in/consuelo-sebastian-silva-b15407342/" target="_blank" rel="noopener noreferrer" class="team-linkedin">
+                    <h3 class="team-name">Alejandro Hernandez Aguirre</h3>
+                    <p class="team-role">Co-Fundador</p>
+                    <a href="https://www.linkedin.com/in/alejandro-hern%C3%A1ndez-aguirre-bb8967246/" target="_blank" rel="noopener noreferrer" class="team-linkedin">
                         <i class="fab fa-linkedin"></i> Ver LinkedIn
                     </a>
                 </div>
@@ -2601,6 +2742,91 @@ LANDING_HTML = '''<!DOCTYPE html>
                 btn.disabled = false;
                 alert('Error de conexion. Intenta nuevamente.');
             });
+        });
+
+        // ============================================================================
+        // MOBILE TAB NAVIGATION
+        // ============================================================================
+        
+        function isMobileView() {
+            return window.innerWidth <= 768;
+        }
+        
+        function switchTab(tabName) {
+            // Update active tab button
+            document.querySelectorAll('.mobile-tab').forEach(function(tab) {
+                tab.classList.remove('active');
+                if (tab.dataset.tab === tabName) {
+                    tab.classList.add('active');
+                }
+            });
+            
+            // Scroll to the corresponding section
+            var sectionMap = {
+                'inicio': 'hero',
+                'demo': 'demo',
+                'servicios': 'servicios',
+                'contacto': 'contacto'
+            };
+            
+            var targetId = sectionMap[tabName];
+            var section = null;
+            
+            if (targetId === 'hero') {
+                section = document.querySelector('.hero');
+            } else {
+                section = document.getElementById(targetId);
+            }
+            
+            if (section) {
+                var offset = isMobileView() ? 60 : 0; // Account for mobile header
+                var sectionTop = section.getBoundingClientRect().top + window.pageYOffset - offset;
+                window.scrollTo({ top: sectionTop, behavior: 'smooth' });
+            }
+        }
+        
+        // Update active tab on scroll
+        function updateActiveTabOnScroll() {
+            if (!isMobileView()) return;
+            
+            var sections = [
+                { id: 'hero', tab: 'inicio', element: document.querySelector('.hero') },
+                { id: 'demo', tab: 'demo', element: document.getElementById('demo') },
+                { id: 'servicios', tab: 'servicios', element: document.getElementById('servicios') },
+                { id: 'contacto', tab: 'contacto', element: document.getElementById('contacto') }
+            ];
+            
+            var scrollPos = window.scrollY + 150;
+            
+            for (var i = sections.length - 1; i >= 0; i--) {
+                var section = sections[i];
+                if (section.element && section.element.offsetTop <= scrollPos) {
+                    document.querySelectorAll('.mobile-tab').forEach(function(tab) {
+                        tab.classList.remove('active');
+                        if (tab.dataset.tab === section.tab) {
+                            tab.classList.add('active');
+                        }
+                    });
+                    break;
+                }
+            }
+        }
+        
+        // Enable mobile mode on mobile devices
+        function initMobileMode() {
+            if (isMobileView()) {
+                document.body.classList.add('mobile-tab-mode');
+            } else {
+                document.body.classList.remove('mobile-tab-mode');
+            }
+        }
+        
+        // Initialize mobile mode and add scroll listener
+        window.addEventListener('resize', initMobileMode);
+        window.addEventListener('scroll', updateActiveTabOnScroll);
+        document.addEventListener('DOMContentLoaded', function() {
+            initMobileMode();
+            updateActiveTabOnScroll();
         });
 
         // Start the map initialization
