@@ -715,9 +715,9 @@ LANDING_HTML = '''<!DOCTYPE html>
             position: absolute;
             top: 50%;
             left: 50%;
-            transform: translate(-50%, -50%) rotateX(66deg);
-            width: 300px;
-            height: 300px;
+            transform: translate(-50%, -50%) rotateX(60deg);
+            width: 320px;
+            height: 320px;
             border: 2px dashed rgba(166, 139, 91, 0.3);
             border-radius: 50%;
         }
@@ -726,10 +726,10 @@ LANDING_HTML = '''<!DOCTYPE html>
             position: absolute;
             top: 50%;
             left: 50%;
-            width: 300px;
-            height: 300px;
+            width: 320px;
+            height: 320px;
             transform-style: preserve-3d;
-            transform: translate(-50%, -50%) rotateX(66deg);
+            transform: translate(-50%, -50%) rotateX(60deg);
             animation: orbitSatellite 8s linear infinite, orbitZIndex 8s linear infinite;
         }
         
@@ -775,16 +775,21 @@ LANDING_HTML = '''<!DOCTYPE html>
             top: 3px; /* Center relative to 20px body */
             opacity: 0.95;
             box-shadow: 0 0 5px rgba(232, 184, 109, 0.3);
+            /* Remove manual positioning, use relative attachment below */
         }
         
         .sat-panel.left {
-            transform: translateX(-40px) rotateY(-20deg);
+            right: 50%; /* Start at center */
+            margin-right: 10px; /* Push to left edge of 20px body */
             transform-origin: right center;
+            transform: rotateY(-20deg);
         }
         
         .sat-panel.right {
-            transform: translateX(20px) rotateY(20deg);
+            left: 50%; /* Start at center */
+            margin-left: 10px; /* Push to right edge of 20px body */
             transform-origin: left center;
+            transform: rotateY(20deg);
         }
 
         /* Z-Index Animation keyframes - Adjusted for visual horizon */
@@ -796,8 +801,8 @@ LANDING_HTML = '''<!DOCTYPE html>
             100% { z-index: 20; }
         }
         @keyframes orbitSatellite {
-            0% { transform: translate(-50%, -50%) rotateX(66deg) rotateZ(0deg); }
-            100% { transform: translate(-50%, -50%) rotateX(66deg) rotateZ(360deg); }
+            0% { transform: translate(-50%, -50%) rotateX(60deg) rotateZ(0deg); }
+            100% { transform: translate(-50%, -50%) rotateX(60deg) rotateZ(360deg); }
         }
 
         /* Data Points */
@@ -1302,8 +1307,8 @@ LANDING_HTML = '''<!DOCTYPE html>
             }
             .orbit-path,
             .satellite-wrapper {
-                width: 180px !important;
-                height: 180px !important;
+                width: 190px !important;
+                height: 190px !important;
             }
             .satellite-3d {
                 transform: translateX(-50%) rotateX(-90deg) scale(0.7) !important;
