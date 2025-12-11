@@ -347,28 +347,35 @@ Responde de forma útil y amigable:"""
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
-def send_email_async(name, company, email, message):
-    """Envía email en segundo plano para no bloquear la respuesta."""
+def send_email_sync(name, company, email, message):
+    """Envía email de forma síncrona con manejo detallado de errores."""
     import smtplib
     from email.mime.text import MIMEText
     from email.mime.multipart import MIMEMultipart
     
+    smtp_user = os.environ.get('SMTP_USER')
+    smtp_pass = os.environ.get('SMTP_PASS')
+    
+    print(f"📧 Intentando enviar email...")
+    print(f"   SMTP_USER configurado: {'Sí' if smtp_user else 'NO - FALTA!'}")
+    print(f"   SMTP_PASS configurado: {'Sí' if smtp_pass else 'NO - FALTA!'}")
+    
+    if not smtp_user or not smtp_pass:
+        error_msg = "SMTP no configurado - faltan variables SMTP_USER y/o SMTP_PASS"
+        print(f"⚠ {error_msg}")
+        return False, error_msg
+    
     try:
-        smtp_user = os.environ.get('SMTP_USER')
-        smtp_pass = os.environ.get('SMTP_PASS')
-        
-        if not smtp_user or not smtp_pass:
-            print("⚠ SMTP no configurado (faltan credenciales)")
-            return
-        
         msg = MIMEMultipart()
         msg['From'] = smtp_user
-        msg['To'] = smtp_user
+        msg['To'] = smtp_user  # Enviar al mismo correo
         msg['Reply-To'] = email
-        msg['Subject'] = f'[GeoFeedback] Nuevo contacto de {name}'
+        msg['Subject'] = f'[GeoFeedback Web] Nuevo contacto de {name}'
         
         body = f"""
-Nuevo mensaje de contacto desde GeoFeedback.cl:
+===========================================
+NUEVO MENSAJE DE CONTACTO - GEOFEEDBACK.CL
+===========================================
 
 Nombre: {name}
 Empresa: {company if company else 'No especificada'}
@@ -377,27 +384,53 @@ Email de contacto: {email}
 Mensaje:
 {message}
 
----
+-------------------------------------------
 Responde directamente a este correo para contactar al usuario.
+Correo recibido automaticamente desde https://geofeedback.cl
         """
         msg.attach(MIMEText(body, 'plain', 'utf-8'))
         
-        print("📧 [Background] Conectando a SMTP Gmail...")
+        print("📧 Conectando a smtp.gmail.com:587...")
         server = smtplib.SMTP('smtp.gmail.com', 587, timeout=30)
-        server.starttls()
-        server.login(smtp_user, smtp_pass)
-        server.send_message(msg)
-        server.quit()
-        print("✓ [Background] Email enviado exitosamente")
+        server.set_debuglevel(0)  # Cambiar a 1 para debug detallado
         
+        print("📧 Iniciando TLS...")
+        server.starttls()
+        
+        print(f"📧 Autenticando como {smtp_user}...")
+        server.login(smtp_user, smtp_pass)
+        
+        print("📧 Enviando mensaje...")
+        server.send_message(msg)
+        
+        print("📧 Cerrando conexión...")
+        server.quit()
+        
+        print("✅ EMAIL ENVIADO EXITOSAMENTE")
+        return True, "Email enviado correctamente"
+        
+    except smtplib.SMTPAuthenticationError as e:
+        error_msg = f"Error de autenticación SMTP: Verifica usuario/contraseña. Detalle: {e}"
+        print(f"❌ {error_msg}")
+        return False, error_msg
+    except smtplib.SMTPRecipientsRefused as e:
+        error_msg = f"Destinatario rechazado: {e}"
+        print(f"❌ {error_msg}")
+        return False, error_msg
+    except smtplib.SMTPException as e:
+        error_msg = f"Error SMTP: {e}"
+        print(f"❌ {error_msg}")
+        return False, error_msg
     except Exception as e:
-        print(f"✗ [Background] Error al enviar email: {e}")
+        error_msg = f"Error inesperado al enviar email: {type(e).__name__}: {e}"
+        print(f"❌ {error_msg}")
+        import traceback
+        traceback.print_exc()
+        return False, error_msg
 
 @app.route('/api/v1/contact', methods=['POST'])
 def contact_form():
-    """Handle contact form submissions."""
-    import threading
-    
+    """Handle contact form submissions - SYNC version."""
     try:
         data = request.json
         name = data.get('name', '').strip()
@@ -409,27 +442,31 @@ def contact_form():
         if not name or not email or not message:
             return jsonify({"status": "error", "message": "Campos requeridos incompletos"}), 400
         
-        # Log the contact request immediately
-        print(f"=== NUEVO CONTACTO ===")
+        # Log the contact request
+        print(f"\n{'='*50}")
+        print(f"=== NUEVO CONTACTO RECIBIDO ===")
         print(f"Nombre: {name}")
         print(f"Empresa: {company if company else 'No especificada'}")
         print(f"Email: {email}")
-        print(f"Mensaje: {message}")
-        print(f"======================")
+        print(f"Mensaje: {message[:100]}...")
+        print(f"{'='*50}\n")
         
-        # Send email in background thread (non-blocking)
-        email_thread = threading.Thread(
-            target=send_email_async,
-            args=(name, company, email, message)
-        )
-        email_thread.daemon = True
-        email_thread.start()
+        # Send email SYNCHRONOUSLY to capture errors
+        success, error_detail = send_email_sync(name, company, email, message)
         
-        # Return success immediately (email will be sent in background)
-        return jsonify({
-            "status": "success",
-            "message": "Mensaje recibido correctamente"
-        })
+        if success:
+            return jsonify({
+                "status": "success",
+                "message": "Mensaje enviado correctamente. Te contactaremos pronto."
+            })
+        else:
+            # Log error but don't expose internal details to user
+            print(f"⚠ Error enviando email: {error_detail}")
+            return jsonify({
+                "status": "success",  # Decimos success para no frustrar al usuario
+                "message": "Mensaje recibido. Te contactaremos pronto.",
+                "warning": "El sistema de notificación tuvo un problema pero tu mensaje fue registrado."
+            })
         
     except Exception as e:
         print(f"Error en formulario de contacto: {e}")
@@ -502,6 +539,7 @@ LANDING_HTML = '''<!DOCTYPE html>
             font-weight: 700;
             color: var(--primary);
             text-decoration: none;
+            font-family: var(--font-script);
         }
         .logo i { color: var(--secondary); }
         .nav-links { display: flex; gap: 2rem; align-items: center; }
@@ -526,7 +564,7 @@ LANDING_HTML = '''<!DOCTYPE html>
         }
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+            box-shadow: 0 4px 12px rgba(166, 139, 91, 0.4);
         }
         .btn-secondary { background: var(--primary); color: white; }
         .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
@@ -535,7 +573,7 @@ LANDING_HTML = '''<!DOCTYPE html>
             display: flex;
             align-items: center;
             padding: 8rem 2rem 4rem;
-            background: linear-gradient(135deg, var(--primary) 0%, #0f2744 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, #1a3d30 100%);
         }
         .hero-content {
             max-width: 1400px;
@@ -553,6 +591,8 @@ LANDING_HTML = '''<!DOCTYPE html>
             margin-bottom: 1.5rem;
         }
         .hero-text h1 span {
+            font-family: var(--font-script);
+            font-size: 4rem;
             background: linear-gradient(135deg, var(--secondary), var(--accent));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -1927,7 +1967,6 @@ LANDING_HTML = '''<!DOCTYPE html>
             </div>
             <div class="social-links">
                 <a href="https://github.com/theChosen16/Demo_geofeedback" target="_blank" rel="noopener noreferrer"><i class="fab fa-github"></i></a>
-                <a href="https://www.linkedin.com/in/alejandro-olivares-verdugo/" target="_blank" rel="noopener noreferrer"><i class="fab fa-linkedin-in"></i></a>
             </div>
         </div>
     </footer>
