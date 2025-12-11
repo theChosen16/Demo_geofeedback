@@ -681,9 +681,30 @@ LANDING_HTML = '''<!DOCTYPE html>
             background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.2) 0%, transparent 50%);
             border-radius: 50%;
         }
+        }
+        /* Earth Clouds */
+        .earth::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: 
+                radial-gradient(circle at 20% 40%, rgba(255,255,255,0.4) 0%, transparent 20%),
+                radial-gradient(circle at 60% 20%, rgba(255,255,255,0.3) 0%, transparent 30%),
+                radial-gradient(circle at 75% 65%, rgba(255,255,255,0.35) 0%, transparent 25%),
+                radial-gradient(circle at 30% 70%, rgba(255,255,255,0.25) 0%, transparent 20%);
+            animation: cloudsRotate 25s linear infinite reverse;
+            opacity: 0.8;
+            pointer-events: none;
+        }
+        @keyframes cloudsRotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
         @keyframes earthRotate {
-            0% { box-shadow: inset -30px -30px 60px rgba(0,0,0,0.4), inset 20px 20px 40px rgba(255,255,255,0.1), 0 0 60px rgba(30, 87, 153, 0.5); }
-            100% { box-shadow: inset -30px -30px 60px rgba(0,0,0,0.4), inset 20px 20px 40px rgba(255,255,255,0.1), 0 0 60px rgba(30, 87, 153, 0.5); }
+            0% { box-shadow: inset -30px -30px 60px rgba(0,0,0,0.5), inset 20px 20px 40px rgba(255,255,255,0.15), 0 0 80px rgba(30, 87, 153, 0.6), 0 0 120px rgba(30, 87, 153, 0.3); }
+            100% { box-shadow: inset -30px -30px 60px rgba(0,0,0,0.5), inset 20px 20px 40px rgba(255,255,255,0.15), 0 0 80px rgba(30, 87, 153, 0.6), 0 0 120px rgba(30, 87, 153, 0.3); }
         }
         @keyframes continentsMove {
             0% { transform: translateX(0); }
@@ -694,9 +715,9 @@ LANDING_HTML = '''<!DOCTYPE html>
             position: absolute;
             top: 50%;
             left: 50%;
-            transform: translate(-50%, -50%) rotateX(70deg);
-            width: 280px;
-            height: 280px;
+            transform: translate(-50%, -50%) rotateX(66deg);
+            width: 300px;
+            height: 300px;
             border: 2px dashed rgba(166, 139, 91, 0.3);
             border-radius: 50%;
         }
@@ -705,10 +726,10 @@ LANDING_HTML = '''<!DOCTYPE html>
             position: absolute;
             top: 50%;
             left: 50%;
-            width: 280px;
-            height: 280px;
+            width: 300px;
+            height: 300px;
             transform-style: preserve-3d;
-            transform: translate(-50%, -50%) rotateX(70deg);
+            transform: translate(-50%, -50%) rotateX(66deg);
             animation: orbitSatellite 8s linear infinite, orbitZIndex 8s linear infinite;
         }
         
@@ -753,6 +774,7 @@ LANDING_HTML = '''<!DOCTYPE html>
             border: 1px solid #E8B86D;
             top: 3px; /* Center relative to 20px body */
             opacity: 0.95;
+            box-shadow: 0 0 5px rgba(232, 184, 109, 0.3);
         }
         
         .sat-panel.left {
@@ -768,14 +790,14 @@ LANDING_HTML = '''<!DOCTYPE html>
         /* Z-Index Animation keyframes - Adjusted for visual horizon */
         @keyframes orbitZIndex {
             0% { z-index: 20; }
-            45% { z-index: 20; }
-            50% { z-index: 1; }
+            40% { z-index: 20; }
+            45% { z-index: 1; }  /* Switch earlier as back arc is now more visible */
             95% { z-index: 1; }
             100% { z-index: 20; }
         }
         @keyframes orbitSatellite {
-            0% { transform: translate(-50%, -50%) rotateX(70deg) rotateZ(0deg); }
-            100% { transform: translate(-50%, -50%) rotateX(70deg) rotateZ(360deg); }
+            0% { transform: translate(-50%, -50%) rotateX(66deg) rotateZ(0deg); }
+            100% { transform: translate(-50%, -50%) rotateX(66deg) rotateZ(360deg); }
         }
 
         /* Data Points */
@@ -1280,8 +1302,8 @@ LANDING_HTML = '''<!DOCTYPE html>
             }
             .orbit-path,
             .satellite-wrapper {
-                width: 160px !important;
-                height: 160px !important;
+                width: 180px !important;
+                height: 180px !important;
             }
             .satellite-3d {
                 transform: translateX(-50%) rotateX(-90deg) scale(0.7) !important;
