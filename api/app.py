@@ -1586,13 +1586,14 @@ LANDING_HTML = '''<!DOCTYPE html>
             <div class="cards-grid" style="margin-bottom:3rem;">
                 <div class="card" style="border:2px solid rgba(255,255,255,0.1);">
                     <div style="text-align:center;">
-                        <span style="background:var(--secondary); color:white; padding:0.25rem 0.75rem; border-radius:20px; font-size:0.8rem; font-weight:600;">STARTER</span>
-                        <div style="font-size:2.5rem; font-weight:800; margin:1rem 0;">$99<span style="font-size:1rem; font-weight:400;">/mes</span></div>
+                        <span style="background:var(--secondary); color:white; padding:0.25rem 0.75rem; border-radius:20px; font-size:0.8rem; font-weight:600;">MONITOREO</span>
+                        <div style="font-size:2rem; font-weight:800; margin:1rem 0;">$50.000<span style="font-size:0.9rem; font-weight:400;"> CLP/mes</span></div>
                     </div>
                     <ul style="list-style:none; padding:0; margin:1rem 0; color:rgba(255,255,255,0.8);">
-                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>5 analisis satelitales/mes</li>
-                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>Alertas basicas por email</li>
-                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>Dashboard limitado</li>
+                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>Dashboard en tiempo real personalizado</li>
+                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>Metricas seleccionables del pool de opciones</li>
+                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>Usuario propio en la plataforma</li>
+                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>Alertas por email</li>
                         <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>Soporte por email</li>
                     </ul>
                     <a href="#contacto" class="btn btn-primary" style="width:100%; justify-content:center;">Comenzar</a>
@@ -1601,14 +1602,15 @@ LANDING_HTML = '''<!DOCTYPE html>
                 <div class="card" style="border:2px solid var(--secondary); transform:scale(1.05); position:relative;">
                     <div style="position:absolute; top:-12px; left:50%; transform:translateX(-50%); background:var(--accent); color:var(--primary); padding:0.25rem 1rem; border-radius:20px; font-size:0.75rem; font-weight:700;">MAS POPULAR</div>
                     <div style="text-align:center;">
-                        <span style="background:linear-gradient(135deg, var(--secondary), var(--accent)); color:white; padding:0.25rem 0.75rem; border-radius:20px; font-size:0.8rem; font-weight:600;">PROFESSIONAL</span>
-                        <div style="font-size:2.5rem; font-weight:800; margin:1rem 0;">$299<span style="font-size:1rem; font-weight:400;">/mes</span></div>
+                        <span style="background:linear-gradient(135deg, var(--secondary), var(--accent)); color:white; padding:0.25rem 0.75rem; border-radius:20px; font-size:0.8rem; font-weight:600;">PROFESIONAL</span>
+                        <div style="font-size:2rem; font-weight:800; margin:1rem 0;">$150.000<span style="font-size:0.9rem; font-weight:400;"> CLP/mes</span></div>
                     </div>
                     <ul style="list-style:none; padding:0; margin:1rem 0; color:rgba(255,255,255,0.8);">
-                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>50 analisis satelitales/mes</li>
+                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>Dashboard interactivo con control total</li>
+                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>Acceso a todos los servicios de datos</li>
+                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>API para integrar data a tus sistemas</li>
                         <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>Alertas en tiempo real (email + SMS)</li>
-                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>Dashboard completo con graficos</li>
-                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>Reportes PDF automaticos</li>
+                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>Reportes automaticos</li>
                         <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>Soporte prioritario</li>
                     </ul>
                     <a href="#contacto" class="btn btn-primary" style="width:100%; justify-content:center;">Elegir Plan</a>
@@ -1616,15 +1618,15 @@ LANDING_HTML = '''<!DOCTYPE html>
                 
                 <div class="card" style="border:2px solid rgba(255,255,255,0.1);">
                     <div style="text-align:center;">
-                        <span style="background:var(--primary-light); color:white; padding:0.25rem 0.75rem; border-radius:20px; font-size:0.8rem; font-weight:600;">ENTERPRISE</span>
-                        <div style="font-size:2.5rem; font-weight:800; margin:1rem 0;">Custom</div>
+                        <span style="background:var(--primary-light); color:white; padding:0.25rem 0.75rem; border-radius:20px; font-size:0.8rem; font-weight:600;">INGENIERIA</span>
+                        <div style="font-size:2rem; font-weight:800; margin:1rem 0;">Contactar</div>
                     </div>
                     <ul style="list-style:none; padding:0; margin:1rem 0; color:rgba(255,255,255,0.8);">
-                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>Analisis ilimitados</li>
-                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>API dedicada</li>
-                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>Integraciones personalizadas</li>
-                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>SLA garantizado</li>
-                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>Gestor de cuenta dedicado</li>
+                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>Servicios de Ingenieria Ambiental</li>
+                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>Estudios de Impacto Ambiental (EIA/DIA)</li>
+                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>Consultoria GIS personalizada</li>
+                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>Monitoreo de cumplimiento ambiental</li>
+                        <li style="padding:0.5rem 0;"><i class="fas fa-check" style="color:var(--secondary); margin-right:0.5rem;"></i>Gestor de proyecto dedicado</li>
                     </ul>
                     <a href="#contacto" class="btn btn-secondary" style="width:100%; justify-content:center;">Contactar</a>
                 </div>
