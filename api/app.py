@@ -483,7 +483,7 @@ LANDING_HTML = '''<!DOCTYPE html>
     <link rel="canonical" href="https://geofeedback.cl/">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -501,8 +501,8 @@ LANDING_HTML = '''<!DOCTYPE html>
             --border: #D4CFC4;
             --shadow: 0 4px 6px -1px rgba(45, 90, 74, 0.1);
             --shadow-lg: 0 10px 15px -3px rgba(45, 90, 74, 0.15);
-            /* California Script Typography */
-            --font-script: 'Dancing Script', cursive;
+            /* Modern Typography */
+            --font-accent: 'Outfit', sans-serif;
             --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -537,7 +537,7 @@ LANDING_HTML = '''<!DOCTYPE html>
             font-weight: 700;
             color: var(--primary);
             text-decoration: none;
-            font-family: var(--font-script);
+            font-family: var(--font-accent);
         }
         .logo i { color: var(--secondary); }
         .nav-links { display: flex; gap: 2rem; align-items: center; }
@@ -585,29 +585,198 @@ LANDING_HTML = '''<!DOCTYPE html>
             font-size: 3.5rem;
             font-weight: 800;
             color: white;
-            line-height: 1.1;
+            line-height: 1.3;
             margin-bottom: 1.5rem;
         }
         .hero-text h1 span {
-            font-family: var(--font-script);
-            font-size: 4rem;
+            font-family: var(--font-accent);
+            font-size: 3.8rem;
+            font-weight: 700;
+            font-style: italic;
             background: linear-gradient(135deg, var(--secondary), var(--accent));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            display: block;
+            line-height: 1.4;
         }
-        .hero-text p { font-size: 1.25rem; color: rgba(255,255,255,0.8); margin-bottom: 2rem; }
+        .hero-text p { font-size: 1.25rem; color: rgba(255,255,255,0.9); margin-bottom: 2rem; }
         .hero-buttons { display: flex; gap: 1rem; flex-wrap: wrap; }
-        .hero-visual { display: flex; justify-content: center; }
-        .satellite-icon {
-            font-size: 12rem;
-            color: var(--secondary);
-            opacity: 0.3;
-            animation: float 6s ease-in-out infinite;
+        .hero-visual { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            position: relative;
+            width: 100%;
+            height: 400px;
         }
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-20px); }
+        /* Earth-Satellite Animation Container */
+        .earth-satellite-animation {
+            position: relative;
+            width: 320px;
+            height: 320px;
+        }
+        /* Stars Background */
+        .stars-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            border-radius: 50%;
+        }
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 2s ease-in-out infinite;
+        }
+        .star:nth-child(1) { width: 2px; height: 2px; top: 10%; left: 20%; animation-delay: 0s; }
+        .star:nth-child(2) { width: 3px; height: 3px; top: 25%; left: 85%; animation-delay: 0.3s; }
+        .star:nth-child(3) { width: 2px; height: 2px; top: 45%; left: 10%; animation-delay: 0.6s; }
+        .star:nth-child(4) { width: 2px; height: 2px; top: 70%; left: 75%; animation-delay: 0.9s; }
+        .star:nth-child(5) { width: 3px; height: 3px; top: 85%; left: 30%; animation-delay: 1.2s; }
+        .star:nth-child(6) { width: 2px; height: 2px; top: 15%; left: 60%; animation-delay: 0.4s; }
+        .star:nth-child(7) { width: 2px; height: 2px; top: 55%; left: 90%; animation-delay: 0.8s; }
+        .star:nth-child(8) { width: 3px; height: 3px; top: 90%; left: 55%; animation-delay: 1.5s; }
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+        /* Earth */
+        .earth {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1e5799 0%, #2989d8 25%, #1e5799 50%, #207cca 75%, #1e5799 100%);
+            box-shadow: 
+                inset -30px -30px 60px rgba(0,0,0,0.4),
+                inset 20px 20px 40px rgba(255,255,255,0.1),
+                0 0 60px rgba(30, 87, 153, 0.5);
+            overflow: hidden;
+            animation: earthRotate 20s linear infinite;
+        }
+        .earth::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse 25% 20% at 30% 40%, #4CAF50 0%, transparent 60%),
+                radial-gradient(ellipse 35% 15% at 60% 35%, #4CAF50 0%, transparent 60%),
+                radial-gradient(ellipse 20% 25% at 75% 55%, #4CAF50 0%, transparent 60%),
+                radial-gradient(ellipse 30% 15% at 20% 65%, #4CAF50 0%, transparent 60%),
+                radial-gradient(ellipse 15% 20% at 85% 30%, #4CAF50 0%, transparent 60%);
+            animation: continentsMove 20s linear infinite;
+        }
+        .earth::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.2) 0%, transparent 50%);
+            border-radius: 50%;
+        }
+        @keyframes earthRotate {
+            0% { box-shadow: inset -30px -30px 60px rgba(0,0,0,0.4), inset 20px 20px 40px rgba(255,255,255,0.1), 0 0 60px rgba(30, 87, 153, 0.5); }
+            100% { box-shadow: inset -30px -30px 60px rgba(0,0,0,0.4), inset 20px 20px 40px rgba(255,255,255,0.1), 0 0 60px rgba(30, 87, 153, 0.5); }
+        }
+        @keyframes continentsMove {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        /* Orbit Path */
+        .orbit-path {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotateX(70deg);
+            width: 280px;
+            height: 280px;
+            border: 2px dashed rgba(166, 139, 91, 0.3);
+            border-radius: 50%;
+        }
+        /* Satellite */
+        .satellite-wrapper {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 280px;
+            height: 280px;
+            transform: translate(-50%, -50%);
+            animation: orbitSatellite 8s linear infinite;
+        }
+        .satellite {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 2rem;
+            color: var(--accent);
+            filter: drop-shadow(0 0 10px rgba(232, 184, 109, 0.8));
+        }
+        @keyframes orbitSatellite {
+            0% { transform: translate(-50%, -50%) rotateX(70deg) rotateZ(0deg); }
+            100% { transform: translate(-50%, -50%) rotateX(70deg) rotateZ(360deg); }
+        }
+        /* Scan Rays */
+        .scan-rays {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 180px;
+            height: 180px;
+        }
+        .scan-ray {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 2px;
+            height: 120px;
+            background: linear-gradient(to bottom, rgba(232, 184, 109, 0.8) 0%, transparent 100%);
+            transform-origin: top center;
+            animation: scanRotate 4s ease-in-out infinite;
+            opacity: 0;
+        }
+        .scan-ray:nth-child(1) { animation-delay: 0s; }
+        .scan-ray:nth-child(2) { animation-delay: 1s; }
+        .scan-ray:nth-child(3) { animation-delay: 2s; }
+        .scan-ray:nth-child(4) { animation-delay: 3s; }
+        @keyframes scanRotate {
+            0% { opacity: 0; transform: translateX(-50%) rotate(-30deg); }
+            10% { opacity: 0.8; }
+            50% { opacity: 0.6; transform: translateX(-50%) rotate(30deg); }
+            90% { opacity: 0.8; }
+            100% { opacity: 0; transform: translateX(-50%) rotate(-30deg); }
+        }
+        /* Data Points */
+        .data-points {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 180px;
+            height: 180px;
+        }
+        .data-point {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        .data-point:nth-child(1) { top: 30%; left: 40%; animation-delay: 0s; }
+        .data-point:nth-child(2) { top: 50%; left: 65%; animation-delay: 0.5s; }
+        .data-point:nth-child(3) { top: 70%; left: 35%; animation-delay: 1s; }
+        .data-point:nth-child(4) { top: 40%; left: 55%; animation-delay: 1.5s; }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; transform: scale(1); box-shadow: 0 0 5px var(--accent); }
+            50% { opacity: 1; transform: scale(1.5); box-shadow: 0 0 15px var(--accent); }
         }
         .section { padding: 6rem 2rem; }
         .section-dark { background: var(--primary); color: white; }
@@ -1071,7 +1240,42 @@ LANDING_HTML = '''<!DOCTYPE html>
                 justify-content: center;
                 flex-wrap: wrap;
             }
-            .hero-visual { display: none; }
+            /* Mobile Earth-Satellite Animation */
+            .hero-visual { 
+                height: 200px !important;
+                margin-bottom: 1rem;
+            }
+            .earth-satellite-animation {
+                width: 180px !important;
+                height: 180px !important;
+            }
+            .earth {
+                width: 100px !important;
+                height: 100px !important;
+            }
+            .orbit-path,
+            .satellite-wrapper {
+                width: 160px !important;
+                height: 160px !important;
+            }
+            .satellite {
+                font-size: 1.2rem !important;
+                top: -10px !important;
+            }
+            .scan-rays,
+            .data-points {
+                width: 100px !important;
+                height: 100px !important;
+            }
+            .scan-ray {
+                height: 70px !important;
+            }
+            .stars-container .star {
+                display: none;
+            }
+            .stars-container .star:nth-child(-n+4) {
+                display: block;
+            }
             .nav-links { display: none; }
             .section-header h2 {
                 font-size: 1.5rem !important;
@@ -1565,7 +1769,43 @@ LANDING_HTML = '''<!DOCTYPE html>
                     <a href="https://github.com/theChosen16/Demo_geofeedback" target="_blank" rel="noopener noreferrer" class="btn btn-secondary"><i class="fab fa-github"></i> GitHub</a>
                 </div>
             </div>
-            <div class="hero-visual"><i class="fas fa-satellite satellite-icon"></i></div>
+            <div class="hero-visual">
+                <div class="earth-satellite-animation">
+                    <!-- Stars Background -->
+                    <div class="stars-container">
+                        <div class="star"></div>
+                        <div class="star"></div>
+                        <div class="star"></div>
+                        <div class="star"></div>
+                        <div class="star"></div>
+                        <div class="star"></div>
+                        <div class="star"></div>
+                        <div class="star"></div>
+                    </div>
+                    <!-- Earth -->
+                    <div class="earth"></div>
+                    <!-- Orbit Path -->
+                    <div class="orbit-path"></div>
+                    <!-- Satellite in Orbit -->
+                    <div class="satellite-wrapper">
+                        <div class="satellite"><i class="fas fa-satellite"></i></div>
+                    </div>
+                    <!-- Scan Rays -->
+                    <div class="scan-rays">
+                        <div class="scan-ray"></div>
+                        <div class="scan-ray"></div>
+                        <div class="scan-ray"></div>
+                        <div class="scan-ray"></div>
+                    </div>
+                    <!-- Data Points on Earth -->
+                    <div class="data-points">
+                        <div class="data-point"></div>
+                        <div class="data-point"></div>
+                        <div class="data-point"></div>
+                        <div class="data-point"></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
     <section id="problema" class="section section-dark">
