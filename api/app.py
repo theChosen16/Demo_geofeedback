@@ -709,29 +709,30 @@ LANDING_HTML = '''<!DOCTYPE html>
             height: 280px;
             transform-style: preserve-3d;
             transform: translate(-50%, -50%) rotateX(70deg);
-            animation: orbitSatellite 8s linear infinite;
+            animation: orbitSatellite 8s linear infinite, orbitZIndex 8s linear infinite;
         }
         .satellite {
             position: absolute;
             top: -15px;
             left: 50%;
-            transform: translateX(-50%) rotateX(-70deg);
-            font-size: 2rem;
+            transform: translateX(-50%) rotateX(-70deg) rotateY(15deg);
+            font-size: 2.2rem;
             color: var(--accent);
-            filter: drop-shadow(0 0 10px rgba(232, 184, 109, 0.8));
-            backface-visibility: hidden;
+            text-shadow: 
+                1px 1px 0 #baa07a,
+                2px 2px 0 #a9906d,
+                3px 3px 0 #978060,
+                4px 4px 5px rgba(0,0,0,0.3);
+            filter: drop-shadow(0 0 15px rgba(232, 184, 109, 0.4));
+            backface-visibility: visible;
         }
-        /* Satellite behind Earth - hide it */
-        .satellite-wrapper::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 200px;
-            height: 200px;
-            transform: translate(-50%, -50%) rotateX(-70deg);
-            border-radius: 50%;
-            z-index: 5;
+        /* Z-Index Animation keyframes */
+        @keyframes orbitZIndex {
+            0% { z-index: 20; }
+            49% { z-index: 20; }
+            50% { z-index: 1; }
+            99% { z-index: 1; }
+            100% { z-index: 20; }
         }
         @keyframes orbitSatellite {
             0% { transform: translate(-50%, -50%) rotateX(70deg) rotateZ(0deg); }
@@ -1247,14 +1248,11 @@ LANDING_HTML = '''<!DOCTYPE html>
                 font-size: 1.2rem !important;
                 top: -10px !important;
             }
-            .scan-rays,
             .data-points {
                 width: 100px !important;
                 height: 100px !important;
             }
-            .scan-ray {
-                height: 70px !important;
-            }
+
             .stars-container .star {
                 display: none;
             }
