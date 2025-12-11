@@ -347,32 +347,32 @@ Responde de forma útil y amigable:"""
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
-def send_email_sync(name, company, email, message):
-    """Envía email de forma síncrona con manejo detallado de errores."""
-    import smtplib
-    from email.mime.text import MIMEText
-    from email.mime.multipart import MIMEMultipart
+def send_email_resend(name, company, email, message):
+    """Envía email usando Resend API (HTTP-based, funciona en Railway)."""
+    import urllib.request
+    import urllib.error
+    import json
     
-    smtp_user = os.environ.get('SMTP_USER')
-    smtp_pass = os.environ.get('SMTP_PASS')
+    resend_api_key = os.environ.get('RESEND_API_KEY')
+    destination_email = os.environ.get('SMTP_USER', 'GeoFeedback.cl@gmail.com')
     
-    print(f"📧 Intentando enviar email...")
-    print(f"   SMTP_USER configurado: {'Sí' if smtp_user else 'NO - FALTA!'}")
-    print(f"   SMTP_PASS configurado: {'Sí' if smtp_pass else 'NO - FALTA!'}")
+    print(f"📧 Intentando enviar email via Resend API...")
+    print(f"   RESEND_API_KEY configurado: {'Sí' if resend_api_key else 'NO - FALTA!'}")
+    print(f"   Email destino: {destination_email}")
     
-    if not smtp_user or not smtp_pass:
-        error_msg = "SMTP no configurado - faltan variables SMTP_USER y/o SMTP_PASS"
+    if not resend_api_key:
+        error_msg = "RESEND_API_KEY no configurado. Ve a resend.com, crea una cuenta gratis, obtén tu API key y agrégala a Railway."
         print(f"⚠ {error_msg}")
         return False, error_msg
     
     try:
-        msg = MIMEMultipart()
-        msg['From'] = smtp_user
-        msg['To'] = smtp_user  # Enviar al mismo correo
-        msg['Reply-To'] = email
-        msg['Subject'] = f'[GeoFeedback Web] Nuevo contacto de {name}'
-        
-        body = f"""
+        # Construir el email
+        email_data = {
+            "from": "GeoFeedback <onboarding@resend.dev>",  # Usa tu dominio verificado cuando lo tengas
+            "to": [destination_email],
+            "reply_to": email,
+            "subject": f"[GeoFeedback Web] Nuevo contacto de {name}",
+            "text": f"""
 ===========================================
 NUEVO MENSAJE DE CONTACTO - GEOFEEDBACK.CL
 ===========================================
@@ -387,42 +387,37 @@ Mensaje:
 -------------------------------------------
 Responde directamente a este correo para contactar al usuario.
 Correo recibido automaticamente desde https://geofeedback.cl
-        """
-        msg.attach(MIMEText(body, 'plain', 'utf-8'))
+            """
+        }
         
-        print("📧 Conectando a smtp.gmail.com:587...")
-        server = smtplib.SMTP('smtp.gmail.com', 587, timeout=30)
-        server.set_debuglevel(0)  # Cambiar a 1 para debug detallado
+        # Enviar via API HTTP
+        req = urllib.request.Request(
+            'https://api.resend.com/emails',
+            data=json.dumps(email_data).encode('utf-8'),
+            headers={
+                'Authorization': f'Bearer {resend_api_key}',
+                'Content-Type': 'application/json'
+            },
+            method='POST'
+        )
         
-        print("📧 Iniciando TLS...")
-        server.starttls()
-        
-        print(f"📧 Autenticando como {smtp_user}...")
-        server.login(smtp_user, smtp_pass)
-        
-        print("📧 Enviando mensaje...")
-        server.send_message(msg)
-        
-        print("📧 Cerrando conexión...")
-        server.quit()
-        
-        print("✅ EMAIL ENVIADO EXITOSAMENTE")
-        return True, "Email enviado correctamente"
-        
-    except smtplib.SMTPAuthenticationError as e:
-        error_msg = f"Error de autenticación SMTP: Verifica usuario/contraseña. Detalle: {e}"
+        print("📧 Enviando via Resend API...")
+        with urllib.request.urlopen(req, timeout=30) as response:
+            result = json.loads(response.read().decode('utf-8'))
+            print(f"✅ EMAIL ENVIADO EXITOSAMENTE via Resend. ID: {result.get('id', 'N/A')}")
+            return True, "Email enviado correctamente"
+            
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode('utf-8') if e.fp else str(e)
+        error_msg = f"Error HTTP de Resend ({e.code}): {error_body}"
         print(f"❌ {error_msg}")
         return False, error_msg
-    except smtplib.SMTPRecipientsRefused as e:
-        error_msg = f"Destinatario rechazado: {e}"
-        print(f"❌ {error_msg}")
-        return False, error_msg
-    except smtplib.SMTPException as e:
-        error_msg = f"Error SMTP: {e}"
+    except urllib.error.URLError as e:
+        error_msg = f"Error de conexión a Resend: {e.reason}"
         print(f"❌ {error_msg}")
         return False, error_msg
     except Exception as e:
-        error_msg = f"Error inesperado al enviar email: {type(e).__name__}: {e}"
+        error_msg = f"Error inesperado: {type(e).__name__}: {e}"
         print(f"❌ {error_msg}")
         import traceback
         traceback.print_exc()
@@ -451,8 +446,8 @@ def contact_form():
         print(f"Mensaje: {message[:100]}...")
         print(f"{'='*50}\n")
         
-        # Send email SYNCHRONOUSLY to capture errors
-        success, error_detail = send_email_sync(name, company, email, message)
+        # Send email via Resend API (HTTP-based, works on Railway)
+        success, error_detail = send_email_resend(name, company, email, message)
         
         if success:
             return jsonify({
