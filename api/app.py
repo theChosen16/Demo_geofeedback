@@ -354,21 +354,24 @@ def send_email_resend(name, company, email, message):
     import json
     
     resend_api_key = os.environ.get('RESEND_API_KEY')
-    destination_email = os.environ.get('SMTP_USER', 'GeoFeedback.cl@gmail.com')
+    # Dominio verificado en Resend: geofeedback.cl
+    from_email = "GeoFeedback <contacto@geofeedback.cl>"
+    destination_email = os.environ.get('RESEND_TO_EMAIL', 'GeoFeedback.cl@gmail.com')
     
     print(f"📧 Intentando enviar email via Resend API...")
     print(f"   RESEND_API_KEY configurado: {'Sí' if resend_api_key else 'NO - FALTA!'}")
+    print(f"   Email desde: {from_email}")
     print(f"   Email destino: {destination_email}")
     
     if not resend_api_key:
-        error_msg = "RESEND_API_KEY no configurado. Ve a resend.com, crea una cuenta gratis, obtén tu API key y agrégala a Railway."
+        error_msg = "RESEND_API_KEY no configurado"
         print(f"⚠ {error_msg}")
         return False, error_msg
     
     try:
         # Construir el email
         email_data = {
-            "from": "GeoFeedback <onboarding@resend.dev>",  # Usa tu dominio verificado cuando lo tengas
+            "from": from_email,
             "to": [destination_email],
             "reply_to": email,
             "subject": f"[GeoFeedback Web] Nuevo contacto de {name}",
