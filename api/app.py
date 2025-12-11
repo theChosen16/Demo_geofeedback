@@ -711,27 +711,66 @@ LANDING_HTML = '''<!DOCTYPE html>
             transform: translate(-50%, -50%) rotateX(70deg);
             animation: orbitSatellite 8s linear infinite, orbitZIndex 8s linear infinite;
         }
-        .satellite {
+        
+        /* 3D Satellite Construction */
+        .satellite-3d {
             position: absolute;
-            top: -15px;
-            left: 50%;
-            transform: translateX(-50%) rotateX(-70deg) rotateY(15deg);
-            font-size: 2.2rem;
-            color: var(--accent);
-            text-shadow: 
-                1px 1px 0 #baa07a,
-                2px 2px 0 #a9906d,
-                3px 3px 0 #978060,
-                4px 4px 5px rgba(0,0,0,0.3);
-            filter: drop-shadow(0 0 15px rgba(232, 184, 109, 0.4));
-            backface-visibility: visible;
+            top: 0; left: 50%;
+            width: 0; height: 0;
+            transform-style: preserve-3d;
+            /* Rotate to align with orbit path */
+            transform: translateX(-50%) rotateX(-90deg); 
         }
-        /* Z-Index Animation keyframes */
+
+        .sat-body {
+            position: absolute;
+            width: 20px; height: 20px;
+            transform-style: preserve-3d;
+            transform: translate(-10px, -10px);
+            background: rgba(232, 184, 109, 0.2);
+        }
+        
+        .face {
+            position: absolute;
+            width: 20px; height: 20px;
+            background: linear-gradient(135deg, #E8B86D, #A68B5B);
+            border: 1px solid rgba(166, 139, 91, 0.6);
+            opacity: 1;
+            backface-visibility: hidden; /* Hide inside faces */
+        }
+        
+        .face.front  { transform: translateZ(10px); }
+        .face.back   { transform: rotateY(180deg) translateZ(10px); }
+        .face.right  { transform: rotateY(90deg) translateZ(10px); }
+        .face.left   { transform: rotateY(-90deg) translateZ(10px); }
+        .face.top    { transform: rotateX(90deg) translateZ(10px); }
+        .face.bottom { transform: rotateX(-90deg) translateZ(10px); }
+
+        .sat-panel {
+            position: absolute;
+            width: 36px; height: 14px;
+            background: linear-gradient(to bottom, #2D5A4A, #1a3d30);
+            border: 1px solid #E8B86D;
+            top: 3px; /* Center relative to 20px body */
+            opacity: 0.95;
+        }
+        
+        .sat-panel.left {
+            transform: translateX(-40px) rotateY(-20deg);
+            transform-origin: right center;
+        }
+        
+        .sat-panel.right {
+            transform: translateX(20px) rotateY(20deg);
+            transform-origin: left center;
+        }
+
+        /* Z-Index Animation keyframes - Adjusted for visual horizon */
         @keyframes orbitZIndex {
             0% { z-index: 20; }
-            49% { z-index: 20; }
+            45% { z-index: 20; }
             50% { z-index: 1; }
-            99% { z-index: 1; }
+            95% { z-index: 1; }
             100% { z-index: 20; }
         }
         @keyframes orbitSatellite {
@@ -1244,9 +1283,8 @@ LANDING_HTML = '''<!DOCTYPE html>
                 width: 160px !important;
                 height: 160px !important;
             }
-            .satellite {
-                font-size: 1.2rem !important;
-                top: -10px !important;
+            .satellite-3d {
+                transform: translateX(-50%) rotateX(-90deg) scale(0.7) !important;
             }
             .data-points {
                 width: 100px !important;
@@ -1769,9 +1807,20 @@ LANDING_HTML = '''<!DOCTYPE html>
                     <div class="earth"></div>
                     <!-- Orbit Path -->
                     <div class="orbit-path"></div>
-                    <!-- Satellite in Orbit -->
+                    <!-- Satellite in Orbit (3D) -->
                     <div class="satellite-wrapper">
-                        <div class="satellite"><i class="fas fa-satellite"></i></div>
+                        <div class="satellite-3d">
+                            <div class="sat-body">
+                                <div class="face front"></div>
+                                <div class="face back"></div>
+                                <div class="face top"></div>
+                                <div class="face bottom"></div>
+                                <div class="face left"></div>
+                                <div class="face right"></div>
+                            </div>
+                            <div class="sat-panel left"></div>
+                            <div class="sat-panel right"></div>
+                        </div>
                     </div>
 
                     <!-- Data Points on Earth -->
