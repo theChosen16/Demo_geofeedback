@@ -653,11 +653,12 @@ LANDING_HTML = '''<!DOCTYPE html>
             border-radius: 50%;
             background: linear-gradient(135deg, #1e5799 0%, #2989d8 25%, #1e5799 50%, #207cca 75%, #1e5799 100%);
             box-shadow: 
-                inset -30px -30px 60px rgba(0,0,0,0.4),
-                inset 20px 20px 40px rgba(255,255,255,0.1),
-                0 0 60px rgba(30, 87, 153, 0.5);
+                inset -30px -30px 60px rgba(0,0,0,0.5),
+                inset 20px 20px 40px rgba(255,255,255,0.15),
+                0 0 80px rgba(30, 87, 153, 0.6),
+                0 0 120px rgba(30, 87, 153, 0.3);
             overflow: hidden;
-            animation: earthRotate 20s linear infinite;
+            z-index: 10;
         }
         .earth::before {
             content: '';
@@ -706,53 +707,37 @@ LANDING_HTML = '''<!DOCTYPE html>
             left: 50%;
             width: 280px;
             height: 280px;
-            transform: translate(-50%, -50%);
+            transform-style: preserve-3d;
+            transform: translate(-50%, -50%) rotateX(70deg);
             animation: orbitSatellite 8s linear infinite;
         }
         .satellite {
             position: absolute;
             top: -15px;
             left: 50%;
-            transform: translateX(-50%);
+            transform: translateX(-50%) rotateX(-70deg);
             font-size: 2rem;
             color: var(--accent);
             filter: drop-shadow(0 0 10px rgba(232, 184, 109, 0.8));
+            backface-visibility: hidden;
+        }
+        /* Satellite behind Earth - hide it */
+        .satellite-wrapper::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 200px;
+            height: 200px;
+            transform: translate(-50%, -50%) rotateX(-70deg);
+            border-radius: 50%;
+            z-index: 5;
         }
         @keyframes orbitSatellite {
             0% { transform: translate(-50%, -50%) rotateX(70deg) rotateZ(0deg); }
             100% { transform: translate(-50%, -50%) rotateX(70deg) rotateZ(360deg); }
         }
-        /* Scan Rays */
-        .scan-rays {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 180px;
-            height: 180px;
-        }
-        .scan-ray {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 2px;
-            height: 120px;
-            background: linear-gradient(to bottom, rgba(232, 184, 109, 0.8) 0%, transparent 100%);
-            transform-origin: top center;
-            animation: scanRotate 4s ease-in-out infinite;
-            opacity: 0;
-        }
-        .scan-ray:nth-child(1) { animation-delay: 0s; }
-        .scan-ray:nth-child(2) { animation-delay: 1s; }
-        .scan-ray:nth-child(3) { animation-delay: 2s; }
-        .scan-ray:nth-child(4) { animation-delay: 3s; }
-        @keyframes scanRotate {
-            0% { opacity: 0; transform: translateX(-50%) rotate(-30deg); }
-            10% { opacity: 0.8; }
-            50% { opacity: 0.6; transform: translateX(-50%) rotate(30deg); }
-            90% { opacity: 0.8; }
-            100% { opacity: 0; transform: translateX(-50%) rotate(-30deg); }
-        }
+
         /* Data Points */
         .data-points {
             position: absolute;
@@ -1790,13 +1775,7 @@ LANDING_HTML = '''<!DOCTYPE html>
                     <div class="satellite-wrapper">
                         <div class="satellite"><i class="fas fa-satellite"></i></div>
                     </div>
-                    <!-- Scan Rays -->
-                    <div class="scan-rays">
-                        <div class="scan-ray"></div>
-                        <div class="scan-ray"></div>
-                        <div class="scan-ray"></div>
-                        <div class="scan-ray"></div>
-                    </div>
+
                     <!-- Data Points on Earth -->
                     <div class="data-points">
                         <div class="data-point"></div>
