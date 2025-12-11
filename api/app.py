@@ -1120,28 +1120,64 @@ LANDING_HTML = '''<!DOCTYPE html>
             body.mobile-tab-mode { padding-bottom: 70px; }
             body.mobile-tab-mode .navbar { display: none; }
             
-            /* Mobile header */
+            /* Mobile header - NOT fixed, scrolls with content */
             .mobile-header {
+                display: none !important; /* Hide mobile header, use navbar instead */
+            }
+            /* Keep regular navbar visible on mobile */
+            .navbar {
+                position: relative !important;
+                padding: 0.75rem 1rem !important;
+            }
+            .navbar .logo {
+                font-size: 1.1rem !important;
+            }
+            body.mobile-tab-mode .navbar {
+                display: flex !important;
+            }
+            body.mobile-tab-mode { padding-bottom: 70px; }
+            
+            /* Responsive tables */
+            table {
                 display: block !important;
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                background: linear-gradient(135deg, var(--primary), var(--primary-light));
-                padding: 1rem;
-                z-index: 1999;
-                text-align: center;
+                width: 100% !important;
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch !important;
             }
-            .mobile-header .logo {
-                color: white;
-                font-size: 1.25rem;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 0.5rem;
+            .table-responsive {
+                display: block;
+                width: 100%;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
             }
-            .mobile-header .logo i { color: var(--accent); }
-            body.mobile-tab-mode .tab-section { padding-top: 70px; }
+            
+            /* Dashboard stats grid */
+            [style*="grid-template-columns:repeat(4"] {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 0.75rem !important;
+            }
+            
+            /* Fluid elements */
+            img, video, iframe, embed, object {
+                max-width: 100% !important;
+                height: auto !important;
+            }
+            
+            /* Prevent any element from exceeding viewport */
+            div, section, article, aside, header, footer, main, nav {
+                max-width: 100vw !important;
+            }
+            
+            /* Alert/notification cards */
+            [style*="display:flex"][style*="align-items:center"][style*="gap:1rem"] {
+                flex-wrap: wrap !important;
+                gap: 0.5rem !important;
+            }
+            
+            /* Pricing cards equal height */
+            .cards-grid .card {
+                margin-bottom: 1rem !important;
+            }
             
             /* California Script Typography */
             .script-title {
