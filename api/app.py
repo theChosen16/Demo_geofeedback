@@ -961,11 +961,117 @@ LANDING_HTML = '''<!DOCTYPE html>
             .results-grid { grid-template-columns: 1fr; }
         }
         @media (max-width: 768px) {
-            .hero-content { grid-template-columns: 1fr; text-align: center; }
-            .hero-text h1 { font-size: 2.5rem; }
-            .hero-buttons { justify-content: center; }
+            /* Global mobile width fixes */
+            html, body {
+                overflow-x: hidden !important;
+                width: 100% !important;
+                max-width: 100vw !important;
+            }
+            * {
+                box-sizing: border-box !important;
+            }
+            .container, .demo-container, .team-container, .contact-container {
+                width: 100% !important;
+                max-width: 100% !important;
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+            }
+            .section {
+                padding: 3rem 1rem !important;
+            }
+            .cards-grid {
+                grid-template-columns: 1fr !important;
+                gap: 1rem !important;
+                padding: 0 !important;
+            }
+            .card {
+                width: 100% !important;
+                max-width: 100% !important;
+                transform: none !important;
+            }
+            .team-grid {
+                grid-template-columns: 1fr !important;
+                gap: 1rem !important;
+            }
+            .team-card {
+                max-width: 100% !important;
+                width: 100% !important;
+            }
+            .demo-layout {
+                grid-template-columns: 1fr !important;
+                gap: 1rem !important;
+            }
+            #demo-map {
+                height: 300px !important;
+            }
+            .sidebar {
+                width: 100% !important;
+            }
+            .panel {
+                width: 100% !important;
+            }
+            .results-grid {
+                grid-template-columns: 1fr !important;
+            }
+            .hero {
+                padding: 5rem 1rem 3rem !important;
+                min-height: auto !important;
+            }
+            .hero-content {
+                grid-template-columns: 1fr !important;
+                text-align: center;
+                gap: 2rem !important;
+            }
+            .hero-text h1 {
+                font-size: 1.75rem !important;
+                line-height: 1.2 !important;
+            }
+            .hero-text p {
+                font-size: 1rem !important;
+            }
+            .hero-buttons {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
             .hero-visual { display: none; }
             .nav-links { display: none; }
+            .section-header h2 {
+                font-size: 1.5rem !important;
+            }
+            .section-header p {
+                font-size: 0.9rem !important;
+            }
+            /* Contact form mobile */
+            .contact-form {
+                padding: 1.5rem !important;
+            }
+            .form-group input, .form-group textarea {
+                font-size: 16px !important; /* Prevents zoom on iOS */
+            }
+            /* Footer mobile */
+            .footer-content {
+                flex-direction: column !important;
+                text-align: center !important;
+                gap: 1.5rem !important;
+            }
+            .footer-links {
+                flex-direction: column !important;
+                gap: 0.75rem !important;
+            }
+            /* Fix chat button position */
+            .chat-toggle-btn {
+                bottom: 5rem !important;
+                right: 1rem !important;
+                width: 50px !important;
+                height: 50px !important;
+            }
+            .chat-sidebar {
+                width: 100% !important;
+                right: -100% !important;
+            }
+            .chat-sidebar.open {
+                right: 0 !important;
+            }
             
             /* Mobile Tab Navigation */
             .mobile-tabs {
