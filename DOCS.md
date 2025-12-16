@@ -26,7 +26,7 @@ GeoFeedback Chile es una plataforma de inteligencia territorial que transforma d
 | Componente | Tecnología                       |
 | ---------- | -------------------------------- |
 | Backend    | Python 3.11 + Flask              |
-| AI         | Google Gemini 1.5 Flash          |
+| AI         | Google Gemini 2.5 Flash          |
 | Satélite   | Google Earth Engine (Sentinel-2) |
 | Mapas      | Google Maps JavaScript API       |
 | Deploy     | Railway (Docker)                 |
@@ -108,9 +108,10 @@ GeoFeedback Chile es una plataforma de inteligencia territorial que transforma d
 
 ### Gemini API (AI)
 
-- **Modelo:** gemini-1.5-flash
+- **Modelo:** gemini-2.5-flash
 - **Uso:** Interpretación de análisis, chatbot
 - **SDK:** google-generativeai >= 0.3.0
+- **Resilencia:** Retry automático con timeout de 30s
 
 ---
 
