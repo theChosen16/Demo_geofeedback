@@ -10,6 +10,7 @@
 import os
 import datetime
 import json
+import time
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import ee
@@ -29,7 +30,27 @@ try:
         print("WARNING: GEMINI_API_KEY no configurada.")
 except ImportError:
     gemini_available = False
+    gemini_model = None
     print("WARNING: google-generativeai no instalado.")
+
+
+def call_gemini_with_retry(prompt, max_retries=2, timeout=30):
+    """Llama a Gemini con reintentos y timeout corto para manejar problemas de red."""
+    if not gemini_available or not gemini_model:
+        return None
+    
+    for attempt in range(max_retries):
+        try:
+            response = gemini_model.generate_content(
+                prompt,
+                request_options={"timeout": timeout}
+            )
+            return response.text
+        except Exception as e:
+            print(f"Gemini intento {attempt + 1}/{max_retries}: {e}")
+            if attempt < max_retries - 1:
+                time.sleep(1)
+    return None
 
 app = Flask(__name__)
 CORS(app)
@@ -90,7 +111,11 @@ def analyze_territory():
         
         s2_image = get_sentinel2_image(roi)
         if not s2_image:
-            return jsonify({"status": "warning", "message": "No se encontraron imágenes recientes libres de nubes."}), 404
+            return jsonify({
+                "status": "warning", 
+                "message": "No se encontraron imágenes satelitales libres de nubes en los últimos 6 meses para esta ubicación. Intenta con otra zona o espera a mejores condiciones climáticas.",
+                "retry": False
+            }), 200
             
         s2_indices = calculate_indices(s2_image)
         
@@ -278,17 +303,23 @@ Resultados del análisis satelital:
 
 Genera una interpretación profesional de estos datos siguiendo la estructura indicada. Máximo 250 palabras."""
 
-        response = gemini_model.generate_content(prompt)
+        response_text = call_gemini_with_retry(prompt, timeout=45)
+        
+        if not response_text:
+            return jsonify({
+                "status": "error",
+                "message": "No se pudo generar la interpretación. El servicio de IA está temporalmente no disponible. Por favor intenta de nuevo."
+            }), 503
         
         return jsonify({
             "status": "success",
-            "interpretation": response.text,
+            "interpretation": response_text,
             "model": "gemini-2.5-flash"
         })
         
     except Exception as e:
         print(f"Error en interpretación AI: {e}")
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return jsonify({"status": "error", "message": "Error temporal en el servicio de IA. Por favor intenta de nuevo."}), 503
 
 
 @app.route('/api/v1/chat', methods=['POST'])
@@ -334,17 +365,28 @@ PREGUNTA DEL USUARIO: {message}
 
 Responde de forma útil y amigable:"""
 
-        response = gemini_model.generate_content(prompt)
+        response_text = call_gemini_with_retry(prompt, timeout=30)
+        
+        if not response_text:
+            return jsonify({
+                "status": "error",
+                "message": "El servicio de IA está temporalmente ocupado. Por favor intenta de nuevo en unos segundos.",
+                "retry": True
+            }), 503
         
         return jsonify({
             "status": "success",
-            "response": response.text,
+            "response": response_text,
             "model": "gemini-2.5-flash"
         })
         
     except Exception as e:
         print(f"Error en chat AI: {e}")
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return jsonify({
+            "status": "error", 
+            "message": "Error de conexión temporal. Por favor intenta de nuevo.",
+            "retry": True
+        }), 503
 
 
 def send_email_resend(name, company, email, message):

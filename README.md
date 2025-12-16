@@ -19,7 +19,8 @@
 - 🤖 **IA Integrada** - Interpretación automática con Google Gemini
 - 🗺️ **13 APIs de Google** - Maps, Elevation, Air Quality, Solar, Pollen
 - 💬 **Chat Asistente** - Pregunta sobre tus análisis en tiempo real
-- 📊 **8 Enfoques de Análisis** - Minería, Agricultura, Energía, y más
+- �️ **Resiliente** - Retry automático y manejo de errores de red
+- �📊 **8 Enfoques de Análisis** - Minería, Agricultura, Energía, y más
 
 ---
 
@@ -52,4 +53,4 @@ Este proyecto es una demo técnica. Ver [LICENSE](./LICENSE) para detalles.
 
 ---
 
-_Última actualización: 8 de Diciembre de 2025_
+_Última actualización: 16 de Diciembre de 2025_
