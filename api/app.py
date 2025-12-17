@@ -3210,14 +3210,14 @@ LANDING_HTML = '''<!DOCTYPE html>
                     // Format AI text with styled sections
                     var formattedText = data.interpretation
                         // Section headers with icons
-                        .replace(/^RESUMEN\s*\n?/gm, '<div class="ai-section"><h6 class="ai-section-title">📋 Resumen</h6><div class="ai-section-content">')
-                        .replace(/^QUÉ SIGNIFICAN LOS DATOS\s*\n?/gm, '</div></div><div class="ai-section"><h6 class="ai-section-title">📊 Qué Significan los Datos</h6><div class="ai-section-content">')
-                        .replace(/^IMPLICACIONES PRÁCTICAS\s*\n?/gm, '</div></div><div class="ai-section"><h6 class="ai-section-title">💡 Implicaciones Prácticas</h6><div class="ai-section-content">')
-                        .replace(/^RECOMENDACIONES\s*\n?/gm, '</div></div><div class="ai-section"><h6 class="ai-section-title">✅ Recomendaciones</h6><div class="ai-section-content">')
-                        // Markdown bold
-                        .replace(/\*\*(.*?)\*\*/g, '<strong style="color:var(--secondary)">$1</strong>')
+                        .replace(/RESUMEN/g, '<div class="ai-section"><h6 class="ai-section-title">📋 Resumen</h6><div class="ai-section-content">')
+                        .replace(/QUÉ SIGNIFICAN LOS DATOS/g, '</div></div><div class="ai-section"><h6 class="ai-section-title">📊 Qué Significan los Datos</h6><div class="ai-section-content">')
+                        .replace(/IMPLICACIONES PRÁCTICAS/g, '</div></div><div class="ai-section"><h6 class="ai-section-title">💡 Implicaciones Prácticas</h6><div class="ai-section-content">')
+                        .replace(/RECOMENDACIONES/g, '</div></div><div class="ai-section"><h6 class="ai-section-title">✅ Recomendaciones</h6><div class="ai-section-content">')
+                        // Markdown bold - using string method
+                        .split('**').map(function(part, i) { return i % 2 === 1 ? '<strong style="color:var(--secondary)">' + part + '</strong>' : part; }).join('')
                         // Line breaks
-                        .replace(/\n/g, '<br>');
+                        .split('\n').join('<br>');
                     
                     // Close any open section
                     if (formattedText.includes('ai-section-content')) {
