@@ -1991,6 +1991,66 @@ LANDING_HTML = '''<!DOCTYPE html>
                     <p>Valores &gt; 0.2 indican alta humedad. Evalua estres hidrico en vegetacion y contenido de agua en plantas.</p>
                 </div>
             </div>
+            
+            <!-- Science Explainer Box with Animations -->
+            <div class="science-explainer" style="margin-top: 2rem;">
+                
+                <!-- Como funcionan los indices -->
+                <div class="explainer-card" style="background: linear-gradient(135deg, rgba(45,90,74,0.15) 0%, rgba(0,0,0,0.3) 100%); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; animation: fadeInUp 0.6s ease-out;">
+                    <h4 style="color:var(--secondary); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
+                        <i class="fas fa-lightbulb" style="animation: pulse 2s infinite;"></i> 
+                        ¿Como funcionan estos indices?
+                    </h4>
+                    <p style="line-height:1.8; font-size:1rem; color:#e0e0e0;">
+                        Imagina que cada material en la Tierra tiene su propia "huella digital" de luz. 
+                        Las plantas, el agua y el suelo reflejan y absorben diferentes colores de forma unica.
+                        <br><br>
+                        <strong style="color:var(--secondary);">🌿 Las plantas sanas</strong> absorben la luz roja para hacer fotosintesis, 
+                        pero reflejan intensamente la luz infrarroja (invisible para nosotros). Es como si las plantas 
+                        "brillaran" en infrarrojo cuando estan sanas.
+                        <br><br>
+                        <strong style="color:#3b82f6;">💧 El agua</strong> absorbe casi toda la luz infrarroja, 
+                        pero refleja algo de luz verde. Por eso podemos detectar lagos, rios e inundaciones desde el espacio.
+                        <br><br>
+                        <strong style="color:#06b6d4;">💦 La humedad en las plantas</strong> absorbe un tipo especial de infrarrojo (SWIR). 
+                        Cuando las plantas tienen sed, esta "firma" cambia, permitiendonos detectar estres hidrico antes de que sea visible.
+                    </p>
+                </div>
+                
+                <!-- Sentinel-2 Info -->
+                <div class="explainer-card" style="background: linear-gradient(135deg, rgba(59,130,246,0.1) 0%, rgba(0,0,0,0.3) 100%); border-radius: 16px; padding: 1.5rem; animation: fadeInUp 0.8s ease-out;">
+                    <h4 style="color:#60a5fa; margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
+                        <i class="fas fa-satellite" style="animation: float 3s ease-in-out infinite;"></i>
+                        Sentinel-2: Nuestros ojos en el espacio
+                    </h4>
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:1rem; margin-bottom:1rem;">
+                        <div style="background:rgba(0,0,0,0.2); padding:1rem; border-radius:8px; text-align:center;">
+                            <div style="font-size:1.8rem; color:var(--secondary); font-weight:bold;">🇪🇺</div>
+                            <div style="font-size:0.85rem; color:#aaa;">Operado por ESA<br>(Agencia Espacial Europea)</div>
+                        </div>
+                        <div style="background:rgba(0,0,0,0.2); padding:1rem; border-radius:8px; text-align:center;">
+                            <div style="font-size:1.8rem; color:var(--secondary); font-weight:bold;">€200M</div>
+                            <div style="font-size:0.85rem; color:#aaa;">Costo por satelite<br>+ €25M/año operacion</div>
+                        </div>
+                        <div style="background:rgba(0,0,0,0.2); padding:1rem; border-radius:8px; text-align:center;">
+                            <div style="font-size:1.8rem; color:var(--secondary); font-weight:bold;">GRATIS</div>
+                            <div style="font-size:0.85rem; color:#aaa;">Datos abiertos<br>para todo el mundo</div>
+                        </div>
+                    </div>
+                    <p style="font-size:0.9rem; color:#9ca3af; line-height:1.6;">
+                        <i class="fas fa-info-circle"></i> 
+                        Sentinel-2 captura 13 "colores" de luz (bandas espectrales). Para analisis aun mas detallados, 
+                        la ESA esta desarrollando <strong>CHIME</strong>, un satelite hiperespectral con mas de 200 bandas 
+                        que funcionara como un laboratorio quimico en orbita.
+                    </p>
+                </div>
+            </div>
+            
+            <style>
+                @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+                @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+                @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-5px); } }
+            </style>
         </div>
     </section>
     
