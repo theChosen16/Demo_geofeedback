@@ -2907,9 +2907,8 @@ LANDING_HTML = '''<!DOCTYPE html>
                         location: locationName
                     };
                     
-                    // Open chat and send automatic interpretation request
-                    document.getElementById('chat-sidebar').classList.add('open');
-                    requestAIInterpretation(data.data, selectedApproach, locationName, data.area_m2, data.meta);
+                    // Open interpretation modal with AI analysis
+                    showInterpretationModal();
                     
                 } else if (data.status === 'warning') {
                     alert("Aviso: " + data.message);
@@ -3208,16 +3207,50 @@ LANDING_HTML = '''<!DOCTYPE html>
                 if (loading) loading.remove();
                 
                 if (data.status === 'success') {
-                    var aiHtml = '<div class="ai-interpretation">' +
-                        '<h5><i class="fas fa-robot"></i> Interpretacion del Asistente IA</h5>' +
-                        '<div>' + data.interpretation.replace(/\\n/g, '<br>') + '</div>' +
+                    // Format AI text with styled sections
+                    var formattedText = data.interpretation
+                        // Section headers with icons
+                        .replace(/^RESUMEN\s*\n?/gm, '<div class="ai-section"><h6 class="ai-section-title">📋 Resumen</h6><div class="ai-section-content">')
+                        .replace(/^QUÉ SIGNIFICAN LOS DATOS\s*\n?/gm, '</div></div><div class="ai-section"><h6 class="ai-section-title">📊 Qué Significan los Datos</h6><div class="ai-section-content">')
+                        .replace(/^IMPLICACIONES PRÁCTICAS\s*\n?/gm, '</div></div><div class="ai-section"><h6 class="ai-section-title">💡 Implicaciones Prácticas</h6><div class="ai-section-content">')
+                        .replace(/^RECOMENDACIONES\s*\n?/gm, '</div></div><div class="ai-section"><h6 class="ai-section-title">✅ Recomendaciones</h6><div class="ai-section-content">')
+                        // Markdown bold
+                        .replace(/\*\*(.*?)\*\*/g, '<strong style="color:var(--secondary)">$1</strong>')
+                        // Line breaks
+                        .replace(/\n/g, '<br>');
+                    
+                    // Close any open section
+                    if (formattedText.includes('ai-section-content')) {
+                        formattedText += '</div></div>';
+                    }
+                    // Clean up empty opening tag if first section not matched
+                    formattedText = formattedText.replace(/^<\/div><\/div>/, '');
+                    
+                    var aiHtml = '<div class="ai-interpretation" style="margin-top:1.5rem; padding:1rem; background:linear-gradient(135deg, #f0fdf4 0%, #ecfeff 100%); border-radius:12px; border-left:4px solid var(--secondary);">' +
+                        '<h5 style="margin:0 0 1rem; color:var(--primary); display:flex; align-items:center; gap:0.5rem;"><i class="fas fa-robot"></i> Interpretación del Asistente IA</h5>' +
+                        '<div class="ai-content" style="line-height:1.7; color:var(--text);">' + formattedText + '</div>' +
                         '</div>';
+                    
+                    // Add section styles dynamically
+                    if (!document.getElementById('ai-section-styles')) {
+                        var styles = document.createElement('style');
+                        styles.id = 'ai-section-styles';
+                        styles.textContent = '.ai-section { margin-bottom:1rem; } .ai-section-title { color:var(--primary); margin:0 0 0.5rem; padding-bottom:0.3rem; border-bottom:1px solid rgba(45,90,74,0.2); font-size:0.9rem; font-weight:600; } .ai-section-content { padding-left:0.5rem; }';
+                        document.head.appendChild(styles);
+                    }
+                    
                     modalBody.insertAdjacentHTML('beforeend', aiHtml);
+                } else {
+                    var errorHtml = '<div class="ai-interpretation" style="margin-top:1rem; padding:1rem; background:#fef2f2; border-radius:8px; color:#dc2626;">' +
+                        '<i class="fas fa-exclamation-circle"></i> No se pudo generar la interpretación. Intenta de nuevo.' +
+                        '</div>';
+                    modalBody.insertAdjacentHTML('beforeend', errorHtml);
                 }
             })
             .catch(error => {
                 var loading = document.getElementById('ai-loading');
                 if (loading) loading.remove();
+                console.error('AI Interpretation error:', error);
             });
         }
 
