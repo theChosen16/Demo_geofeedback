@@ -3217,7 +3217,7 @@ LANDING_HTML = '''<!DOCTYPE html>
                         // Markdown bold - using string method
                         .split('**').map(function(part, i) { return i % 2 === 1 ? '<strong style="color:var(--secondary)">' + part + '</strong>' : part; }).join('')
                         // Line breaks
-                        .split('\n').join('<br>');
+                        .split(String.fromCharCode(10)).join('<br>');
                     
                     // Close any open section
                     if (formattedText.includes('ai-section-content')) {
