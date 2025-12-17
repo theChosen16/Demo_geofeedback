@@ -153,6 +153,28 @@ Rango: -1 a +1
 < 0    → Estrés hídrico
 ```
 
+### Física de los Índices Espectrales
+
+Los índices funcionan gracias a las propiedades de absorción y reflexión de la luz:
+
+| Índice   | Fenómeno Físico                                                              |
+| -------- | ---------------------------------------------------------------------------- |
+| **NDVI** | Clorofila absorbe luz roja (~680nm), estructura celular mesófilo refleja NIR |
+| **NDWI** | Agua absorbe NIR, refleja luz verde                                          |
+| **NDMI** | Agua en tejidos absorbe SWIR, NIR reflejado por estructura celular           |
+
+### Sentinel-2 - Operadores y Costos
+
+| Aspecto            | Información                                               |
+| ------------------ | --------------------------------------------------------- |
+| Operador           | ESA (Agencia Espacial Europea) - Programa Copernicus (UE) |
+| Satélites          | Sentinel-2A (2015), 2B (2017), 2C (2024)                  |
+| Costo construcción | ~€200 millones por satélite                               |
+| Costo operación    | ~€25 millones/año                                         |
+| Acceso datos       | **Gratuito y abierto**                                    |
+
+> **Nota:** Sentinel-2 es multiespectral (13 bandas). ESA desarrolla CHIME con +200 bandas hiperespectrales.
+
 ---
 
 ## Configuración de Railway
