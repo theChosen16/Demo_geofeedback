@@ -1,571 +1,4 @@
-# =============================================================================
-# GeoFeedback Chile - Plataforma de Inteligencia Territorial
-# Copyright (c) 2025 Alejandro Hernández Aguirre
-# TODOS LOS DERECHOS RESERVADOS / ALL RIGHTS RESERVED
-# 
-# Este código es propiedad exclusiva del autor y se proporciona únicamente
-# con fines de demostración técnica. Prohibido copiar, modificar o distribuir.
-# =============================================================================
-
-import os
-import datetime
-import json
-import time
-from flask import Flask, jsonify, request
-from flask_cors import CORS
-import ee
-from gee_config import init_gee
-
-# Gemini AI Integration
-try:
-    import google.generativeai as genai
-    GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
-    if GEMINI_API_KEY:
-        genai.configure(api_key=GEMINI_API_KEY)
-        gemini_model = genai.GenerativeModel('gemini-2.5-flash')  # Stable fast model
-        gemini_available = True
-        print("Gemini AI inicializado correctamente.")
-    else:
-        gemini_available = False
-        print("WARNING: GEMINI_API_KEY no configurada.")
-except ImportError:
-    gemini_available = False
-    gemini_model = None
-    print("WARNING: google-generativeai no instalado.")
-
-
-def call_gemini_with_retry(prompt, max_retries=2, timeout=30):
-    """Llama a Gemini con reintentos y timeout corto para manejar problemas de red."""
-    if not gemini_available or not gemini_model:
-        return None
-    
-    for attempt in range(max_retries):
-        try:
-            response = gemini_model.generate_content(
-                prompt,
-                request_options={"timeout": timeout}
-            )
-            return response.text
-        except Exception as e:
-            print(f"Gemini intento {attempt + 1}/{max_retries}: {e}")
-            if attempt < max_retries - 1:
-                time.sleep(1)
-    return None
-
-app = Flask(__name__)
-CORS(app)
-
-# Inicializar Google Earth Engine
-gee_initialized = init_gee()
-
-def get_sentinel2_image(roi):
-    """Obtiene la imagen Sentinel-2 más reciente y libre de nubes para la ROI."""
-    end_date = datetime.datetime.now()
-    start_date = end_date - datetime.timedelta(days=180) # 6 meses
-    
-    col = (ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
-            .filterBounds(roi)
-            .filterDate(start_date, end_date)
-            .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 30))
-            .sort('system:time_start', False))
-            
-    # Verificar si hay imágenes (evita error 500 si la colección está vacía)
-    try:
-        if col.size().getInfo() == 0:
-            return None
-    except Exception as e:
-        print(f"Error checking collection size: {e}")
-        return None
-        
-    return col.first()
-
-def calculate_indices(image):
-    """Calcula índices espectrales comunes."""
-    ndvi = image.normalizedDifference(['B8', 'B4']).rename('NDVI')
-    ndwi = image.normalizedDifference(['B3', 'B8']).rename('NDWI') # McFeeters
-    ndmi = image.normalizedDifference(['B8', 'B11']).rename('NDMI')
-    return image.addBands([ndvi, ndwi, ndmi])
-
-@app.route('/api/v1/analyze', methods=['POST'])
-def analyze_territory():
-    if not gee_initialized:
-        return jsonify({"status": "error", "message": "GEE no está inicializado"}), 500
-    
-    data = request.json
-    lat = data.get('lat')
-    lng = data.get('lng')
-    approach = data.get('approach')
-    radius = data.get('radius', 1000)  # Default 1km
-    
-    if not lat or not lng or not approach:
-        return jsonify({"status": "error", "message": "Faltan parámetros"}), 400
-
-    try:
-        point = ee.Geometry.Point([lng, lat])
-        roi = point.buffer(radius)  # Dynamic radius from frontend
-        
-        # Datos Base
-        srtm = ee.Image('CGIAR/SRTM90_V4')
-        elevation = srtm.select('elevation')
-        slope = ee.Terrain.slope(elevation)
-        
-        s2_image = get_sentinel2_image(roi)
-        if not s2_image:
-            return jsonify({
-                "status": "warning", 
-                "message": "No se encontraron imágenes satelitales libres de nubes en los últimos 6 meses para esta ubicación. Intenta con otra zona o espera a mejores condiciones climáticas.",
-                "retry": False
-            }), 200
-            
-        s2_indices = calculate_indices(s2_image)
-        
-        # Reducers
-        mean_reducer = ee.Reducer.mean()
-        
-        results = {}
-        
-        # Lógica por Enfoque
-        if approach == 'mining':
-            # Minería: Vegetación (Impacto), Agua (Relaves), Pendiente (Estabilidad)
-            stats = s2_indices.select(['NDVI', 'NDWI']).addBands(slope).reduceRegion(
-                reducer=mean_reducer, geometry=roi, scale=20, maxPixels=1e9
-            ).getInfo()
-            results = {
-                "Vegetación Circundante (NDVI)": f"{stats.get('NDVI', 0):.2f}",
-                "Índice de Agua (NDWI)": f"{stats.get('NDWI', 0):.2f}",
-                "Pendiente Promedio (°)": f"{stats.get('slope', 0):.1f}"
-            }
-            
-        elif approach == 'agriculture':
-            # Agro: Salud Cultivo (NDVI), Estrés Hídrico (NDMI)
-            stats = s2_indices.select(['NDVI', 'NDMI']).reduceRegion(
-                reducer=mean_reducer, geometry=roi, scale=20, maxPixels=1e9
-            ).getInfo()
-            results = {
-                "Vigor Vegetal (NDVI)": f"{stats.get('NDVI', 0):.2f}",
-                "Humedad Vegetación (NDMI)": f"{stats.get('NDMI', 0):.2f}",
-                "Estado": "Saludable" if stats.get('NDVI', 0) > 0.4 else "Atención Requerida"
-            }
-            
-        elif approach == 'energy':
-            # Energía: Pendiente (Solar/Eólica), Elevación
-            stats = srtm.select('elevation').addBands(slope).reduceRegion(
-                reducer=mean_reducer, geometry=roi, scale=90, maxPixels=1e9
-            ).getInfo()
-            avg_slope = stats.get('slope', 0)
-            results = {
-                "Elevación Promedio (msnm)": f"{stats.get('elevation', 0):.0f}",
-                "Pendiente Promedio (°)": f"{avg_slope:.1f}",
-                "Aptitud Solar (Topografía)": "Alta" if avg_slope < 10 else "Media" if avg_slope < 20 else "Baja"
-            }
-
-        elif approach == 'real-estate':
-            # Inmobiliario: Pendiente (Constructibilidad), Riesgo Inundación (NDWI proxy)
-            stats = s2_indices.select(['NDWI']).addBands(slope).reduceRegion(
-                reducer=mean_reducer, geometry=roi, scale=20, maxPixels=1e9
-            ).getInfo()
-            avg_slope = stats.get('slope', 0)
-            results = {
-                "Pendiente Terreno (°)": f"{avg_slope:.1f}",
-                "Índice Agua (NDWI)": f"{stats.get('NDWI', 0):.2f}",
-                "Constructibilidad (Topo)": "Óptima" if avg_slope < 5 else "Buena" if avg_slope < 15 else "Compleja"
-            }
-            
-        # Enfoques Originales (Mantenidos/Mejorados)
-        # Enfoques Originales (Mantenidos/Mejorados)
-        elif approach == 'flood-risk':
-             stats = s2_indices.select(['NDWI']).addBands(elevation).reduceRegion(
-                reducer=mean_reducer, geometry=roi, scale=30, maxPixels=1e9
-            ).getInfo()
-             results = {"NDWI Promedio": f"{stats.get('NDWI', 0):.2f}", "Elevación Media": f"{stats.get('elevation', 0):.0f} m"}
-
-        elif approach == 'water-management':
-             stats = s2_indices.select(['NDWI', 'NDMI']).reduceRegion(
-                 reducer=mean_reducer, geometry=roi, scale=20, maxPixels=1e9
-             ).getInfo()
-             results = {"Cuerpos de Agua (NDWI)": f"{stats.get('NDWI', 0):.2f}", "Humedad Suelo/Veg (NDMI)": f"{stats.get('NDMI', 0):.2f}"}
-
-        elif approach == 'environmental':
-             stats = s2_indices.select(['NDVI']).reduceRegion(
-                 reducer=mean_reducer, geometry=roi, scale=20, maxPixels=1e9
-             ).getInfo()
-             results = {"Cobertura Vegetal (NDVI)": f"{stats.get('NDVI', 0):.2f}"}
-             
-        elif approach == 'land-planning':
-             stats = slope.reduceRegion(
-                 reducer=mean_reducer, geometry=roi, scale=90, maxPixels=1e9
-             ).getInfo()
-             results = {"Pendiente Promedio": f"{stats.get('slope', 0):.1f}°"}
-
-        elif approach == 'fire-risk':
-            # Riesgo de Incendio: NDVI (vegetación seca), NDMI (humedad baja), Pendiente (dificulta combate)
-            stats = s2_indices.select(['NDVI', 'NDMI']).addBands(slope).reduceRegion(
-                reducer=mean_reducer, geometry=roi, scale=20, maxPixels=1e9
-            ).getInfo()
-            
-            ndvi = stats.get('NDVI', 0)
-            ndmi = stats.get('NDMI', 0)
-            avg_slope = stats.get('slope', 0)
-            
-            # Cálculo de índice de riesgo (0-100)
-            # NDVI bajo = más riesgo (vegetación seca)
-            # NDMI bajo = más riesgo (baja humedad)
-            # Pendiente alta = más riesgo (dificulta combate)
-            risk_vegetation = max(0, (0.6 - ndvi) / 0.6 * 40)  # 40 pts max
-            risk_moisture = max(0, (0.4 - ndmi) / 0.4 * 40)    # 40 pts max
-            risk_slope = min(avg_slope / 45 * 20, 20)          # 20 pts max
-            
-            risk_index = min(int(risk_vegetation + risk_moisture + risk_slope), 100)
-            
-            # Clasificación de riesgo
-            if risk_index < 20:
-                risk_level = "Bajo"
-            elif risk_index < 40:
-                risk_level = "Moderado"
-            elif risk_index < 60:
-                risk_level = "Alto"
-            elif risk_index < 80:
-                risk_level = "Muy Alto"
-            else:
-                risk_level = "Extremo"
-            
-            results = {
-                "Índice de Riesgo": f"{risk_index}/100",
-                "Nivel de Riesgo": risk_level,
-                "Vegetación (NDVI)": f"{ndvi:.2f}",
-                "Humedad (NDMI)": f"{ndmi:.2f}",
-                "Pendiente (°)": f"{avg_slope:.1f}"
-            }
-
-        # Generar Visualización (Map ID) - CLIPPED to ROI
-        vis_params = {}
-        vis_image = None
-        
-        if approach in ['mining', 'agriculture', 'environmental', 'water-management']:
-            # Visualizar NDVI/NDWI
-            vis_image = s2_indices.select('NDVI').clip(roi)
-            vis_params = {'min': -0.2, 'max': 0.8, 'palette': ['red', 'yellow', 'green']}
-            if approach == 'water-management' or approach == 'flood-risk':
-                 vis_image = s2_indices.select('NDWI').clip(roi)
-                 vis_params = {'min': -0.5, 'max': 0.5, 'palette': ['white', 'blue']}
-        elif approach in ['energy', 'real-estate', 'land-planning']:
-            # Visualizar Pendiente
-            vis_image = slope.clip(roi)
-            vis_params = {'min': 0, 'max': 45, 'palette': ['green', 'yellow', 'red']}
-        elif approach == 'fire-risk':
-            # Visualizar riesgo compuesto: bajo NDVI + bajo NDMI + alta pendiente = más riesgo
-            # Crear imagen compuesta de riesgo
-            ndvi_risk = s2_indices.select('NDVI').multiply(-1).add(0.6)  # Invertir: menos verde = más riesgo
-            ndmi_risk = s2_indices.select('NDMI').multiply(-1).add(0.4)  # Invertir: menos humedad = más riesgo
-            slope_norm = slope.divide(45)  # Normalizar pendiente
-            
-            risk_composite = ndvi_risk.add(ndmi_risk).add(slope_norm).divide(3).clip(roi)
-            vis_image = risk_composite
-            vis_params = {'min': 0, 'max': 1, 'palette': ['#22c55e', '#84cc16', '#eab308', '#f97316', '#dc2626']}
-        else:
-            vis_image = s2_indices.select('NDVI').clip(roi)  # Fallback
-            vis_params = {'min': 0, 'max': 1, 'palette': ['white', 'green']}
-
-        map_id_dict = vis_image.getMapId(vis_params)
-        tile_url = map_id_dict['tile_fetcher'].url_format
-        
-        # Calculate analysis area dynamically (area = π * r²)
-        import math
-        area_m2 = int(math.pi * radius * radius)
-
-        return jsonify({
-            "status": "success",
-            "approach": approach,
-            "data": results,
-            "area_m2": area_m2,
-            "map_layer": {
-                "url": tile_url,
-                "attribution": "Google Earth Engine"
-            },
-            "meta": {
-                "satellite": "Sentinel-2 MSI (Level-2A)",
-                "terrain": "SRTM v4",
-                "date": datetime.datetime.now().strftime("%Y-%m-%d"),
-                "buffer_radius_m": radius
-            }
-        })
-
-    except Exception as e:
-        print(f"Error en análisis GEE: {e}")
-        return jsonify({"status": "error", "message": str(e)}), 500
-
-
-# ============================================================================
-# AI INTERPRETATION AND CHAT ENDPOINTS
-# ============================================================================
-
-@app.route('/api/v1/interpret', methods=['POST'])
-def interpret_analysis():
-    """Generate AI interpretation of analysis results."""
-    if not gemini_available:
-        return jsonify({"status": "error", "message": "Gemini AI no disponible"}), 503
-    
-    try:
-        data = request.json
-        results = data.get('results', {})
-        approach = data.get('approach', '')
-        location = data.get('location', 'ubicación seleccionada')
-        
-        approach_names = {
-            'mining': 'Minería Sostenible',
-            'agriculture': 'Agroindustria Inteligente',
-            'energy': 'Energías Renovables',
-            'real-estate': 'Desarrollo Inmobiliario',
-            'flood-risk': 'Riesgo de Inundación',
-            'water-management': 'Gestión Hídrica',
-            'environmental': 'Calidad Ambiental',
-            'land-planning': 'Planificación Territorial'
-        }
-        
-        # System prompt for expert personality
-        system_prompt = """PERSONALIDAD Y ROL:
-Eres GeoBot, el asistente experto de GeoFeedback Chile. Eres un especialista en análisis geoespacial, teledetección satelital e índices ambientales. Tu rol es explicar datos técnicos de forma clara y accesible para cualquier usuario, sin perder rigor científico.
-
-ESTILO DE COMUNICACIÓN:
-- Usa un tono profesional pero cercano y amigable
-- Evita tecnicismos innecesarios, pero cuando los uses explícalos brevemente
-- Sé conciso y ve directo al punto
-- Usa emojis moderadamente para hacer el contenido más visual (🌱 🌊 ⛰️ 📊 ⚠️ ✅)
-- NO uses formato markdown como ### o ** porque no se renderiza bien
-- Usa saltos de línea para separar secciones
-
-ESTRUCTURA DE RESPUESTA:
-Organiza tu respuesta en estas secciones claramente separadas:
-1. RESUMEN (2-3 líneas con el hallazgo principal)
-2. QUÉ SIGNIFICAN LOS DATOS (explica cada métrica de forma simple)
-3. IMPLICACIONES PRÁCTICAS (qué significa esto para el usuario)
-4. RECOMENDACIONES (3-5 acciones concretas)
-"""
-        
-        prompt = f"""{system_prompt}
-
-DATOS A INTERPRETAR:
-Tipo de análisis: {approach_names.get(approach, approach)}
-Ubicación: {location}
-
-Resultados del análisis satelital:
-{json.dumps(results, indent=2, ensure_ascii=False)}
-
-Genera una interpretación profesional de estos datos siguiendo la estructura indicada. Máximo 250 palabras."""
-
-        response_text = call_gemini_with_retry(prompt, timeout=45)
-        
-        if not response_text:
-            return jsonify({
-                "status": "error",
-                "message": "No se pudo generar la interpretación. El servicio de IA está temporalmente no disponible. Por favor intenta de nuevo."
-            }), 503
-        
-        return jsonify({
-            "status": "success",
-            "interpretation": response_text,
-            "model": "gemini-2.5-flash"
-        })
-        
-    except Exception as e:
-        print(f"Error en interpretación AI: {e}")
-        return jsonify({"status": "error", "message": "Error temporal en el servicio de IA. Por favor intenta de nuevo."}), 503
-
-
-@app.route('/api/v1/chat', methods=['POST'])
-def chat_with_assistant():
-    """Chat with GeoFeedback AI assistant."""
-    if not gemini_available:
-        return jsonify({"status": "error", "message": "Gemini AI no disponible"}), 503
-    
-    try:
-        data = request.json
-        message = data.get('message', '')
-        context = data.get('context', {})
-        history = data.get('history', [])
-        
-        # Build conversation history for context
-        chat_history = ""
-        for msg in history[-5:]:  # Last 5 messages for context
-            role = "Usuario" if msg.get('role') == 'user' else "Asistente"
-            chat_history += f"{role}: {msg.get('content', '')}\n"
-        
-        # GeoBot system personality
-        system_prompt = """Eres GeoBot, el asistente experto de GeoFeedback Chile. 
-Eres un especialista en análisis geoespacial, teledetección satelital e índices ambientales.
-Tu rol es responder preguntas de forma clara, útil y accesible.
-
-REGLAS:
-- Responde siempre en español
-- Sé conciso (máximo 100 palabras para respuestas simples)
-- Usa emojis moderadamente para hacer el contenido más visual
-- NO uses formato markdown como ### o ** porque no se renderiza
-- Si no tienes datos de análisis, indica que el usuario debe primero realizar un análisis
-"""
-        
-        prompt = f"""{system_prompt}
-
-CONTEXTO DEL ANÁLISIS ACTUAL:
-{json.dumps(context, indent=2, ensure_ascii=False) if context else "No hay análisis activo aún."}
-
-HISTORIAL DE CONVERSACIÓN:
-{chat_history if chat_history else "Inicio de conversación."}
-
-PREGUNTA DEL USUARIO: {message}
-
-Responde de forma útil y amigable:"""
-
-        response_text = call_gemini_with_retry(prompt, timeout=30)
-        
-        if not response_text:
-            return jsonify({
-                "status": "error",
-                "message": "El servicio de IA está temporalmente ocupado. Por favor intenta de nuevo en unos segundos.",
-                "retry": True
-            }), 503
-        
-        return jsonify({
-            "status": "success",
-            "response": response_text,
-            "model": "gemini-2.5-flash"
-        })
-        
-    except Exception as e:
-        print(f"Error en chat AI: {e}")
-        return jsonify({
-            "status": "error", 
-            "message": "Error de conexión temporal. Por favor intenta de nuevo.",
-            "retry": True
-        }), 503
-
-
-def send_email_resend(name, company, email, message):
-    """Envía email usando Resend API (HTTP-based, funciona en Railway)."""
-    import urllib.request
-    import urllib.error
-    import json
-    
-    resend_api_key = os.environ.get('RESEND_API_KEY')
-    # Dominio verificado en Resend: geofeedback.cl
-    from_email = "GeoFeedback <contacto@geofeedback.cl>"
-    destination_email = os.environ.get('RESEND_TO_EMAIL', 'GeoFeedback.cl@gmail.com')
-    
-    print(f"📧 Intentando enviar email via Resend API...")
-    print(f"   RESEND_API_KEY configurado: {'Sí' if resend_api_key else 'NO - FALTA!'}")
-    print(f"   Email desde: {from_email}")
-    print(f"   Email destino: {destination_email}")
-    
-    if not resend_api_key:
-        error_msg = "RESEND_API_KEY no configurado"
-        print(f"⚠ {error_msg}")
-        return False, error_msg
-    
-    try:
-        # Construir el email
-        email_data = {
-            "from": from_email,
-            "to": [destination_email],
-            "reply_to": email,
-            "subject": f"[GeoFeedback Web] Nuevo contacto de {name}",
-            "text": f"""
-===========================================
-NUEVO MENSAJE DE CONTACTO - GEOFEEDBACK.CL
-===========================================
-
-Nombre: {name}
-Empresa: {company if company else 'No especificada'}
-Email de contacto: {email}
-
-Mensaje:
-{message}
-
--------------------------------------------
-Responde directamente a este correo para contactar al usuario.
-Correo recibido automaticamente desde https://geofeedback.cl
-            """
-        }
-        
-        # Enviar via API HTTP
-        req = urllib.request.Request(
-            'https://api.resend.com/emails',
-            data=json.dumps(email_data).encode('utf-8'),
-            headers={
-                'Authorization': f'Bearer {resend_api_key}',
-                'Content-Type': 'application/json'
-            },
-            method='POST'
-        )
-        
-        print("📧 Enviando via Resend API...")
-        with urllib.request.urlopen(req, timeout=30) as response:
-            result = json.loads(response.read().decode('utf-8'))
-            print(f"✅ EMAIL ENVIADO EXITOSAMENTE via Resend. ID: {result.get('id', 'N/A')}")
-            return True, "Email enviado correctamente"
-            
-    except urllib.error.HTTPError as e:
-        error_body = e.read().decode('utf-8') if e.fp else str(e)
-        error_msg = f"Error HTTP de Resend ({e.code}): {error_body}"
-        print(f"❌ {error_msg}")
-        return False, error_msg
-    except urllib.error.URLError as e:
-        error_msg = f"Error de conexión a Resend: {e.reason}"
-        print(f"❌ {error_msg}")
-        return False, error_msg
-    except Exception as e:
-        error_msg = f"Error inesperado: {type(e).__name__}: {e}"
-        print(f"❌ {error_msg}")
-        import traceback
-        traceback.print_exc()
-        return False, error_msg
-
-@app.route('/api/v1/contact', methods=['POST'])
-def contact_form():
-    """Handle contact form submissions - SYNC version."""
-    try:
-        data = request.json
-        name = data.get('name', '').strip()
-        company = data.get('company', '').strip()
-        email = data.get('email', '').strip()
-        message = data.get('message', '').strip()
-        
-        # Validate required fields
-        if not name or not email or not message:
-            return jsonify({"status": "error", "message": "Campos requeridos incompletos"}), 400
-        
-        # Log the contact request
-        print(f"\n{'='*50}")
-        print(f"=== NUEVO CONTACTO RECIBIDO ===")
-        print(f"Nombre: {name}")
-        print(f"Empresa: {company if company else 'No especificada'}")
-        print(f"Email: {email}")
-        print(f"Mensaje: {message[:100]}...")
-        print(f"{'='*50}\n")
-        
-        # Send email via Resend API (HTTP-based, works on Railway)
-        success, error_detail = send_email_resend(name, company, email, message)
-        
-        if success:
-            return jsonify({
-                "status": "success",
-                "message": "Mensaje enviado correctamente. Te contactaremos pronto."
-            })
-        else:
-            # Log error but don't expose internal details to user
-            print(f"⚠ Error enviando email: {error_detail}")
-            return jsonify({
-                "status": "success",  # Decimos success para no frustrar al usuario
-                "message": "Mensaje recibido. Te contactaremos pronto.",
-                "warning": "El sistema de notificación tuvo un problema pero tu mensaje fue registrado."
-            })
-        
-    except Exception as e:
-        print(f"Error en formulario de contacto: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({"status": "error", "message": str(e)}), 500
-
-
-LANDING_HTML = '''<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -1899,7 +1332,125 @@ LANDING_HTML = '''<!DOCTYPE html>
             </div>
         </div>
     </nav>
-    <section class="hero">
+    
+<section id="demo" class="demo-section" style="padding-top: 8rem;">
+        <div class="demo-container">
+            <div class="section-header">
+                <h2>Demo Interactivo</h2>
+                <p>Selecciona ubicacion y enfoque para explorar datos en tiempo real</p>
+            </div>
+            <div class="demo-layout">
+                <div class="map-container">
+                    <div id="demo-map">
+                        <div class="map-placeholder" id="map-placeholder">
+                            <i class="fas fa-map-marked-alt"></i>
+                            <p>Cargando mapa...</p>
+                        </div>
+                    </div>
+                    <div class="map-controls">
+                        <button class="map-control-btn" onclick="centerMap()" title="Centrar en Chile"><i class="fas fa-home"></i></button>
+                        <button class="map-control-btn" onclick="toggleMapType()" title="Cambiar vista"><i class="fas fa-layer-group"></i></button>
+                    </div>
+                </div>
+                <div class="sidebar">
+                    <div class="panel">
+                        <div class="status-bar">
+                            <div class="status-item"><span class="status-dot" id="status-location"></span>Ubicacion</div>
+                            <div class="status-item"><span class="status-dot" id="status-approach"></span>Enfoque</div>
+                        </div>
+                    </div>
+                    <div class="panel">
+                        <div class="panel-header"><i class="fas fa-search"></i> Buscar Ubicacion</div>
+                        <div class="search-wrapper">
+                            <div id="autocomplete-container"></div>
+                        </div>
+                        <div class="location-badge" id="location-badge">
+                            <h4 id="location-name">-</h4>
+                            <p id="location-coords">-</p>
+                        </div>
+                        <div class="live-data" id="live-data">
+                            <h4><i class="fas fa-broadcast-tower"></i> Datos en tiempo real</h4>
+                            <div class="live-data-grid">
+                                <div class="live-data-item"><div class="live-data-label">Elevacion</div><div class="live-data-value" id="data-elevation">--</div></div>
+                                <div class="live-data-item"><div class="live-data-label">Calidad Aire (AQI)</div><div class="live-data-value" id="data-aqi">--</div></div>
+                                <div class="live-data-item"><div class="live-data-label">Potencial Solar</div><div class="live-data-value" id="data-solar">--</div></div>
+                                <div class="live-data-item"><div class="live-data-label">Pendiente</div><div class="live-data-value" id="data-slope">--</div></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel">
+                        <div class="panel-header"><i class="fas fa-crosshairs"></i> Seleccionar Enfoque</div>
+                        <select id="approach-select" class="approach-select" onchange="onApproachChange()">
+                            <option value="">-- Elige un enfoque de analisis --</option>
+                            <optgroup label="Sectores Industriales">
+                                <option value="mining">Mineria Sostenible</option>
+                                <option value="agriculture">Agroindustria Inteligente</option>
+                                <option value="energy">Energias Renovables</option>
+                                <option value="real-estate">Desarrollo Inmobiliario</option>
+                            </optgroup>
+                            <optgroup label="Analisis General">
+                                <option value="flood-risk">Riesgo de Inundacion</option>
+                                <option value="water-management">Gestion Hidrica</option>
+                                <option value="environmental">Calidad Ambiental</option>
+                                <option value="land-planning">Planificacion Territorial</option>
+                            </optgroup>
+                        </select>
+                        <div class="indices-panel" id="indices-panel">
+                            <div class="indices-title">Indices y datos del analisis:</div>
+                            <div id="analysis-results" style="display:none;"></div>
+                            <div id="indices-list"></div>
+                        </div>
+                    </div>
+                    <div class="panel">
+                        <div class="panel-header"><i class="fas fa-ruler-combined"></i> Radio de Analisis</div>
+                        <select id="radius-select" class="approach-select" onchange="onRadiusChange()">
+                            <option value="">-- Selecciona el radio --</option>
+                            <option value="2000" selected>2 kilometros (~12.57 km²)</option>
+                            <option value="5000">5 kilometros (~78.54 km²)</option>
+                            <option value="10000">10 kilometros (~314.16 km²)</option>
+                        </select>
+                        <div style="font-size:0.75rem; color:var(--text-light); margin-top:0.5rem;">
+                            <i class="fas fa-info-circle"></i> El radio define el area circular alrededor del punto para el analisis.
+                        </div>
+                    </div>
+                    <div class="panel">
+                        <button class="btn btn-primary" id="analyze-btn" onclick="analyzeTerritory()" disabled><i class="fas fa-satellite-dish"></i> Iniciar Analisis</button>
+                        <p style="font-size: 0.8rem; color: var(--text-light); margin-top: 0.5rem; text-align: center;">Requiere ubicacion y enfoque seleccionados</p>
+                    </div>
+                </div>
+            </div>
+            <div class="results-grid">
+                <div class="result-card" id="result-location"><i class="fas fa-map-marker-alt result-icon"></i><div class="result-content"><h4>Ubicacion</h4><p>Busca o haz clic en el mapa</p></div></div>
+                <div class="result-card" id="result-approach"><i class="fas fa-crosshairs result-icon"></i><div class="result-content"><h4>Enfoque</h4><p>Selecciona el tipo de analisis</p></div></div>
+                <div class="result-card"><i class="fas fa-satellite result-icon"></i><div class="result-content"><h4>APIs Integradas</h4><p>Elevation, Air Quality, Solar, Geocoding</p></div></div>
+            </div>
+        </div>
+    </section>
+<section class="team-section" id="equipo">
+        <div class="team-container">
+            <h2 class="section-title"><i class="fas fa-users"></i> Nuestro Equipo</h2>
+            <p class="section-subtitle">Conoce a los fundadores de GeoFeedback Chile</p>
+            <div class="team-grid">
+                <div class="team-card">
+                    <div class="team-avatar"><i class="fas fa-user"></i></div>
+                    <h3 class="team-name">Consuelo Sebastian Silva</h3>
+                    <p class="team-role">Fundadora</p>
+                    <a href="https://www.linkedin.com/in/consuelo-sebastian-silva-b15407342/" target="_blank" rel="noopener noreferrer" class="team-linkedin">
+                        <i class="fab fa-linkedin"></i> Ver LinkedIn
+                    </a>
+                </div>
+                <div class="team-card">
+                    <div class="team-avatar"><i class="fas fa-user"></i></div>
+                    <h3 class="team-name">Alejandro Hernandez Aguirre</h3>
+                    <p class="team-role">Co-Fundador</p>
+                    <a href="https://www.linkedin.com/in/alejandro-hern%C3%A1ndez-aguirre-bb8967246/" target="_blank" rel="noopener noreferrer" class="team-linkedin">
+                        <i class="fab fa-linkedin"></i> Ver LinkedIn
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+<section class="hero">
         <div class="hero-content">
             <div class="hero-text">
                 <h1>Democratizando la <span>Inteligencia Territorial</span></h1>
@@ -1953,7 +1504,7 @@ LANDING_HTML = '''<!DOCTYPE html>
             </div>
         </div>
     </section>
-    <section id="problema" class="section section-dark">
+<section id="problema" class="section section-dark">
         <div class="container">
             <div class="section-header">
                 <h2>El Problema</h2>
@@ -1966,7 +1517,7 @@ LANDING_HTML = '''<!DOCTYPE html>
             </div>
         </div>
     </section>
-    <section id="solucion" class="section section-light">
+<section id="solucion" class="section section-light">
         <div class="container">
             <div class="section-header">
                 <h2>Nuestra Solucion</h2>
@@ -2007,9 +1558,7 @@ LANDING_HTML = '''<!DOCTYPE html>
             </div>
         </div>
     </section>
-    
-    <!-- Sentinel-2 Indices Section -->
-    <section id="indices" class="section section-dark">
+<section id="indices" class="section section-dark">
         <div class="container">
             <div class="section-header">
                 <h2>Indices Satelitales Sentinel-2</h2>
@@ -2103,103 +1652,7 @@ LANDING_HTML = '''<!DOCTYPE html>
             </style>
         </div>
     </section>
-    
-    <section id="demo" class="demo-section">
-        <div class="demo-container">
-            <div class="section-header">
-                <h2>Demo Interactivo</h2>
-                <p>Selecciona ubicacion y enfoque para explorar datos en tiempo real</p>
-            </div>
-            <div class="demo-layout">
-                <div class="map-container">
-                    <div id="demo-map">
-                        <div class="map-placeholder" id="map-placeholder">
-                            <i class="fas fa-map-marked-alt"></i>
-                            <p>Cargando mapa...</p>
-                        </div>
-                    </div>
-                    <div class="map-controls">
-                        <button class="map-control-btn" onclick="centerMap()" title="Centrar en Chile"><i class="fas fa-home"></i></button>
-                        <button class="map-control-btn" onclick="toggleMapType()" title="Cambiar vista"><i class="fas fa-layer-group"></i></button>
-                    </div>
-                </div>
-                <div class="sidebar">
-                    <div class="panel">
-                        <div class="status-bar">
-                            <div class="status-item"><span class="status-dot" id="status-location"></span>Ubicacion</div>
-                            <div class="status-item"><span class="status-dot" id="status-approach"></span>Enfoque</div>
-                        </div>
-                    </div>
-                    <div class="panel">
-                        <div class="panel-header"><i class="fas fa-search"></i> Buscar Ubicacion</div>
-                        <div class="search-wrapper">
-                            <div id="autocomplete-container"></div>
-                        </div>
-                        <div class="location-badge" id="location-badge">
-                            <h4 id="location-name">-</h4>
-                            <p id="location-coords">-</p>
-                        </div>
-                        <div class="live-data" id="live-data">
-                            <h4><i class="fas fa-broadcast-tower"></i> Datos en tiempo real</h4>
-                            <div class="live-data-grid">
-                                <div class="live-data-item"><div class="live-data-label">Elevacion</div><div class="live-data-value" id="data-elevation">--</div></div>
-                                <div class="live-data-item"><div class="live-data-label">Calidad Aire (AQI)</div><div class="live-data-value" id="data-aqi">--</div></div>
-                                <div class="live-data-item"><div class="live-data-label">Potencial Solar</div><div class="live-data-value" id="data-solar">--</div></div>
-                                <div class="live-data-item"><div class="live-data-label">Pendiente</div><div class="live-data-value" id="data-slope">--</div></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="panel">
-                        <div class="panel-header"><i class="fas fa-crosshairs"></i> Seleccionar Enfoque</div>
-                        <select id="approach-select" class="approach-select" onchange="onApproachChange()">
-                            <option value="">-- Elige un enfoque de analisis --</option>
-                            <optgroup label="Sectores Industriales">
-                                <option value="mining">Mineria Sostenible</option>
-                                <option value="agriculture">Agroindustria Inteligente</option>
-                                <option value="energy">Energias Renovables</option>
-                                <option value="real-estate">Desarrollo Inmobiliario</option>
-                            </optgroup>
-                            <optgroup label="Analisis General">
-                                <option value="flood-risk">Riesgo de Inundacion</option>
-                                <option value="water-management">Gestion Hidrica</option>
-                                <option value="environmental">Calidad Ambiental</option>
-                                <option value="land-planning">Planificacion Territorial</option>
-                            </optgroup>
-                        </select>
-                        <div class="indices-panel" id="indices-panel">
-                            <div class="indices-title">Indices y datos del analisis:</div>
-                            <div id="analysis-results" style="display:none;"></div>
-                            <div id="indices-list"></div>
-                        </div>
-                    </div>
-                    <div class="panel">
-                        <div class="panel-header"><i class="fas fa-ruler-combined"></i> Radio de Analisis</div>
-                        <select id="radius-select" class="approach-select" onchange="onRadiusChange()">
-                            <option value="">-- Selecciona el radio --</option>
-                            <option value="2000" selected>2 kilometros (~12.57 km²)</option>
-                            <option value="5000">5 kilometros (~78.54 km²)</option>
-                            <option value="10000">10 kilometros (~314.16 km²)</option>
-                        </select>
-                        <div style="font-size:0.75rem; color:var(--text-light); margin-top:0.5rem;">
-                            <i class="fas fa-info-circle"></i> El radio define el area circular alrededor del punto para el analisis.
-                        </div>
-                    </div>
-                    <div class="panel">
-                        <button class="btn btn-primary" id="analyze-btn" onclick="analyzeTerritory()" disabled><i class="fas fa-satellite-dish"></i> Iniciar Analisis</button>
-                        <p style="font-size: 0.8rem; color: var(--text-light); margin-top: 0.5rem; text-align: center;">Requiere ubicacion y enfoque seleccionados</p>
-                    </div>
-                </div>
-            </div>
-            <div class="results-grid">
-                <div class="result-card" id="result-location"><i class="fas fa-map-marker-alt result-icon"></i><div class="result-content"><h4>Ubicacion</h4><p>Busca o haz clic en el mapa</p></div></div>
-                <div class="result-card" id="result-approach"><i class="fas fa-crosshairs result-icon"></i><div class="result-content"><h4>Enfoque</h4><p>Selecciona el tipo de analisis</p></div></div>
-                <div class="result-card"><i class="fas fa-satellite result-icon"></i><div class="result-content"><h4>APIs Integradas</h4><p>Elevation, Air Quality, Solar, Geocoding</p></div></div>
-            </div>
-        </div>
-    </section>
-    
-    <!-- Servicios Premium Section -->
-    <section id="servicios" class="section section-dark">
+<section id="servicios" class="section section-dark">
         <div class="container">
             <div class="section-header">
                 <h2><i class="fas fa-rocket" style="color:var(--accent)"></i> Servicios Premium</h2>
@@ -2341,35 +1794,7 @@ LANDING_HTML = '''<!DOCTYPE html>
             </div>
         </div>
     </section>
-    
-    <!-- Team Section -->
-    <section class="team-section" id="equipo">
-        <div class="team-container">
-            <h2 class="section-title"><i class="fas fa-users"></i> Nuestro Equipo</h2>
-            <p class="section-subtitle">Conoce a los fundadores de GeoFeedback Chile</p>
-            <div class="team-grid">
-                <div class="team-card">
-                    <div class="team-avatar"><i class="fas fa-user"></i></div>
-                    <h3 class="team-name">Consuelo Sebastian Silva</h3>
-                    <p class="team-role">Fundadora</p>
-                    <a href="https://www.linkedin.com/in/consuelo-sebastian-silva-b15407342/" target="_blank" rel="noopener noreferrer" class="team-linkedin">
-                        <i class="fab fa-linkedin"></i> Ver LinkedIn
-                    </a>
-                </div>
-                <div class="team-card">
-                    <div class="team-avatar"><i class="fas fa-user"></i></div>
-                    <h3 class="team-name">Alejandro Hernandez Aguirre</h3>
-                    <p class="team-role">Co-Fundador</p>
-                    <a href="https://www.linkedin.com/in/alejandro-hern%C3%A1ndez-aguirre-bb8967246/" target="_blank" rel="noopener noreferrer" class="team-linkedin">
-                        <i class="fab fa-linkedin"></i> Ver LinkedIn
-                    </a>
-                </div>
-            </div>
-        </div>
-    </section>
-    
-    <!-- Contact Section -->
-    <section class="contact-section" id="contacto">
+<section class="contact-section" id="contacto">
         <div class="contact-container">
             <h2 class="section-title"><i class="fas fa-envelope"></i> Contactanos</h2>
             <p class="section-subtitle">Tienes alguna pregunta o propuesta? Escribenos</p>
@@ -2399,6 +1824,7 @@ LANDING_HTML = '''<!DOCTYPE html>
             </form>
         </div>
     </section>
+
     
     <footer>
         <div class="footer-content">
@@ -3556,153 +2982,3 @@ LANDING_HTML = '''<!DOCTYPE html>
     </script>
 </body>
 </html>
-'''
-
-@app.route('/')
-def landing():
-    google_maps_key = os.environ.get('GOOGLE_MAPS_API_KEY', '')
-    if not google_maps_key:
-        print("WARNING: GOOGLE_MAPS_API_KEY not found in environment variables.")
-    else:
-        print(f"INFO: GOOGLE_MAPS_API_KEY found (length: {len(google_maps_key)})")
-    
-    # Read reordered HTML template
-    try:
-        template_path = os.path.join(os.path.dirname(__file__), 'templates', 'index_reordered.html')
-        with open(template_path, 'r', encoding='utf-8') as f:
-            html_content = f.read()
-            
-        html = html_content.replace('GOOGLE_MAPS_KEY_PLACEHOLDER', google_maps_key)
-        return html
-    except Exception as e:
-        print(f"Error reading template: {e}")
-        # Fallback to embedded HTML if file fails
-        return LANDING_HTML.replace('GOOGLE_MAPS_KEY_PLACEHOLDER', google_maps_key)
-
-@app.route('/api/v1/health')
-def health():
-    return jsonify({"status": "healthy", "service": "GeoFeedback API", "version": "1.0.0"})
-
-@app.route('/api/v1/stats')
-def stats():
-    return jsonify({"total_analyses": 147, "municipalities_served": 12, "apis_integrated": ["Elevation", "Air Quality", "Solar", "Geocoding"]})
-
-@app.route('/api/v1/infrastructure')
-def infrastructure():
-    return jsonify({"features": [{"type": "school", "name": "Escuela Papudo", "lat": -32.5127, "lng": -71.4469}]})
-
-@app.route('/api/v1/risk-zones')
-def risk_zones():
-    return jsonify({"zones": [{"level": "high", "area_ha": 45.2, "description": "Quebrada El Frances"}]})
-
-@app.route('/api/docs')
-def api_docs():
-    return '''<!DOCTYPE html>
-<html lang="es">
-<head>
-    <title>GeoFeedback API Documentation</title>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1f2937; line-height: 1.6; }
-        .container { max-width: 900px; margin: 0 auto; padding: 2rem; }
-        header { background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); color: white; padding: 3rem 2rem; margin-bottom: 2rem; }
-        header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
-        header p { opacity: 0.8; }
-        .section { background: white; border-radius: 12px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .section h2 { color: #1e3a5f; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
-        .endpoint { background: #f8fafc; border-radius: 8px; padding: 1.25rem; margin: 1rem 0; border-left: 4px solid #10b981; }
-        .method { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 4px; font-weight: 600; font-size: 0.8rem; margin-right: 0.5rem; }
-        .get { background: #10b981; color: white; }
-        .post { background: #3b82f6; color: white; }
-        code { background: #e5e7eb; padding: 0.2rem 0.5rem; border-radius: 4px; font-family: monospace; }
-        .endpoint-path { font-weight: 600; color: #1e3a5f; }
-        .endpoint-desc { color: #6b7280; margin-top: 0.5rem; font-size: 0.95rem; }
-        .api-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem; }
-        .api-item { background: #f0fdf4; padding: 1rem; border-radius: 8px; text-align: center; }
-        .api-item i { font-size: 1.5rem; color: #10b981; margin-bottom: 0.5rem; display: block; }
-        .back-link { display: inline-flex; align-items: center; gap: 0.5rem; color: #1e3a5f; text-decoration: none; margin-top: 2rem; }
-        .back-link:hover { color: #10b981; }
-        .note { background: #fef3c7; border: 1px solid #f59e0b; padding: 1rem; border-radius: 8px; margin-top: 1rem; }
-        .note strong { color: #92400e; }
-    </style>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-<body>
-    <header>
-        <div class="container">
-            <h1><i class="fas fa-code"></i> GeoFeedback API v1</h1>
-            <p>Documentacion de la API de inteligencia territorial</p>
-        </div>
-    </header>
-    
-    <div class="container">
-        <div class="section">
-            <h2><i class="fas fa-plug"></i> APIs Integradas</h2>
-            <p>GeoFeedback integra multiples APIs de Google Cloud Platform:</p>
-            <div class="api-list">
-                <div class="api-item"><i class="fas fa-map"></i>Maps JavaScript API</div>
-                <div class="api-item"><i class="fas fa-mountain"></i>Elevation API</div>
-                <div class="api-item"><i class="fas fa-wind"></i>Air Quality API</div>
-                <div class="api-item"><i class="fas fa-sun"></i>Solar API</div>
-                <div class="api-item"><i class="fas fa-map-marker-alt"></i>Geocoding API</div>
-                <div class="api-item"><i class="fas fa-satellite"></i>Earth Engine</div>
-            </div>
-        </div>
-        
-        <div class="section">
-            <h2><i class="fas fa-server"></i> Endpoints Publicos</h2>
-            
-            <div class="endpoint">
-                <span class="method get">GET</span>
-                <span class="endpoint-path">/api/v1/health</span>
-                <p class="endpoint-desc">Verifica el estado del servicio y componentes.</p>
-            </div>
-            
-            <div class="endpoint">
-                <span class="method get">GET</span>
-                <span class="endpoint-path">/api/v1/stats</span>
-                <p class="endpoint-desc">Estadisticas generales de la plataforma.</p>
-            </div>
-            
-            <div class="endpoint">
-                <span class="method post">POST</span>
-                <span class="endpoint-path">/api/v1/analyze</span>
-                <p class="endpoint-desc">Ejecuta analisis geoespacial con Google Earth Engine.</p>
-            </div>
-            
-            <div class="endpoint">
-                <span class="method post">POST</span>
-                <span class="endpoint-path">/api/v1/interpret</span>
-                <p class="endpoint-desc">Genera interpretacion con IA de los resultados.</p>
-            </div>
-            
-            <div class="endpoint">
-                <span class="method post">POST</span>
-                <span class="endpoint-path">/api/v1/contact</span>
-                <p class="endpoint-desc">Envia mensaje de contacto al equipo.</p>
-            </div>
-            
-            <div class="note">
-                <strong><i class="fas fa-info-circle"></i> Nota:</strong> 
-                Algunos endpoints requieren autenticacion y no estan disponibles publicamente. 
-                Para acceso a la API completa, contactanos.
-            </div>
-        </div>
-        
-        <div class="section">
-            <h2><i class="fas fa-envelope"></i> Contacto</h2>
-            <p>Para consultas sobre la API o integraciones comerciales:</p>
-            <p style="margin-top: 1rem;"><strong>Email:</strong> <a href="mailto:GeoFeedback.cl@gmail.com">GeoFeedback.cl@gmail.com</a></p>
-        </div>
-        
-        <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Volver al inicio</a>
-    </div>
-</body>
-</html>'''
-
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
