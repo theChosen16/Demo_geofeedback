@@ -197,6 +197,46 @@ def analyze_territory():
              ).getInfo()
              results = {"Pendiente Promedio": f"{stats.get('slope', 0):.1f}°"}
 
+        elif approach == 'fire-risk':
+            # Riesgo de Incendio: NDVI (vegetación seca), NDMI (humedad baja), Pendiente (dificulta combate)
+            stats = s2_indices.select(['NDVI', 'NDMI']).addBands(slope).reduceRegion(
+                reducer=mean_reducer, geometry=roi, scale=20, maxPixels=1e9
+            ).getInfo()
+            
+            ndvi = stats.get('NDVI', 0)
+            ndmi = stats.get('NDMI', 0)
+            avg_slope = stats.get('slope', 0)
+            
+            # Cálculo de índice de riesgo (0-100)
+            # NDVI bajo = más riesgo (vegetación seca)
+            # NDMI bajo = más riesgo (baja humedad)
+            # Pendiente alta = más riesgo (dificulta combate)
+            risk_vegetation = max(0, (0.6 - ndvi) / 0.6 * 40)  # 40 pts max
+            risk_moisture = max(0, (0.4 - ndmi) / 0.4 * 40)    # 40 pts max
+            risk_slope = min(avg_slope / 45 * 20, 20)          # 20 pts max
+            
+            risk_index = min(int(risk_vegetation + risk_moisture + risk_slope), 100)
+            
+            # Clasificación de riesgo
+            if risk_index < 20:
+                risk_level = "Bajo"
+            elif risk_index < 40:
+                risk_level = "Moderado"
+            elif risk_index < 60:
+                risk_level = "Alto"
+            elif risk_index < 80:
+                risk_level = "Muy Alto"
+            else:
+                risk_level = "Extremo"
+            
+            results = {
+                "Índice de Riesgo": f"{risk_index}/100",
+                "Nivel de Riesgo": risk_level,
+                "Vegetación (NDVI)": f"{ndvi:.2f}",
+                "Humedad (NDMI)": f"{ndmi:.2f}",
+                "Pendiente (°)": f"{avg_slope:.1f}"
+            }
+
         # Generar Visualización (Map ID) - CLIPPED to ROI
         vis_params = {}
         vis_image = None
@@ -212,6 +252,16 @@ def analyze_territory():
             # Visualizar Pendiente
             vis_image = slope.clip(roi)
             vis_params = {'min': 0, 'max': 45, 'palette': ['green', 'yellow', 'red']}
+        elif approach == 'fire-risk':
+            # Visualizar riesgo compuesto: bajo NDVI + bajo NDMI + alta pendiente = más riesgo
+            # Crear imagen compuesta de riesgo
+            ndvi_risk = s2_indices.select('NDVI').multiply(-1).add(0.6)  # Invertir: menos verde = más riesgo
+            ndmi_risk = s2_indices.select('NDMI').multiply(-1).add(0.4)  # Invertir: menos humedad = más riesgo
+            slope_norm = slope.divide(45)  # Normalizar pendiente
+            
+            risk_composite = ndvi_risk.add(ndmi_risk).add(slope_norm).divide(3).clip(roi)
+            vis_image = risk_composite
+            vis_params = {'min': 0, 'max': 1, 'palette': ['#22c55e', '#84cc16', '#eab308', '#f97316', '#dc2626']}
         else:
             vis_image = s2_indices.select('NDVI').clip(roi)  # Fallback
             vis_params = {'min': 0, 'max': 1, 'palette': ['white', 'green']}
@@ -2482,6 +2532,15 @@ LANDING_HTML = '''<!DOCTYPE html>
                     { name: "Pendiente", api: "Elevation", desc: "Aptitud de uso de suelo.", color: "#95a5a6" },
                     { name: "Uso Actual", api: "Sentinel-2", desc: "Clasificacion de cobertura.", color: "#f1c40f" }
                 ]
+            },
+            "fire-risk": {
+                name: "Riesgo de Incendio Forestal",
+                icon: "fire",
+                indices: [
+                    { name: "Vegetacion Seca (NDVI)", api: "Sentinel-2", desc: "Areas con baja humedad vegetal.", color: "#dc2626" },
+                    { name: "Humedad Vegetacion (NDMI)", api: "Sentinel-2", desc: "Contenido de agua en plantas.", color: "#f97316" },
+                    { name: "Pendiente", api: "Elevation", desc: "Dificultad de acceso para combate.", color: "#95a5a6" }
+                ]
             }
         };
 
@@ -2867,6 +2926,53 @@ LANDING_HTML = '''<!DOCTYPE html>
             }
         }
 
+        function addMapLegend() {
+            // Remove existing legend if any
+            removeMapLegend();
+            
+            var legendDiv = document.createElement('div');
+            legendDiv.id = 'fire-risk-legend';
+            legendDiv.style.cssText = 'position:absolute; bottom:30px; left:10px; background:rgba(255,255,255,0.95); padding:12px 16px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.25); font-family:Inter,sans-serif; z-index:1000; max-width:200px;';
+            
+            var title = document.createElement('div');
+            title.textContent = 'Riesgo de Incendio';
+            title.style.cssText = 'font-weight:600; font-size:0.85rem; margin-bottom:8px; color:#1e3a5f;';
+            legendDiv.appendChild(title);
+            
+            var scale = [
+                { color: '#22c55e', label: 'Bajo' },
+                { color: '#84cc16', label: 'Moderado' },
+                { color: '#eab308', label: 'Alto' },
+                { color: '#f97316', label: 'Muy Alto' },
+                { color: '#dc2626', label: 'Extremo' }
+            ];
+            
+            for (var i = 0; i \u003c scale.length; i++) {
+                var item = document.createElement('div');
+                item.style.cssText = 'display:flex; align-items:center; margin:4px 0; font-size:0.75rem;';
+                
+                var colorBox = document.createElement('div');
+                colorBox.style.cssText = 'width:20px; height:14px; background:' + scale[i].color + '; border-radius:3px; margin-right:8px;';
+                
+                var label = document.createElement('span');
+                label.textContent = scale[i].label;
+                label.style.color = '#374151';
+                
+                item.appendChild(colorBox);
+                item.appendChild(label);
+                legendDiv.appendChild(item);
+            }
+            
+            document.getElementById('demo-map').appendChild(legendDiv);
+        }
+        
+        function removeMapLegend() {
+            var existing = document.getElementById('fire-risk-legend');
+            if (existing) {
+                existing.remove();
+            }
+        }
+
         var currentGeeLayer = null;
 
         function analyzeTerritory() {
@@ -2955,6 +3061,13 @@ LANDING_HTML = '''<!DOCTYPE html>
                         map.overlayMapTypes.insertAt(0, geeMapType);
                         currentGeeLayer = geeMapType;
                         console.log("Capa GEE agregada: " + data.map_layer.url);
+                        
+                        // Añadir leyenda de colores si es fire-risk
+                        if (selectedApproach === 'fire-risk') {
+                            addMapLegend();
+                        } else {
+                            removeMapLegend();
+                        }
                     }
                     
                     // Open Chat Sidebar with AI Interpretation
