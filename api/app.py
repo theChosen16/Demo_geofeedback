@@ -3565,19 +3565,9 @@ def landing():
         print("WARNING: GOOGLE_MAPS_API_KEY not found in environment variables.")
     else:
         print(f"INFO: GOOGLE_MAPS_API_KEY found (length: {len(google_maps_key)})")
-    
-    # Read reordered HTML template
-    try:
-        template_path = os.path.join(os.path.dirname(__file__), 'templates', 'index_reordered.html')
-        with open(template_path, 'r', encoding='utf-8') as f:
-            html_content = f.read()
-            
-        html = html_content.replace('GOOGLE_MAPS_KEY_PLACEHOLDER', google_maps_key)
-        return html
-    except Exception as e:
-        print(f"Error reading template: {e}")
-        # Fallback to embedded HTML if file fails
-        return LANDING_HTML.replace('GOOGLE_MAPS_KEY_PLACEHOLDER', google_maps_key)
+    # Use embedded HTML (contains fire-risk and all features)
+    html = LANDING_HTML.replace('GOOGLE_MAPS_KEY_PLACEHOLDER', google_maps_key)
+    return html
 
 @app.route('/api/v1/health')
 def health():
