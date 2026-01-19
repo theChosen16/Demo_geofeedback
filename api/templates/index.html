@@ -776,10 +776,21 @@
           .section {
               padding: 2rem 1rem !important;
           }
-          .demo-section {
-              padding-top: 5rem !important;
-              padding-bottom: 2rem !important;
-          }
+            .demo-section {
+                padding-top: 5rem !important;
+                padding-bottom: 2rem !important;
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+            }
+            .intro_text {
+                padding: 0 1rem;
+            }
+            .demo-container {
+                width: 100% !important;
+                max-width: 100% !important;
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+            }
           .cards-grid {
               grid-template-columns: 1fr !important;
               gap: 1rem !important;
@@ -798,15 +809,19 @@
               max-width: 100% !important;
               width: 100% !important;
           }
-          .demo-layout {
-              grid-template-columns: 1fr !important;
-              gap: 1.25rem !important;
-          }
-          #demo-map {
-              height: 55vh !important;
-              min-height: 400px !important;
-              border-radius: 12px !important;
-          }
+            .demo-layout {
+                grid-template-columns: 1fr !important;
+                gap: 0 !important;
+            }
+            .map-container {
+                border-radius: 0 !important;
+                border: none !important;
+            }
+            #demo-map {
+                height: 55vh !important;
+                min-height: 400px !important;
+                border-radius: 0 !important;
+            }
           .map-control-btn {
               width: 44px !important;
               height: 44px !important;
@@ -815,10 +830,17 @@
           .sidebar {
               width: 100% !important;
           }
-          .panel {
-              width: 100% !important;
-              padding: 1rem !important;
-          }
+            .panel {
+                width: 100% !important;
+                padding: 1.5rem 1rem !important;
+                border-radius: 0 !important;
+                border-left: none !important;
+                border-right: none !important;
+                border-top: none !important;
+                border-bottom: 1px solid #eee !important;
+                margin-bottom: 0 !important;
+                box-shadow: none !important;
+            }
           .results-grid {
               grid-template-columns: 1fr !important;
               gap: 0.75rem !important;
@@ -1399,7 +1421,7 @@
 
     <section id="demo" class="demo-section" style="padding-top: 8rem">
       <div class="demo-container">
-        <div class="section-header">
+        <div class="section-header intro_text">
           <h2>Demo Interactivo</h2>
           <p>
             Selecciona ubicacion y enfoque para explorar datos en tiempo real
