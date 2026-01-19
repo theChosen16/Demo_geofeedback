@@ -22,9 +22,9 @@ try:
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
     if GEMINI_API_KEY:
         gemini_client = genai.Client(api_key=GEMINI_API_KEY)
-        gemini_model_name = 'gemini-1.5-flash'  # Stable fast model
+        gemini_model_name = 'gemini-3-flash-preview'  # Latest: Dec 2025
         gemini_available = True
-        print("Gemini AI (google-genai) inicializado correctamente.")
+        print("Gemini AI (gemini-3-flash-preview) inicializado correctamente.")
     else:
         gemini_available = False
         print("WARNING: GEMINI_API_KEY no configurada.")
@@ -365,7 +365,7 @@ Genera una interpretación profesional de estos datos siguiendo la estructura in
         return jsonify({
             "status": "success",
             "interpretation": response_text,
-            "model": "gemini-1.5-flash"
+            "model": "gemini-3-flash-preview"
         })
         
     except Exception as e:
@@ -428,7 +428,7 @@ Responde de forma útil y amigable:"""
         return jsonify({
             "status": "success",
             "response": response_text,
-            "model": "gemini-1.5-flash"
+            "model": "gemini-3-flash-preview"
         })
         
     except Exception as e:
