@@ -3105,7 +3105,7 @@ LANDING_HTML = '''<!DOCTYPE html>
             var html = '';
             
             // Extract numeric values for interpretation
-            var ndvi = parseFloat(Object.values(data).find(v => v && v.toString().match(/^-?\d+\.\d+$/) && parseFloat(v) >= -1 && parseFloat(v) <= 1) || 0);
+            var ndvi = parseFloat(Object.values(data).find(v => v && v.toString().match(/^-?\\d+\\.\\d+$/) && parseFloat(v) >= -1 && parseFloat(v) <= 1) || 0);
             
             // NDVI Scale (if applicable)
             if (approach === 'mining' || approach === 'agriculture' || approach === 'environmental') {
