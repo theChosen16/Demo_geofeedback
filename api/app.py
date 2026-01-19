@@ -16,34 +16,35 @@ from flask_cors import CORS
 import ee
 from gee_config import init_gee
 
-# Gemini AI Integration
+# Gemini AI Integration (New SDK: google-genai)
 try:
-    import google.generativeai as genai
+    from google import genai
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
     if GEMINI_API_KEY:
-        genai.configure(api_key=GEMINI_API_KEY)
-        gemini_model = genai.GenerativeModel('gemini-2.5-flash')  # Stable fast model
+        gemini_client = genai.Client(api_key=GEMINI_API_KEY)
+        gemini_model_name = 'gemini-1.5-flash'  # Stable fast model
         gemini_available = True
-        print("Gemini AI inicializado correctamente.")
+        print("Gemini AI (google-genai) inicializado correctamente.")
     else:
         gemini_available = False
         print("WARNING: GEMINI_API_KEY no configurada.")
 except ImportError:
     gemini_available = False
-    gemini_model = None
-    print("WARNING: google-generativeai no instalado.")
+    gemini_client = None
+    print("WARNING: google-genai no instalado.")
 
 
 def call_gemini_with_retry(prompt, max_retries=2, timeout=30):
-    """Llama a Gemini con reintentos y timeout corto para manejar problemas de red."""
-    if not gemini_available or not gemini_model:
+    """Llama a Gemini con reintentos y timeout usando el nuevo SDK google-genai."""
+    if not gemini_available or not gemini_client:
         return None
     
     for attempt in range(max_retries):
         try:
-            response = gemini_model.generate_content(
-                prompt,
-                request_options={"timeout": timeout}
+            # Using the new SDK structure
+            response = gemini_client.models.generate_content(
+                model=gemini_model_name,
+                contents=prompt
             )
             return response.text
         except Exception as e:
@@ -364,7 +365,7 @@ Genera una interpretación profesional de estos datos siguiendo la estructura in
         return jsonify({
             "status": "success",
             "interpretation": response_text,
-            "model": "gemini-2.5-flash"
+            "model": "gemini-1.5-flash"
         })
         
     except Exception as e:
@@ -427,7 +428,7 @@ Responde de forma útil y amigable:"""
         return jsonify({
             "status": "success",
             "response": response_text,
-            "model": "gemini-2.5-flash"
+            "model": "gemini-1.5-flash"
         })
         
     except Exception as e:
