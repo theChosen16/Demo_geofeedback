@@ -19,7 +19,7 @@
 
 ## Descripción del Proyecto
 
-GeoFeedback Chile es una plataforma de inteligencia territorial que transforma datos satelitales en mapas de riesgo y herramientas de gestión para Chile.
+GeoFeedback Chile es una plataforma de inteligencia territorial que transforma datos satelitales en mapas de riesgo y herramientas de gestión para Chile. Ofrece capacidades de **Google Earth Engine (GEE)** para uso comercial mediante un modelo de suscripción gestionada.
 
 ### Stack Tecnológico
 
@@ -39,9 +39,9 @@ GeoFeedback Chile es una plataforma de inteligencia territorial que transforma d
 ┌─────────────────────────────────────────────────────────┐
 │                    Frontend (HTML/JS)                   │
 │  - Google Maps con AdvancedMarkerElement                │
-│  - PlaceAutocompleteElement para búsqueda               │
+│  - Diseño Mobile First (Full-Width Map & Inputs)        │
 │  - Modal de interpretación con escalas                  │
-│  - Chat sidebar con Gemini AI                           │
+│  - Chat sidebar responsivo con Gemini AI                │
 └─────────────────────┬───────────────────────────────────┘
                       │
 ┌─────────────────────▼───────────────────────────────────┐
@@ -58,7 +58,9 @@ GeoFeedback Chile es una plataforma de inteligencia territorial que transforma d
 
 ### Google Earth Engine
 
-- **Uso:** Procesamiento de imágenes Sentinel-2
+- **Uso:** Procesamiento de imágenes Sentinel-2 a escala planetaria
+- **Modalidad:** Comercial (mediante suscripción GeoFeedback) y Research
+- **Capacidades:** Earth Engine Compute Units (EECU) gestionadas
 - **Índices:** NDVI, NDWI, NDMI
 - **Datos terreno:** SRTM v4 (elevación, pendiente)
 - **Autenticación:** Service Account JSON
@@ -274,6 +276,28 @@ Chat conversacional con contexto
 - Service Account con permisos mínimos para GEE
 - CORS configurado para orígenes permitidos
 - Credenciales en .gitignore
+
+---
+
+---
+
+## Servicios y Licenciamiento
+
+### Modelo de Negocio (GEE Comercial)
+
+Google Earth Engine requiere licencias Enterprise para uso comercial. GeoFeedback actúa como intermediario tecnológico facilitando:
+
+1.  **Legalidad:** Licenciamiento comercial incluido en planes de suscripción.
+2.  **Infraestructura:** Gestión de cuotas EECU y almacenamiento en la nube.
+3.  **Privacidad:** Ingesta de datos privados (drones/satélite propio) en planes Profesional/Enterprise.
+
+### Planes Disponibles
+
+| Plan            | Enfoque            | GEE Capacidad       | Ideal para                |
+| :-------------- | :----------------- | :------------------ | :------------------------ |
+| **Monitoreo**   | Análisis estándar  | Cloud API Básico    | PyMEs agrícolas, Forestal |
+| **Profesional** | Control total      | High-EECU + Ingesta | Consultoras, Minería      |
+| **Ingeniería**  | Servicios a medida | Custom              | EIA/DIA, Gobierno         |
 
 ---
 

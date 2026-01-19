@@ -18,9 +18,11 @@
 - 🛰️ **Análisis Satelital** - Índices NDVI, NDWI, NDMI con Sentinel-2
 - 🤖 **IA Integrada** - Interpretación automática con Google Gemini
 - 🗺️ **13 APIs de Google** - Maps, Elevation, Air Quality, Solar, Pollen
+- 🏢 **Google Earth Engine™ Enterprise** - Potencia de cómputo comercial sin barreras
+- 📱 **100% Mobile Optimized** - Diseño responsivo full-width y controles táctiles
 - 💬 **Chat Asistente** - Pregunta sobre tus análisis en tiempo real
-- �️ **Resiliente** - Retry automático y manejo de errores de red
-- �📊 **8 Enfoques de Análisis** - Minería, Agricultura, Energía, y más
+- 🛡️ **Resiliente** - Retry automático y manejo de errores de red
+- 📊 **8 Enfoques de Análisis** - Minería, Agricultura, Energía, y más
 
 ---
 
@@ -53,4 +55,4 @@ Este proyecto es una demo técnica. Ver [LICENSE](./LICENSE) para detalles.
 
 ---
 
-_Última actualización: 16 de Diciembre de 2025_
+_Última actualización: 19 de Enero de 2026_
