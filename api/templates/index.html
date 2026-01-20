@@ -176,7 +176,7 @@
           0%, 100% { opacity: 0.3; transform: scale(1); }
           50% { opacity: 1; transform: scale(1.2); }
       }
-      /* High-Quality Earth */
+      /* Cartoon Style Earth from User Image */
       .earth {
           position: absolute;
           top: 50%;
@@ -184,73 +184,14 @@
           transform: translate(-50%, -50%);
           width: 200px;
           height: 200px;
-          border-radius: 50%;
-          /* Base Deep Space Blue */
-          background: #0d1b2a;
-          /* Advanced Atmosperic and Lighting layers */
-          box-shadow: 
-              inset -40px -40px 80px rgba(0,0,0,0.9),  /* Deep Shadow */
-              inset 20px 20px 60px rgba(100,200,255,0.3), /* Light side blue */
-              0 0 40px rgba(30, 87, 153, 0.4),          /* Inner halo */
-              0 0 100px rgba(30, 87, 153, 0.2);        /* Outer glow */
-          position: relative;
           z-index: 10;
-          overflow: hidden;
+          filter: drop-shadow(0 0 20px rgba(74, 144, 226, 0.3));
       }
-      .earth::before {
-          content: '';
-          position: absolute;
-          width: 200%;
-          height: 100%;
-          /* Blue oceans with green/brown continents */
-          background: 
-              linear-gradient(90deg, #1e3a5f 0%, #1e3a5f 100%),
-              radial-gradient(circle at 10% 20%, #4CAF50 0%, transparent 40%),
-              radial-gradient(circle at 30% 60%, #a68b5b 0%, transparent 35%),
-              radial-gradient(circle at 60% 30%, #4CAF50 0%, transparent 45%),
-              radial-gradient(circle at 80% 50%, #388E3C 0%, transparent 40%),
-              radial-gradient(circle at 20% 80%, #a68b5b 0%, transparent 30%);
-          background-blend-mode: overlay;
-          filter: blur(1px);
-          animation: continentsMove 30s linear infinite;
-          opacity: 1;
-      }
-      .earth-atmosphere {
-          position: absolute;
-          top: 50%; left: 50%;
-          transform: translate(-50%, -50%);
-          width: 220px; height: 220px;
-          border-radius: 50%;
-          background: radial-gradient(circle at 30% 30%, rgba(100, 200, 255, 0.15) 0%, transparent 70%);
-          box-shadow: 0 0 30px rgba(100, 200, 255, 0.1);
-          z-index: 5;
-          pointer-events: none;
-      }
-      .earth::after {
-          content: '';
-          position: absolute;
+      .earth svg {
           width: 100%;
           height: 100%;
-          background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3) 0%, transparent 60%);
-          border-radius: 50%;
-          z-index: 12;
+          overflow: visible; /* Allow thick strokes */
       }
-
-      /* Earth Clouds */
-      .earth::after {
-          content: '';
-          position: absolute;
-          width: 100%;
-          height: 100%;
-          border-radius: 50%;
-          background:
-              radial-gradient(circle at 20% 40%, rgba(255,255,255,0.4) 0%, transparent 20%),
-              radial-gradient(circle at 60% 20%, rgba(255,255,255,0.3) 0%, transparent 30%),
-              radial-gradient(circle at 75% 65%, rgba(255,255,255,0.35) 0%, transparent 25%),
-              radial-gradient(circle at 30% 70%, rgba(255,255,255,0.25) 0%, transparent 20%);
-          animation: cloudsRotate 25s linear infinite reverse;
-          opacity: 0.8;
-          pointer-events: none;
       }
       @keyframes cloudsRotate {
           0% { transform: rotate(0deg); }
@@ -1713,6 +1654,30 @@
                   <span id="stat-analyses" style="display: block; font-size: 1.5rem; font-weight: 800; color: #3b82f6; text-shadow: 0 0 10px rgba(59, 130, 246, 0.3);">-</span>
                   <span style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: 600; letter-spacing: 1px;">Análisis</span>
               </div>
+          </div>
+
+          <!-- Earth SVG Implementation -->
+           <div class="earth">
+              <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                  <!-- Ocean / Base -->
+                  <circle cx="50" cy="50" r="48" fill="#3B9AE1" stroke="black" stroke-width="2.5"/>
+                  
+                  <!-- Continents (Approximation of Americas) -->
+                  <path d="M 30 20 Q 40 10 55 15 Q 70 20 65 35 Q 60 45 45 50 Q 55 55 60 65 Q 65 80 50 90 Q 40 85 45 70 Q 50 60 40 55 Q 25 45 30 35 Q 35 30 30 20 Z" 
+                        fill="#76C045" stroke="black" stroke-width="2.5" stroke-linejoin="round"/>
+                  
+                  <!-- Small Island -->
+                  <path d="M 75 35 Q 80 32 82 38 Q 78 42 75 35 Z" 
+                        fill="#76C045" stroke="black" stroke-width="2.5" stroke-linejoin="round"/>
+
+                  <!-- Shine / Highlight -->
+                  <path d="M 20 30 Q 25 10 50 8 Q 30 15 20 30 Z" 
+                        fill="white" opacity="0.9"/>
+                  
+                  <!-- Additional Shine curve -->
+                  <path d="M 15 45 Q 12 30 25 15" 
+                        fill="none" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+              </svg>
           </div>
 
           <div class="earth-satellite-animation">
