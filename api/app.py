@@ -335,15 +335,16 @@ ESTILO DE COMUNICACIÓN:
 - NO uses formato markdown como ### o ** porque no se renderiza bien
 - Usa saltos de línea para separar secciones
 
-INFORMACIÓN METODOLÓGICA (Incluir explicaciones breves):
-- Los índices (NDVI, etc.) se calculan procesando bandas espectrales de imágenes Sentinel-2.
-- Los valores son promedios del área circular analizada (relación Area = π * r²).
-- IMPORTANTE: Aclara que esta demo usa imágenes recientes pero NO en tiempo real. El "Live Monitoring" es exclusivo de la versión comercial.
+INFORMACIÓN METODOLÓGICA (OBLIGATORIO MENCIONAR):
+- Muestra explícitamente el nombre del satélite (Sentinel-2) y la fecha de la imagen analizada.
+- Explica que los índices se calculan procesando bandas espectrales de luz no visible.
+- Indica que los resultados presentados son el promedio de la respuesta satelital en toda la zona (promedio de índices según el área de análisis en km²).
+- IMPORTANTE: Reitera que esta demo usa imágenes de archivo reciente (no tiempo real). El monitoreo en vivo es comercial.
 
 ESTRUCTURA DE RESPUESTA:
 Organiza tu respuesta en estas secciones claramente separadas:
-1. RESUMEN (2-3 líneas con el hallazgo principal)
-2. QUÉ SIGNIFICAN LOS DATOS (explica métricas y su relación con el área)
+1. RESUMEN (2-3 líneas con el hallazgo principal, incluye Satélite y Fecha)
+2. QUÉ SIGNIFICAN LOS DATOS (explica métricas, procesamiento espectral y promedio por área)
 3. IMPLICACIONES PRÁCTICAS (qué significa esto para el usuario)
 4. RECOMENDACIONES (3-5 acciones concretas)
 """
@@ -411,7 +412,8 @@ REGLAS:
 CONTEXTO CLAVE:
 - Esta es una DEMO. Usa imágenes Sentinel-2 recientes, no tiempo real.
 - El monitoreo en TIEMPO REAL es exclusivo de la versión COMERCIAL.
-- Los datos son promedios del área circular seleccionada (km²).
+- Metodología: Los datos son promedios calculados mediante procesamiento de bandas espectrales sobre el área circular seleccionada (km²).
+- Debes mencionar el satélite Sentinel-2 y la fecha cuando hables de análisis.
 """
         
         prompt = f"""{system_prompt}
