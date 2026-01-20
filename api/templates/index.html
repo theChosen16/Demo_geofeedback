@@ -1424,8 +1424,24 @@
         <div class="section-header intro_text">
           <h2>Demo Interactivo</h2>
           <p>
-            Selecciona ubicacion y enfoque para explorar datos en tiempo real
+            Selecciona ubicacion y enfoque para explorar datos satelitales procesados
           </p>
+        </div>
+
+        <!-- Nota Informativa: Datos Tiempo Real -->
+        <div style="background: #fff3cd; color: #856404; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; border: 1px solid #ffeeba; display: flex; gap: 1rem; align-items: flex-start; max-width: 900px; margin-left: auto; margin-right: auto;">
+            <i class="fas fa-info-circle" style="margin-top: 0.25rem; font-size: 1.2rem;"></i>
+            <div style="text-align: left;">
+                <strong style="display: block; margin-bottom: 0.25rem;">Nota sobre la frecuencia de datos:</strong>
+                <p style="margin: 0; font-size: 0.9rem; line-height: 1.5;">
+                    Esta demostracion utiliza la licencia de investigacion/no comercial de Google Earth Engine, por lo que las imagenes satelitales (Sentinel-2) pueden presentar un desfase de 24h a 5 dias segun la orbita del satelite.
+                    <br/>
+                    <i class="fas fa-check-circle" style="color: #2D5A4A; margin-right: 4px;"></i> <strong>El monitoreo en "Tiempo Real" (Live) esta disponible exclusivamente en la version Comercial Enterprise.</strong>
+                </p>
+                 <p style="margin-top: 0.5rem; font-size: 0.85rem; opacity: 0.9; border-top: 1px solid rgba(133, 100, 4, 0.2); padding-top: 0.5rem;">
+                    <strong>Metodologia:</strong> Los indices se calculan procesando bandas espectrales de luz no visible. El area de analisis se determina geometricamente (Area = &pi; &times; r&sup2;) cubriendo la superficie exacta del radio seleccionado.
+                </p>
+            </div>
         </div>
         <div class="demo-layout">
           <div class="map-container">
@@ -1476,7 +1492,7 @@
               </div>
               <div class="live-data" id="live-data">
                 <h4>
-                  <i class="fas fa-broadcast-tower"></i> Datos en tiempo real
+                  <i class="fas fa-broadcast-tower"></i> Monitor en Vivo (Ejemplo)
                 </h4>
                 <div class="live-data-grid">
                   <div class="live-data-item">
