@@ -1678,6 +1678,19 @@
           </div>
         </div>
         <div class="hero-visual">
+          <!-- [NEW] Live Stats Widget -->
+          <div class="stats-widget" id="stats-widget" style="position: absolute; top: 20px; right: 20px; background: rgba(16, 185, 129, 0.1); backdrop-filter: blur(10px); padding: 1rem 1.5rem; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.3); z-index: 10; display: flex; gap: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+              <div class="stat-item" style="text-align: center;">
+                  <span id="stat-visits" style="display: block; font-size: 1.5rem; font-weight: 700; color: #10b981;">-</span>
+                  <span style="font-size: 0.8rem; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px;">Visitas</span>
+              </div>
+              <div class="stat-divider" style="width: 1px; background: rgba(255,255,255,0.1);"></div>
+              <div class="stat-item" style="text-align: center;">
+                  <span id="stat-analyses" style="display: block; font-size: 1.5rem; font-weight: 700; color: #3b82f6;">-</span>
+                  <span style="font-size: 0.8rem; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px;">Análisis</span>
+              </div>
+          </div>
+
           <div class="earth-satellite-animation">
             <!-- Stars Background -->
             <div class="stars-container">
@@ -4357,7 +4370,37 @@
       document.addEventListener("DOMContentLoaded", function () {
         initMobileMode();
         updateActiveTabOnScroll();
+        fetchPublicStats(); // [NEW] Fetch stats on load
       });
+
+      // [NEW] Fetch Public Stats
+      function fetchPublicStats() {
+          fetch('/api/v1/stats')
+            .then(response => response.json())
+            .then(data => {
+                if(data.visits !== undefined) {
+                    animateValue("stat-visits", 0, data.visits, 2000);
+                    animateValue("stat-analyses", 0, data.analyses, 2000);
+                }
+            })
+            .catch(err => console.error("Error fetching stats:", err));
+      }
+
+      function animateValue(id, start, end, duration) {
+          if (start === end) return;
+          var range = end - start;
+          var current = start;
+          var increment = end > start ? 1 : -1;
+          var stepTime = Math.abs(Math.floor(duration / range));
+          var obj = document.getElementById(id);
+          var timer = setInterval(function() {
+              current += increment;
+              obj.innerHTML = current.toLocaleString();
+              if (current == end) {
+                  clearInterval(timer);
+              }
+          }, stepTime);
+      }
 
       // Start the map initialization
       loadGoogleMaps();
