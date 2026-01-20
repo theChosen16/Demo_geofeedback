@@ -229,64 +229,17 @@
           animation: orbitSatellite 12s linear infinite, orbitZIndex 12s linear infinite;
       }
 
-      /* 3D Satellite Construction */
-      .satellite-3d {
+      /* Cartoon Satellite SVG */
+      .satellite-cartoon {
           position: absolute;
           top: 0; left: 50%;
-          width: 0; height: 0;
-          transform-style: preserve-3d;
-          /* Rotate to align with orbit path */
-          transform: translateX(-50%) rotateX(-90deg);
+          width: 60px; height: 60px;
+          transform: translate(-50%, -50%) rotate(-90deg); /* Adjust orientation */
+          z-index: 20;
+          filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
       }
-
-      .sat-body {
-          position: absolute;
-          width: 20px; height: 20px;
-          transform-style: preserve-3d;
-          transform: translate(-10px, -10px);
-          background: rgba(232, 184, 109, 0.2);
-      }
-
-      .face {
-          position: absolute;
-          width: 20px; height: 20px;
-          background: linear-gradient(135deg, #E8B86D, #A68B5B);
-          border: 1px solid rgba(166, 139, 91, 0.6);
-          opacity: 1;
-          backface-visibility: hidden; /* Hide inside faces */
-      }
-
-      .face.front  { transform: translateZ(10px); }
-      .face.back   { transform: rotateY(180deg) translateZ(10px); }
-      .face.right  { transform: rotateY(90deg) translateZ(10px); }
-      .face.left   { transform: rotateY(-90deg) translateZ(10px); }
-      .face.top    { transform: rotateX(90deg) translateZ(10px); }
-      .face.bottom { transform: rotateX(-90deg) translateZ(10px); }
-
-      .sat-panel {
-          position: absolute;
-          width: 36px; height: 14px;
-          background: linear-gradient(to bottom, #2D5A4A, #1a3d30);
-          border: 1px solid #E8B86D;
-          top: 3px; /* Center relative to 20px body */
-          opacity: 0.95;
-          box-shadow: 0 0 5px rgba(232, 184, 109, 0.3);
-          /* Remove manual positioning, use relative attachment below */
-      }
-
-      .sat-panel.left {
-          right: 50%; /* Start at center */
-          margin-right: 10px; /* Push to left edge of 20px body */
-          transform-origin: right center;
-          transform: rotateY(-20deg);
-      }
-
-      .sat-panel.right {
-          left: 50%; /* Start at center */
-          margin-left: 10px; /* Push to right edge of 20px body */
-          transform-origin: left center;
-          transform: rotateY(20deg);
-      }
+      /* Remove old 3D Satellite Styles */
+      .sat-body, .face, .sat-panel { display: none; }
 
       /* Z-Index Animation keyframes - Adjusted for visual horizon */
       /* Z-Index Animation keyframes - Precision switch for 200px Earth */
@@ -1692,24 +1645,26 @@
               <div class="star"></div>
               <div class="star"></div>
             </div>
-            <!-- Earth -->
-            <div class="earth"></div>
+
             <!-- Orbit Path -->
             <div class="orbit-path"></div>
             <!-- Satellite in Orbit (3D) -->
+            <!-- Satellite in Orbit (Cartoon) -->
             <div class="satellite-wrapper">
-              <div class="satellite-3d">
-                <div class="sat-body">
-                  <div class="face front"></div>
-                  <div class="face back"></div>
-                  <div class="face top"></div>
-                  <div class="face bottom"></div>
-                  <div class="face left"></div>
-                  <div class="face right"></div>
-                </div>
-                <div class="sat-panel left"></div>
-                <div class="sat-panel right"></div>
-              </div>
+               <div class="satellite-cartoon">
+                   <svg viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg">
+                      <!-- Solar Panels (Wing-like) -->
+                      <rect x="0" y="15" width="30" height="30" fill="#2D5A4A" stroke="#E8B86D" stroke-width="2"/>
+                      <rect x="70" y="15" width="30" height="30" fill="#2D5A4A" stroke="#E8B86D" stroke-width="2"/>
+                      
+                      <!-- Main Body (Boxy Cube) -->
+                      <rect x="35" y="10" width="30" height="40" fill="#E8B86D" stroke="black" stroke-width="2"/>
+                      
+                      <!-- Connector lines -->
+                      <line x1="30" y1="30" x2="35" y2="30" stroke="black" stroke-width="2"/>
+                      <line x1="65" y1="30" x2="70" y2="30" stroke="black" stroke-width="2"/>
+                   </svg>
+               </div>
             </div>
 
             <!-- Data Points on Earth -->
