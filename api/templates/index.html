@@ -202,16 +202,18 @@
           position: absolute;
           width: 200%;
           height: 100%;
-          /* High quality continental shapes using radial gradients */
+          /* Blue oceans with green/brown continents */
           background: 
+              linear-gradient(90deg, #1e3a5f 0%, #1e3a5f 100%),
               radial-gradient(circle at 10% 20%, #4CAF50 0%, transparent 40%),
-              radial-gradient(circle at 30% 60%, #388E3C 0%, transparent 35%),
-              radial-gradient(circle at 60% 30%, #43A047 0%, transparent 45%),
-              radial-gradient(circle at 80% 50%, #2E7D32 0%, transparent 40%),
-              radial-gradient(circle at 20% 80%, #66BB6A 0%, transparent 30%);
-          filter: blur(2px);
+              radial-gradient(circle at 30% 60%, #a68b5b 0%, transparent 35%),
+              radial-gradient(circle at 60% 30%, #4CAF50 0%, transparent 45%),
+              radial-gradient(circle at 80% 50%, #388E3C 0%, transparent 40%),
+              radial-gradient(circle at 20% 80%, #a68b5b 0%, transparent 30%);
+          background-blend-mode: overlay;
+          filter: blur(1px);
           animation: continentsMove 30s linear infinite;
-          opacity: 0.9;
+          opacity: 1;
       }
       .earth-atmosphere {
           position: absolute;
@@ -229,10 +231,11 @@
           position: absolute;
           width: 100%;
           height: 100%;
-          background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.2) 0%, transparent 50%);
+          background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3) 0%, transparent 60%);
           border-radius: 50%;
+          z-index: 12;
       }
-      }
+
       /* Earth Clouds */
       .earth::after {
           content: '';
@@ -1699,16 +1702,16 @@
         </div>
         <div class="hero-visual">
           <div class="earth-atmosphere"></div>
-          <!-- [NEW] Optimized Stats Widget Position -->
-          <div class="stats-widget" id="stats-widget" style="position: absolute; bottom: 20px; right: 20px; background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); padding: 1rem 1.75rem; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 100; display: flex; gap: 2.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+           <!-- [NEW] Optimized Stats Widget Position - Top Left to avoid any overlap -->
+          <div class="stats-widget" id="stats-widget" style="position: absolute; top: -50px; left: -20px; background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); padding: 0.8rem 1.5rem; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 100; display: flex; gap: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
               <div class="stat-item" style="text-align: center;">
-                  <span id="stat-visits" style="display: block; font-size: 1.75rem; font-weight: 800; color: #10b981; text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);">-</span>
-                  <span style="font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; font-weight: 600; letter-spacing: 1px;">Visitas</span>
+                  <span id="stat-visits" style="display: block; font-size: 1.5rem; font-weight: 800; color: #10b981; text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);">-</span>
+                  <span style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: 600; letter-spacing: 1px;">Visitas</span>
               </div>
               <div class="stat-divider" style="width: 1px; background: rgba(255,255,255,0.1); align-self: stretch;"></div>
               <div class="stat-item" style="text-align: center;">
-                  <span id="stat-analyses" style="display: block; font-size: 1.75rem; font-weight: 800; color: #3b82f6; text-shadow: 0 0 10px rgba(59, 130, 246, 0.3);">-</span>
-                  <span style="font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; font-weight: 600; letter-spacing: 1px;">Análisis</span>
+                  <span id="stat-analyses" style="display: block; font-size: 1.5rem; font-weight: 800; color: #3b82f6; text-shadow: 0 0 10px rgba(59, 130, 246, 0.3);">-</span>
+                  <span style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: 600; letter-spacing: 1px;">Análisis</span>
               </div>
           </div>
 
