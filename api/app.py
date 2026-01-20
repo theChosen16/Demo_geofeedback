@@ -11,14 +11,17 @@ import os
 import datetime
 import json
 import time
+import hashlib
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import ee
 from gee_config import init_gee
+import database # [NEW] Database module
 
-# Gemini AI Integration (New SDK: google-genai)
+# ... (Gemini import remains same)
 try:
     from google import genai
+# ...
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
     if GEMINI_API_KEY:
         gemini_client = genai.Client(api_key=GEMINI_API_KEY)
@@ -273,6 +276,19 @@ def analyze_territory():
         # Calculate analysis area dynamically (area = π * r²)
         import math
         area_m2 = int(math.pi * radius * radius)
+
+        # [NEW] Log analysis to database
+        try:
+            database.log_analysis(
+                endpoint='/api/v1/analyze',
+                location_name=location_name if 'location_name' in locals() else 'Unknown',
+                lat=lat,
+                lng=lng,
+                approach=approach,
+                status='success'
+            )
+        except Exception as e:
+            print(f"Error logging analysis: {e}")
 
         return jsonify({
             "status": "success",
@@ -3580,6 +3596,15 @@ def landing():
         print(f"INFO: GOOGLE_MAPS_API_KEY found (length: {len(google_maps_key)})")
     
     try:
+        # [NEW] Log visit
+        try:
+            user_agent = request.headers.get('User-Agent')
+            ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+            ip_hash = hashlib.sha256(ip.encode()).hexdigest() if ip else None
+            database.log_visit(page='/', user_agent=user_agent, ip_hash=ip_hash)
+        except Exception as e:
+            print(f"Error logging visit: {e}")
+
         template_path = os.path.join(os.path.dirname(__file__), 'templates', 'index.html')
         with open(template_path, 'r', encoding='utf-8') as f:
             html = f.read()
@@ -3594,7 +3619,12 @@ def health():
 
 @app.route('/api/v1/stats')
 def stats():
-    return jsonify({"total_analyses": 147, "municipalities_served": 12, "apis_integrated": ["Elevation", "Air Quality", "Solar", "Geocoding"]})
+    try:
+        public_stats = database.get_public_stats()
+        return jsonify(public_stats)
+    except Exception as e:
+        print(f"Error getting stats: {e}")
+        return jsonify({"visits": 0, "analyses": 0, "error": str(e)})
 
 @app.route('/api/v1/infrastructure')
 def infrastructure():
@@ -3673,31 +3703,30 @@ def api_docs():
             <div class="endpoint">
                 <span class="method get">GET</span>
                 <span class="endpoint-path">/api/v1/stats</span>
-                <p class="endpoint-desc">Estadisticas generales de la plataforma.</p>
+                <p class="endpoint-desc">Estadísticas de uso: Visitas totales y Análisis realizados.</p>
             </div>
             
             <div class="endpoint">
                 <span class="method post">POST</span>
                 <span class="endpoint-path">/api/v1/analyze</span>
-                <p class="endpoint-desc">Ejecuta analisis geoespacial con Google Earth Engine.</p>
+                <p class="endpoint-desc">Ejecuta analisis geoespacial con Google Earth Engine. Retorna índices y mapa.</p>
             </div>
             
             <div class="endpoint">
                 <span class="method post">POST</span>
                 <span class="endpoint-path">/api/v1/interpret</span>
-                <p class="endpoint-desc">Genera interpretacion con IA de los resultados.</p>
+                <p class="endpoint-desc">Genera interpretacion con IA (Gemini) de los resultados.</p>
             </div>
             
             <div class="endpoint">
                 <span class="method post">POST</span>
-                <span class="endpoint-path">/api/v1/contact</span>
-                <p class="endpoint-desc">Envia mensaje de contacto al equipo.</p>
+                <span class="endpoint-path">/api/v1/chat</span>
+                <p class="endpoint-desc">Chatbot asistente para consultas sobre los datos.</p>
             </div>
             
             <div class="note">
                 <strong><i class="fas fa-info-circle"></i> Nota:</strong> 
-                Algunos endpoints requieren autenticacion y no estan disponibles publicamente. 
-                Para acceso a la API completa, contactanos.
+                Esta documentación cubre los endpoints públicos principales de la Demo.
             </div>
         </div>
         
