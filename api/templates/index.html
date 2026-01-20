@@ -176,36 +176,53 @@
           0%, 100% { opacity: 0.3; transform: scale(1); }
           50% { opacity: 1; transform: scale(1.2); }
       }
-      /* Earth */
+      /* High-Quality Earth */
       .earth {
           position: absolute;
           top: 50%;
           left: 50%;
           transform: translate(-50%, -50%);
-          width: 180px;
-          height: 180px;
+          width: 200px;
+          height: 200px;
           border-radius: 50%;
-          background: linear-gradient(135deg, #1e5799 0%, #2989d8 25%, #1e5799 50%, #207cca 75%, #1e5799 100%);
-          box-shadow:
-              inset -30px -30px 60px rgba(0,0,0,0.5),
-              inset 20px 20px 40px rgba(255,255,255,0.15),
-              0 0 80px rgba(30, 87, 153, 0.6),
-              0 0 120px rgba(30, 87, 153, 0.3);
-          overflow: hidden;
+          /* Base Deep Space Blue */
+          background: #0d1b2a;
+          /* Advanced Atmosperic and Lighting layers */
+          box-shadow: 
+              inset -40px -40px 80px rgba(0,0,0,0.9),  /* Deep Shadow */
+              inset 20px 20px 60px rgba(100,200,255,0.3), /* Light side blue */
+              0 0 40px rgba(30, 87, 153, 0.4),          /* Inner halo */
+              0 0 100px rgba(30, 87, 153, 0.2);        /* Outer glow */
+          position: relative;
           z-index: 10;
+          overflow: hidden;
       }
       .earth::before {
           content: '';
           position: absolute;
           width: 200%;
           height: 100%;
-          background:
-              radial-gradient(ellipse 25% 20% at 30% 40%, #4CAF50 0%, transparent 60%),
-              radial-gradient(ellipse 35% 15% at 60% 35%, #4CAF50 0%, transparent 60%),
-              radial-gradient(ellipse 20% 25% at 75% 55%, #4CAF50 0%, transparent 60%),
-              radial-gradient(ellipse 30% 15% at 20% 65%, #4CAF50 0%, transparent 60%),
-              radial-gradient(ellipse 15% 20% at 85% 30%, #4CAF50 0%, transparent 60%);
-          animation: continentsMove 20s linear infinite;
+          /* High quality continental shapes using radial gradients */
+          background: 
+              radial-gradient(circle at 10% 20%, #4CAF50 0%, transparent 40%),
+              radial-gradient(circle at 30% 60%, #388E3C 0%, transparent 35%),
+              radial-gradient(circle at 60% 30%, #43A047 0%, transparent 45%),
+              radial-gradient(circle at 80% 50%, #2E7D32 0%, transparent 40%),
+              radial-gradient(circle at 20% 80%, #66BB6A 0%, transparent 30%);
+          filter: blur(2px);
+          animation: continentsMove 30s linear infinite;
+          opacity: 0.9;
+      }
+      .earth-atmosphere {
+          position: absolute;
+          top: 50%; left: 50%;
+          transform: translate(-50%, -50%);
+          width: 220px; height: 220px;
+          border-radius: 50%;
+          background: radial-gradient(circle at 30% 30%, rgba(100, 200, 255, 0.15) 0%, transparent 70%);
+          box-shadow: 0 0 30px rgba(100, 200, 255, 0.1);
+          z-index: 5;
+          pointer-events: none;
       }
       .earth::after {
           content: '';
@@ -244,27 +261,28 @@
           0% { transform: translateX(0); }
           100% { transform: translateX(-50%); }
       }
-      /* Orbit Path */
+      /* Orbit Path - Better 3D Perspective */
       .orbit-path {
           position: absolute;
           top: 50%;
           left: 50%;
-          transform: translate(-50%, -50%) rotateX(60deg);
-          width: 320px;
-          height: 320px;
-          border: 2px dashed rgba(166, 139, 91, 0.3);
+          transform: translate(-50%, -50%) rotateX(70deg); /* Shallower angle */
+          width: 380px;
+          height: 380px;
+          border: 1px dashed rgba(166, 139, 91, 0.2);
           border-radius: 50%;
+          z-index: 5;
       }
       /* Satellite */
       .satellite-wrapper {
           position: absolute;
           top: 50%;
           left: 50%;
-          width: 320px;
-          height: 320px;
+          width: 380px;
+          height: 380px;
           transform-style: preserve-3d;
-          transform: translate(-50%, -50%) rotateX(60deg);
-          animation: orbitSatellite 8s linear infinite, orbitZIndex 8s linear infinite;
+          transform: translate(-50%, -50%) rotateX(70deg);
+          animation: orbitSatellite 12s linear infinite, orbitZIndex 12s linear infinite;
       }
 
       /* 3D Satellite Construction */
@@ -327,16 +345,18 @@
       }
 
       /* Z-Index Animation keyframes - Adjusted for visual horizon */
+      /* Z-Index Animation keyframes - Precision switch for 200px Earth */
       @keyframes orbitZIndex {
-          0% { z-index: 20; }
-          40% { z-index: 20; }
-          45% { z-index: 1; }  /* Switch earlier as back arc is now more visible */
-          95% { z-index: 1; }
+          0% { z-index: 20; }   /* In front */
+          25% { z-index: 20; }  /* In front side */
+          48% { z-index: 0; }   /* Pass behind */
+          75% { z-index: 0; }   /* Behind side */
+          98% { z-index: 20; }  /* Return to front */
           100% { z-index: 20; }
       }
       @keyframes orbitSatellite {
-          0% { transform: translate(-50%, -50%) rotateX(60deg) rotateZ(0deg); }
-          100% { transform: translate(-50%, -50%) rotateX(60deg) rotateZ(360deg); }
+          0% { transform: translate(-50%, -50%) rotateX(70deg) rotateZ(0deg); }
+          100% { transform: translate(-50%, -50%) rotateX(70deg) rotateZ(360deg); }
       }
 
       /* Data Points */
@@ -1678,16 +1698,17 @@
           </div>
         </div>
         <div class="hero-visual">
-          <!-- [NEW] Live Stats Widget -->
-          <div class="stats-widget" id="stats-widget" style="position: absolute; top: 20px; right: 20px; background: rgba(16, 185, 129, 0.1); backdrop-filter: blur(10px); padding: 1rem 1.5rem; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.3); z-index: 10; display: flex; gap: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+          <div class="earth-atmosphere"></div>
+          <!-- [NEW] Optimized Stats Widget Position -->
+          <div class="stats-widget" id="stats-widget" style="position: absolute; bottom: 20px; right: 20px; background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); padding: 1rem 1.75rem; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 100; display: flex; gap: 2.5rem; box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
               <div class="stat-item" style="text-align: center;">
-                  <span id="stat-visits" style="display: block; font-size: 1.5rem; font-weight: 700; color: #10b981;">-</span>
-                  <span style="font-size: 0.8rem; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px;">Visitas</span>
+                  <span id="stat-visits" style="display: block; font-size: 1.75rem; font-weight: 800; color: #10b981; text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);">-</span>
+                  <span style="font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; font-weight: 600; letter-spacing: 1px;">Visitas</span>
               </div>
-              <div class="stat-divider" style="width: 1px; background: rgba(255,255,255,0.1);"></div>
+              <div class="stat-divider" style="width: 1px; background: rgba(255,255,255,0.1); align-self: stretch;"></div>
               <div class="stat-item" style="text-align: center;">
-                  <span id="stat-analyses" style="display: block; font-size: 1.5rem; font-weight: 700; color: #3b82f6;">-</span>
-                  <span style="font-size: 0.8rem; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.5px;">Análisis</span>
+                  <span id="stat-analyses" style="display: block; font-size: 1.75rem; font-weight: 800; color: #3b82f6; text-shadow: 0 0 10px rgba(59, 130, 246, 0.3);">-</span>
+                  <span style="font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; font-weight: 600; letter-spacing: 1px;">Análisis</span>
               </div>
           </div>
 
