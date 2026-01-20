@@ -57,7 +57,7 @@ class Config:
     # =========================================================================
     # FLASK
     # =========================================================================
-    SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-CHANGE-IN-PRODUCTION')
+    SECRET_KEY = os.getenv('SECRET_KEY', 'dev-key-only-for-local-testing')
     DEBUG = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
     ENV = os.getenv('FLASK_ENV', 'production')
 
@@ -125,10 +125,11 @@ class Config:
             return config
 
         # Fallback: Variables individuales (desarrollo local)
+        # NOTA: En producción, asegurar que estas variables de entorno estén definidas.
         return {
             'dbname': os.getenv('DB_NAME', 'geofeedback_papudo'),
             'user': os.getenv('DB_USER', 'geofeedback'),
-            'password': os.getenv('DB_PASSWORD', 'Papudo2025'),
+            'password': os.getenv('DB_PASSWORD'), # Sin default inseguro
             'host': os.getenv('DB_HOST', 'localhost'),
             'port': int(os.getenv('DB_PORT', 5432)),
             'sslmode': 'disable'

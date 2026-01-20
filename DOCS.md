@@ -192,6 +192,9 @@ Los índices funcionan gracias a las propiedades de absorción y reflexión de l
 
 ### Configuración de Build
 
+- `GOOGLE_APPLICATION_CREDENTIALS_JSON`: Contenido **completo** del archivo `service-account-key.json` (copiar y pegar el JSON como texto).
+- `SECRET_KEY`, `DB_PASSWORD`, etc.: Variables críticas que DEBEN definirse en producción.
+
 ```toml
 # railway.toml
 [build]
@@ -204,78 +207,38 @@ Los índices funcionan gracias a las propiedades de absorción y reflexión de l
 
 ---
 
-## Endpoints de la API
+## Seguridad y Auditoría
 
-### GET /
+**Auditoría Enero 2026: ✅ PASADO** with observations.
 
-Landing page con demo interactivo
+### Gestión de Credenciales
 
-### GET /api/v1/health
+- **Local:** Se usa `service-account-key.json` (protegido por `.gitignore`) y `.env`.
+- **Producción:** Se inyectan credenciales exclusivamente vía Variables de Entorno (ver `gee_config.py`).
+- **Código:** Se han eliminado defaults inseguros de `config.py`.
 
-```json
-{ "status": "healthy", "service": "GeoFeedback API" }
-```
+### Privacidad de Datos
 
-### POST /api/v1/analyze
-
-Análisis territorial con Google Earth Engine
-
-**Request:**
-
-```json
-{
-  "lat": -33.4489,
-  "lng": -70.6693,
-  "approach": "agriculture"
-}
-```
-
-**Response:**
-
-```json
-{
-  "status": "success",
-  "data": {"Vigor Vegetal (NDVI)": "0.45", ...},
-  "map_layer": {"url": "https://earthengine.googleapis.com/..."}
-}
-```
-
-### POST /api/v1/interpret
-
-Interpretación AI de resultados
-
-**Request:**
-
-```json
-{
-  "results": { "NDVI": "0.45" },
-  "approach": "agriculture",
-  "location": "Papudo, Chile"
-}
-```
-
-### POST /api/v1/chat
-
-Chat conversacional con contexto
-
-**Request:**
-
-```json
-{
-  "message": "¿Qué significa un NDVI de 0.45?",
-  "context": {...},
-  "history": [...]
-}
-```
+- Las coordenadas de usuario no se almacenan de forma persistente.
+- PII (Información Personal) se maneja con logs mínimos.
+- API Keys de frontend se inyectan en tiempo de ejecución.
 
 ---
 
-## Seguridad
+## Transparencia Metodológica
 
-- API Keys almacenadas en variables de entorno (no en código)
-- Service Account con permisos mínimos para GEE
-- CORS configurado para orígenes permitidos
-- Credenciales en .gitignore
+### Frecuencia de Datos (Sentinel-2)
+
+- **Licencia Research (Demo):** Imágenes históricas recientes (no tiempo real).
+- **Frecuencia de Revisita:** 5 días en el ecuador, **2-3 días en Chile** debido al solapamiento orbital.
+- **Licencia Comercial:** Permite ingesta de imágenes propias o satélites de baja latencia para "Tiempo Real".
+
+### Cálculo de Índices
+
+Los valores presentados en el dashboard son **promedios espaciales** calculados sobre el área circular seleccionada (A = π \* r²).
+
+- **NDVI:** Promedio de vigor vegetal en el radio de análisis.
+- **Alertas:** Basadas en umbrales predefinidos sobre estos promedios.
 
 ---
 
