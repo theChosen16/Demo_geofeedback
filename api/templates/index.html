@@ -1400,7 +1400,7 @@
           ><i class="fas fa-globe-americas"></i>GeoFeedback</a
         >
         <div class="nav-links">
-          <a href="#problema">Problema</a>
+          <a href="#problema" data-en="Problem">Problema</a>
           <a href="#solucion" data-en="Solution">Solucion</a>
           <a href="#demo" data-en="Demo">Demo</a>
           <a href="#servicios" data-en="Services">Servicios</a>
@@ -1434,10 +1434,10 @@
             <i class="fas fa-info-circle" style="margin-top: 0.25rem; font-size: 1.2rem;"></i>
             <div style="text-align: left;">
                 <strong style="display: block; margin-bottom: 0.25rem;" data-en="Note on data frequency:">Nota sobre la frecuencia de datos:</strong>
-                <p style="margin: 0; font-size: 0.9rem; line-height: 1.5;" data-en="This demo uses the Google Earth Engine Research/Non-Commercial license. Images (Sentinel-2) have a 5-day frequency at the equator, but thanks to orbital overlap, at latitudes like Chile, this is reduced to <strong>2 to 3 days</strong>.<br/><i class='fas fa-check-circle' style='color: #2D5A4A; margin-right: 4px;'></i> <strong>'Real Time' (Live) monitoring is available exclusively in the Commercial Enterprise version.</strong>">
+                <p style="margin: 0; font-size: 0.9rem; line-height: 1.5;" data-en-html="This demo uses the Google Earth Engine Research/Non-Commercial license. Images (Sentinel-2) have a 5-day frequency at the equator, but thanks to orbital overlap, at latitudes like Chile, this is reduced to <strong>2 to 3 days</strong>.<br/><i class='fas fa-check-circle' style='color: #2D5A4A; margin-right: 4px;'></i> <strong>'Real Time' (Live) monitoring is available exclusively in the Commercial Enterprise version.</strong>">
                     Esta demostracion utiliza la licencia de investigacion/no comercial de Google Earth Engine. Las imagenes (Sentinel-2) tienen un tiempo de frecuencia de 5 dias en el ecuador, pero gracias al solapamiento de orbitas, en latitudes como Chile, esto se reduce a <strong>2 a 3 dias</strong>.
                     <br/>
-                    <i class="fas fa-check-circle" style="color: #2D5A4A; margin-right: 4px;"></i> <strong>El monitoreo en "Tiempo Real" (Live) esta disponible exclusivamente en la version Comercial Enterprise.</strong>
+                    <i class="fas fa-check-circle" style="color: #2D5A4A; margin-right: 4px;"></i> <strong>El monitoreo en 'Tiempo Real' (Live) esta disponible exclusivamente en la version Comercial Enterprise.</strong>
                 </p>
                  <p style="margin-top: 0.5rem; font-size: 0.85rem; opacity: 0.9; border-top: 1px solid rgba(133, 100, 4, 0.2); padding-top: 0.5rem;">
                     <strong>Metodologia:</strong> Los indices se calculan procesando bandas espectrales de luz no visible. El area de analisis se determina geometricamente (Area = &pi; &times; r&sup2;) cubriendo la superficie exacta del radio seleccionado.
@@ -1472,16 +1472,16 @@
           <div class="sidebar">
             <div class="panel">
               <div class="status-bar">
-                <div class="status-item">
+                <div class="status-item" data-en-html='<span class="status-dot" id="status-location"></span>Location'>
                   <span class="status-dot" id="status-location"></span>Ubicacion
                 </div>
-                <div class="status-item">
+                <div class="status-item" data-en-html='<span class="status-dot" id="status-approach"></span>Approach'>
                   <span class="status-dot" id="status-approach"></span>Enfoque
                 </div>
               </div>
             </div>
             <div class="panel">
-              <div class="panel-header" data-en='<i class="fas fa-search"></i> Search Location'>
+              <div class="panel-header" data-en-html='<i class="fas fa-search"></i> Search Location'>
                 <i class="fas fa-search"></i> Buscar Ubicacion
               </div>
               <div class="search-wrapper">
@@ -1497,26 +1497,26 @@
                 </h4>
                 <div class="live-data-grid">
                   <div class="live-data-item">
-                    <div class="live-data-label">Elevacion</div>
+                    <div class="live-data-label" data-en="Elevation">Elevacion</div>
                     <div class="live-data-value" id="data-elevation">--</div>
                   </div>
                   <div class="live-data-item">
-                    <div class="live-data-label">Calidad Aire (AQI)</div>
+                    <div class="live-data-label" data-en="Air Quality (AQI)">Calidad Aire (AQI)</div>
                     <div class="live-data-value" id="data-aqi">--</div>
                   </div>
                   <div class="live-data-item">
-                    <div class="live-data-label">Potencial Solar</div>
+                    <div class="live-data-label" data-en="Solar Potential">Potencial Solar</div>
                     <div class="live-data-value" id="data-solar">--</div>
                   </div>
                   <div class="live-data-item">
-                    <div class="live-data-label">Pendiente</div>
+                    <div class="live-data-label" data-en="Slope">Pendiente</div>
                     <div class="live-data-value" id="data-slope">--</div>
                   </div>
                 </div>
               </div>
             </div>
             <div class="panel">
-              <div class="panel-header" data-en='<i class="fas fa-crosshairs"></i> Select Approach'>
+              <div class="panel-header" data-en-html='<i class="fas fa-crosshairs"></i> Select Approach'>
                 <i class="fas fa-crosshairs"></i> Seleccionar Enfoque
               </div>
               <select
@@ -1524,31 +1524,31 @@
                 class="approach-select"
                 onchange="onApproachChange()"
               >
-                <option value="">-- Elige un enfoque de analisis --</option>
-                <optgroup label="Sectores Industriales">
-                  <option value="mining">Mineria Sostenible</option>
-                  <option value="agriculture">Agroindustria Inteligente</option>
-                  <option value="energy">Energias Renovables</option>
-                  <option value="real-estate">Desarrollo Inmobiliario</option>
+                <option value="" data-en="-- Choose an analysis approach --">-- Elige un enfoque de analisis --</option>
+                <optgroup label="Sectores Industriales" data-en-label="Industrial Sectors">
+                  <option value="mining" data-en="Sustainable Mining">Mineria Sostenible</option>
+                  <option value="agriculture" data-en="Smart Agribusiness">Agroindustria Inteligente</option>
+                  <option value="energy" data-en="Renewable Energy">Energias Renovables</option>
+                  <option value="real-estate" data-en="Real Estate Development">Desarrollo Inmobiliario</option>
                 </optgroup>
-                <optgroup label="Analisis General">
-                  <option value="fire-risk">Riesgo de Incendio Forestal</option>
-                  <option value="flood-risk">Riesgo de Inundacion</option>
-                  <option value="water-management">Gestion Hidrica</option>
-                  <option value="environmental">Calidad Ambiental</option>
-                  <option value="land-planning">
+                <optgroup label="Analisis General" data-en-label="General Analysis">
+                  <option value="fire-risk" data-en="Forest Fire Risk">Riesgo de Incendio Forestal</option>
+                  <option value="flood-risk" data-en="Flood Risk">Riesgo de Inundacion</option>
+                  <option value="water-management" data-en="Water Management">Gestion Hidrica</option>
+                  <option value="environmental" data-en="Environmental Quality">Calidad Ambiental</option>
+                  <option value="land-planning" data-en="Territorial Planning">
                     Planificacion Territorial
                   </option>
                 </optgroup>
               </select>
               <div class="indices-panel" id="indices-panel">
-                <div class="indices-title">Indices y datos del analisis:</div>
+                <div class="indices-title" data-en="Analysis indices and data:">Indices y datos del analisis:</div>
                 <div id="analysis-results" style="display: none"></div>
                 <div id="indices-list"></div>
               </div>
             </div>
             <div class="panel">
-              <div class="panel-header" data-en='<i class="fas fa-ruler-combined"></i> Analysis Radius'>
+              <div class="panel-header" data-en-html='<i class="fas fa-ruler-combined"></i> Analysis Radius'>
                 <i class="fas fa-ruler-combined"></i> Radio de Analisis
               </div>
               <select
@@ -1578,7 +1578,7 @@
                 id="analyze-btn"
                 onclick="analyzeTerritory()"
                 disabled
-                data-en='<i class="fas fa-satellite-dish"></i> Start Analysis'
+                data-en-html='<i class="fas fa-satellite-dish"></i> Start Analysis'
               >
                 <i class="fas fa-satellite-dish"></i> Iniciar Analisis
               </button>
@@ -1599,21 +1599,21 @@
           <div class="result-card" id="result-location">
             <i class="fas fa-map-marker-alt result-icon"></i>
             <div class="result-content">
-              <h4>Ubicacion</h4>
-              <p>Busca o haz clic en el mapa</p>
+              <h4 data-en="Location">Ubicacion</h4>
+              <p data-en="Search or click on the map">Busca o haz clic en el mapa</p>
             </div>
           </div>
           <div class="result-card" id="result-approach">
             <i class="fas fa-crosshairs result-icon"></i>
             <div class="result-content">
-              <h4>Enfoque</h4>
-              <p>Selecciona el tipo de analisis</p>
+              <h4 data-en="Approach">Enfoque</h4>
+              <p data-en="Select analysis type">Selecciona el tipo de analisis</p>
             </div>
           </div>
           <div class="result-card">
             <i class="fas fa-satellite result-icon"></i>
             <div class="result-content">
-              <h4>APIs Integradas</h4>
+              <h4 data-en="Integrated APIs">APIs Integradas</h4>
               <p>Elevation, Air Quality, Solar, Geocoding</p>
             </div>
           </div>
@@ -1685,12 +1685,12 @@
           <div class="stats-widget" id="stats-widget" style="position: absolute; top: -50px; left: -20px; background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); padding: 0.8rem 1.5rem; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 100; display: flex; gap: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
               <div class="stat-item" style="text-align: center;">
                   <span id="stat-visits" style="display: block; font-size: 1.5rem; font-weight: 800; color: #10b981; text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);">-</span>
-                  <span style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: 600; letter-spacing: 1px;">Visitas</span>
+                  <span style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: 600; letter-spacing: 1px;" data-en="Visits">Visitas</span>
               </div>
               <div class="stat-divider" style="width: 1px; background: rgba(255,255,255,0.1); align-self: stretch;"></div>
               <div class="stat-item" style="text-align: center;">
                   <span id="stat-analyses" style="display: block; font-size: 1.5rem; font-weight: 800; color: #3b82f6; text-shadow: 0 0 10px rgba(59, 130, 246, 0.3);">-</span>
-                  <span style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: 600; letter-spacing: 1px;">Análisis</span>
+                  <span style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: 600; letter-spacing: 1px;" data-en="Analyses">Análisis</span>
               </div>
           </div>
 
@@ -1761,7 +1761,7 @@
         <div class="cards-grid">
           <div class="card">
             <i class="fas fa-balance-scale"></i>
-            <h3>Ley 21.364</h3>
+            <h3 data-en="Law 21.364">Ley 21.364</h3>
             <p data-en="Municipalities must develop emergency plans and risk maps, but lack accessible tools.">
               Municipios deben elaborar planes de emergencia y mapas de riesgo,
               pero carecen de herramientas accesibles.
@@ -1769,7 +1769,7 @@
           </div>
           <div class="card">
             <i class="fas fa-tint-slash"></i>
-            <h3>Mega-sequia</h3>
+            <h3 data-en="Mega-drought">Mega-sequia</h3>
             <p data-en="15 years of water deficit. Farmers need data to optimize water use.">
               15 años de deficit hidrico. Agricultores necesitan datos para
               optimizar uso del agua.
@@ -1777,7 +1777,7 @@
           </div>
           <div class="card">
             <i class="fas fa-dollar-sign"></i>
-            <h3>Alto Costo</h3>
+            <h3 data-en="High Cost">Alto Costo</h3>
             <p data-en="Professional geospatial studies are expensive for rural municipalities.">
               Estudios geoespaciales profesionales son costosos para municipios
               rurales.
@@ -1808,18 +1808,19 @@
           <div class="card card-light">
             <i class="fab fa-google"></i>
             <h3>Google Earth Engine</h3>
-            <p>Procesamiento de Sentinel-2 (NDVI, NDWI, NDMI)</p>
+            <p data-en="Sentinel-2 Processing (NDVI, NDWI, NDMI)">Procesamiento de Sentinel-2 (NDVI, NDWI, NDMI)</p>
           </div>
           <div class="card card-light">
             <i class="fas fa-th"></i>
             <h3>Map Tiles API</h3>
-            <p>Tiles de mapas personalizados y overlays</p>
+            <p data-en="Custom map tiles and overlays">Tiles de mapas personalizados y overlays</p>
           </div>
         </div>
 
         <!-- API Category: Location -->
         <h3
           style="color: var(--primary); margin-bottom: 1rem; font-size: 1.2rem"
+          data-en-html='<i class="fas fa-location-dot" style="color: var(--secondary)"></i> Location and Places'
         >
           <i class="fas fa-location-dot" style="color: var(--secondary)"></i>
           Ubicacion y Lugares
@@ -1828,28 +1829,29 @@
           <div class="card card-light">
             <i class="fas fa-location-arrow"></i>
             <h3>Geocoding API</h3>
-            <p>Conversion direccion a coordenadas</p>
+            <p data-en="Address to coordinate conversion">Conversion direccion a coordenadas</p>
           </div>
           <div class="card card-light">
             <i class="fas fa-location-crosshairs"></i>
             <h3>Geolocation API</h3>
-            <p>Ubicacion del usuario en tiempo real</p>
+            <p data-en="Real-time user location">Ubicacion del usuario en tiempo real</p>
           </div>
           <div class="card card-light">
             <i class="fas fa-building"></i>
             <h3>Places API (New)</h3>
-            <p>Busqueda de lugares e infraestructura</p>
+            <p data-en="Places and infrastructure search">Busqueda de lugares e infraestructura</p>
           </div>
           <div class="card card-light">
             <i class="fas fa-check-circle"></i>
             <h3>Address Validation</h3>
-            <p>Validacion de direcciones postales</p>
+            <p data-en="Postal address validation">Validacion de direcciones postales</p>
           </div>
         </div>
 
         <!-- API Category: Analysis -->
         <h3
           style="color: var(--primary); margin-bottom: 1rem; font-size: 1.2rem"
+          data-en-html='<i class="fas fa-chart-line" style="color: var(--secondary)"></i> Analysis APIs'
         >
           <i class="fas fa-chart-line" style="color: var(--secondary)"></i> APIs
           de Analisis
@@ -1913,7 +1915,7 @@
           <div class="card">
             <i class="fas fa-leaf"></i>
             <h3 data-en="NDVI - Vegetation Index">NDVI - Indice de Vegetacion</h3>
-            <p data-en="<strong>Formula:</strong> (NIR - Red) / (NIR + Red)"><strong>Formula:</strong> (NIR - Rojo) / (NIR + Rojo)</p>
+            <p data-en-html="<strong>Formula:</strong> (NIR - Red) / (NIR + Red)"><strong>Formula:</strong> (NIR - Rojo) / (NIR + Rojo)</p>
             <p><strong>Bandas:</strong> (B8 - B4) / (B8 + B4)</p>
             <p><strong>Rango:</strong> -1 a +1</p>
             <p data-en="Values > 0.3 indicate healthy vegetation. Used to monitor crop health and vegetation cover.">
@@ -1924,7 +1926,7 @@
           <div class="card">
             <i class="fas fa-water"></i>
             <h3 data-en="NDWI - Water Index">NDWI - Indice de Agua</h3>
-            <p data-en="<strong>Formula:</strong> (Green - NIR) / (Green + NIR)"><strong>Formula:</strong> (Verde - NIR) / (Verde + NIR)</p>
+            <p data-en-html="<strong>Formula:</strong> (Green - NIR) / (Green + NIR)"><strong>Formula:</strong> (Verde - NIR) / (Verde + NIR)</p>
             <p><strong>Bandas:</strong> (B3 - B8) / (B3 + B8)</p>
             <p><strong>Rango:</strong> -1 a +1</p>
             <p data-en="Values > 0.3 indicate water presence. Detects water bodies, floods, and surface moisture.">
@@ -1935,7 +1937,7 @@
           <div class="card">
             <i class="fas fa-tint"></i>
             <h3 data-en="NDMI - Moisture Index">NDMI - Indice de Humedad</h3>
-            <p data-en="<strong>Formula:</strong> (NIR - SWIR) / (NIR + SWIR)"><strong>Formula:</strong> (NIR - SWIR) / (NIR + SWIR)</p>
+            <p data-en-html="<strong>Formula:</strong> (NIR - SWIR) / (NIR + SWIR)"><strong>Formula:</strong> (NIR - SWIR) / (NIR + SWIR)</p>
             <p><strong>Bandas:</strong> (B8 - B11) / (B8 + B11)</p>
             <p><strong>Rango:</strong> -1 a +1</p>
             <p data-en="Values > 0.2 indicate high moisture. Evaluates water stress in vegetation.">
@@ -2198,33 +2200,32 @@
                 <i
                   class="fas fa-check"
                   style="color: var(--secondary); margin-right: 0.5rem"
-                ></i
-              <li style="padding: 0.5rem 0">
-                <i
-                  class="fas fa-check"
-                  style="color: var(--secondary); margin-right: 0.5rem"
-                ></i
-                ><strong data-en="GEE Commercial License">Licencia Comercial GEE</strong> <span data-en="included">incluida</span>
+                ></i><strong data-en="GEE Commercial License">Licencia Comercial GEE</strong> <span data-en="included">incluida</span>
               </li>
               <li style="padding: 0.5rem 0">
                 <i
                   class="fas fa-check"
                   style="color: var(--secondary); margin-right: 0.5rem"
-                ></i
-                >Infraestructura Google Cloud gestionada
+                ></i><span data-en-html="Managed <strong>Google Cloud</strong> infrastructure">Infraestructura Google Cloud gestionada</span>
               </li>
               <li style="padding: 0.5rem 0">
                 <i
                   class="fas fa-check"
                   style="color: var(--secondary); margin-right: 0.5rem"
-                ></i
-                >Dashboard en tiempo real personalizado
+                ></i><span data-en="Custom real-time dashboard">Dashboard en tiempo real personalizado</span>
               </li>
               <li style="padding: 0.5rem 0">
                 <i
                   class="fas fa-check"
                   style="color: var(--secondary); margin-right: 0.5rem"
-                ></i
+                ></i><span data-en="Email alerts">Alertas por email</span>
+              </li>
+              <li style="padding: 0.5rem 0">
+                <i
+                  class="fas fa-check"
+                  style="color: var(--secondary); margin-right: 0.5rem"
+                ></i><span data-en="Email support">Soporte por email</span>
+              </li>
                 >Alertas por email
               </li>
               <li style="padding: 0.5rem 0">
@@ -2239,6 +2240,7 @@
               href="#contacto"
               class="btn btn-primary"
               style="width: 100%; justify-content: center"
+              data-en="Start Now"
               >Comenzar</a
             >
           </div>
@@ -2252,21 +2254,22 @@
             "
           >
             <div
-              style="
-                position: absolute;
-                top: -12px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: var(--accent);
-                color: var(--primary);
-                padding: 0.25rem 1rem;
-                border-radius: 20px;
-                font-size: 0.75rem;
-                font-weight: 700;
-              "
-            >
-              MAS POPULAR
-            </div>
+                style="
+                  position: absolute;
+                  top: 0;
+                  right: 1rem;
+                  background: var(--accent);
+                  color: white;
+                  padding: 0.25rem 0.75rem;
+                  border-radius: 0 0 8px 8px;
+                  font-size: 0.7rem;
+                  font-weight: 700;
+                  z-index: 10;
+                "
+                data-en="MOST POPULAR"
+              >
+                MAS POPULAR
+              </div>
             <div style="text-align: center">
               <span
                 style="
@@ -2307,56 +2310,50 @@
                 <i
                   class="fas fa-check"
                   style="color: var(--secondary); margin-right: 0.5rem"
-                ></i
-                ><strong>Alta Capacidad de Cómputo</strong> (High-EECU)
+                ></i><strong data-en="High Computing Capacity">Alta Capacidad de Cómputo</strong> (High-EECU)
               </li>
               <li style="padding: 0.5rem 0">
                 <i
                   class="fas fa-check"
                   style="color: var(--secondary); margin-right: 0.5rem"
-                ></i
-                ><strong>Ingesta de Datos Privados</strong> (Drones/Satélite)
+                ></i><strong data-en="Private Data Ingestion">Ingesta de Datos Privados</strong> (Drones/Satellite)
               </li>
               <li style="padding: 0.5rem 0">
                 <i
                   class="fas fa-check"
                   style="color: var(--secondary); margin-right: 0.5rem"
-                ></i
-                >Exportación Full-Resolution sin límites
+                ></i><span data-en="Unlimited Full-Resolution export">Exportación Full-Resolution sin límites</span>
               </li>
               <li style="padding: 0.5rem 0">
                 <i
                   class="fas fa-check"
                   style="color: var(--secondary); margin-right: 0.5rem"
-                ></i
-                >API para integrar data a tus sistemas
+                ></i><span data-en="API to integrate data into your systems">API para integrar data a tus sistemas</span>
               </li>
               <li style="padding: 0.5rem 0">
                 <i
                   class="fas fa-check"
                   style="color: var(--secondary); margin-right: 0.5rem"
-                ></i
-                >Alertas en tiempo real (email + SMS)
+                ></i><span data-en="Real-time alerts (email + SMS)">Alertas en tiempo real (email + SMS)</span>
               </li>
               <li style="padding: 0.5rem 0">
                 <i
                   class="fas fa-check"
                   style="color: var(--secondary); margin-right: 0.5rem"
-                ></i
-                >Reportes automaticos
+                ></i><span data-en="Automatic reports">Reportes automaticos</span>
               </li>
               <li style="padding: 0.5rem 0">
                 <i
                   class="fas fa-check"
                   style="color: var(--secondary); margin-right: 0.5rem"
-                ></i
-                >Soporte prioritario
+                ></i><span data-en="Priority support">Soporte prioritario</span>
               </li>
             </ul>
             <a
               href="#contacto"
               class="btn btn-primary"
               style="width: 100%; justify-content: center"
+              data-en="Choose Plan"
               >Elegir Plan</a
             >
           </div>
@@ -2372,9 +2369,10 @@
                   font-size: 0.8rem;
                   font-weight: 600;
                 "
+                data-en="ENGINEERING"
                 >INGENIERIA</span
               >
-              <div style="font-size: 2rem; font-weight: 800; margin: 1rem 0">
+              <div style="font-size: 2rem; font-weight: 800; margin: 1rem 0" data-en="Contact Us">
                 Contactar
               </div>
             </div>
@@ -2390,42 +2388,38 @@
                 <i
                   class="fas fa-check"
                   style="color: var(--secondary); margin-right: 0.5rem"
-                ></i
-                >Servicios de Ingenieria Ambiental
+                ></i><span data-en="Environmental Engineering Services">Servicios de Ingenieria Ambiental</span>
               </li>
               <li style="padding: 0.5rem 0">
                 <i
                   class="fas fa-check"
                   style="color: var(--secondary); margin-right: 0.5rem"
-                ></i
-                >Estudios de Impacto Ambiental (EIA/DIA)
+                ></i><span data-en="Environmental Impact Studies (EIA/DIA)">Estudios de Impacto Ambiental (EIA/DIA)</span>
               </li>
               <li style="padding: 0.5rem 0">
                 <i
                   class="fas fa-check"
                   style="color: var(--secondary); margin-right: 0.5rem"
-                ></i
-                >Consultoria GIS personalizada
+                ></i><span data-en="Custom GIS Consulting">Consultoria GIS personalizada</span>
               </li>
               <li style="padding: 0.5rem 0">
                 <i
                   class="fas fa-check"
                   style="color: var(--secondary); margin-right: 0.5rem"
-                ></i
-                >Monitoreo de cumplimiento ambiental
+                ></i><span data-en="Environmental compliance monitoring">Monitoreo de cumplimiento ambiental</span>
               </li>
               <li style="padding: 0.5rem 0">
                 <i
                   class="fas fa-check"
                   style="color: var(--secondary); margin-right: 0.5rem"
-                ></i
-                >Gestor de proyecto dedicado
+                ></i><span data-en="Dedicated project manager">Gestor de proyecto dedicado</span>
               </li>
             </ul>
             <a
               href="#contacto"
               class="btn btn-secondary"
               style="width: 100%; justify-content: center"
+              data-en="Contact"
               >Contactar</a
             >
           </div>
@@ -2433,17 +2427,17 @@
 
         <!-- Why GEE Section -->
         <div style="background: rgba(255,255,255,0.05); padding: 2rem; border-radius: 16px; margin-bottom: 3rem; border-left: 4px solid var(--secondary);">
-            <h4 style="color: white; margin-bottom: 1rem;"><i class="fas fa-info-circle"></i> ¿Por qué GeoFeedback + Google Earth Engine?</h4>
-            <p style="color: rgba(255,255,255,0.8); margin-bottom: 1rem;">
+            <h4 style="color: white; margin-bottom: 1rem;" data-en-html='<i class="fas fa-info-circle"></i> Why GeoFeedback + Google Earth Engine?'><i class="fas fa-info-circle"></i> ¿Por qué GeoFeedback + Google Earth Engine?</h4>
+            <p style="color: rgba(255,255,255,0.8); margin-bottom: 1rem;" data-en-html="Google Earth Engine (GEE) is free only for research. <strong>For commercial use, it requires expensive Enterprise licenses.</strong>">
                 Google Earth Engine (GEE) es gratuito solo para investigación. <strong>Para uso comercial requiere licencias Enterprise costosas.</strong>
             </p>
-            <p style="color: rgba(255,255,255,0.8); margin-bottom: 1rem;">
+            <p style="color: rgba(255,255,255,0.8); margin-bottom: 1rem;" data-en="GeoFeedback removes that barrier. By subscribing, you get legal and direct access to the power of GEE for your business, without complex contracts or your own infrastructure. We manage the Earth Engine Compute Units (EECU) and storage for you.">
                 GeoFeedback elimina esa barrera. Al suscribirte, obtienes acceso legal y directo a la potencia de GEE para tu negocio, sin contratos complejos ni infraestructura propia. Nosotros gestionamos las Earth Engine Compute Units (EECU) y el almacenamiento por ti.
             </p>
-            <p style="color: rgba(255,255,255,0.8); font-size: 0.9rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
+            <p style="color: rgba(255,255,255,0.8); font-size: 0.9rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;" data-en-html="Our prices (Monitoring 700k and Professional 2.8M) are based on the official cost of Google's commercial license (500k and 2M) plus 40% for management and infrastructure.">
                 Nuestros precios (Básico 700k y Profesional 2.8M) se basan en el costo oficial de la licencia comercial de Google (500k y 2M) más un 40% por gestión e infraestructura.
                 <br>
-                <a href="https://cloud.google.com/earth-engine/pricing?hl=es_419&_gl=1*vvnvev*_ga*MzMwNjEwOTIyLjE3Njg5NTQ0NTI.*_ga_WH2QY8WWF5*czE3Njg5NTQ0NTEkbzEkZzEkdDE3Njg5NTQ1NjckajUzJGwwJGgw" target="_blank" style="color: var(--secondary); text-decoration: underline; margin-top: 0.5rem; display: inline-block;">
+                <a href="https://cloud.google.com/earth-engine/pricing?hl=es_419&_gl=1*vvnvev*_ga*MzMwNjEwOTIyLjE3Njg5NTQ0NTI.*_ga_WH2QY8WWF5*czE3Njg5NTQ0NTEkbzEkZzEkdDE3Njg5NTQ1NjckajUzJGwwJGgw" target="_blank" style="color: var(--secondary); text-decoration: underline; margin-top: 0.5rem; display: inline-block;" data-en-html='<i class="fas fa-external-link-alt"></i> See Official Google Earth Engine Pricing'>
                     <i class="fas fa-external-link-alt"></i> Ver Precios Oficiales de Google Earth Engine
                 </a>
             </p>
@@ -2451,38 +2445,37 @@
 
         <!-- Servicios Profesionales -->
         <h3 style="color: white; margin-bottom: 1.5rem; font-size: 1.3rem">
-          <i class="fas fa-leaf" style="color: var(--secondary)"></i> Servicios
-          de Ingenieria Ambiental
+          <i class="fas fa-leaf" style="color: var(--secondary)"></i> <span data-en="Environmental Engineering Services">Servicios de Ingenieria Ambiental</span>
         </h3>
         <div class="cards-grid" style="margin-bottom: 3rem">
           <div class="card">
             <i class="fas fa-file-alt"></i>
-            <h3>Evaluacion de Impacto Ambiental</h3>
-            <p>
+            <h3 data-en="Environmental Impact Assessment">Evaluacion de Impacto Ambiental</h3>
+            <p data-en="Baseline studies with satellite imagery. Vegetation, water resources, and land use analysis for EIA and DIA.">
               Estudios de linea base con imagenes satelitales. Analisis de
               vegetacion, recursos hidricos y uso de suelo para EIA y DIA.
             </p>
           </div>
           <div class="card">
             <i class="fas fa-clipboard-check"></i>
-            <h3>Monitoreo de Cumplimiento</h3>
-            <p>
+            <h3 data-en="Compliance Monitoring">Monitoreo de Cumplimiento</h3>
+            <p data-en="Follow-up on RCA and SEIA regulations. Early detection of non-compliance through temporal analysis of indices.">
               Seguimiento de RCA y normativas SEIA. Deteccion temprana de
               incumplimientos mediante analisis temporal de indices.
             </p>
           </div>
           <div class="card">
             <i class="fas fa-exclamation-triangle"></i>
-            <h3>Gestion de Riesgos Naturales</h3>
-            <p>
+            <h3 data-en="Natural Risk Management">Gestion de Riesgos Naturales</h3>
+            <p data-en="Water risk, forest fire, and landslide maps. Predictive models with topographic and climatic data.">
               Mapas de riesgo hidrico, incendios forestales y deslizamientos.
               Modelos predictivos con datos topograficos y climaticos.
             </p>
           </div>
           <div class="card">
             <i class="fas fa-project-diagram"></i>
-            <h3>Consultoria GIS Personalizada</h3>
-            <p>
+            <h3 data-en="Custom GIS Consulting">Consultoria GIS Personalizada</h3>
+            <p data-en="Development of tailored geospatial solutions. Dashboards, automated reports, and integrations with existing systems.">
               Desarrollo de soluciones geoespaciales a medida. Dashboards,
               reportes automatizados e integraciones con sistemas existentes.
             </p>
@@ -2490,11 +2483,11 @@
         </div>
 
         <!-- Dashboard Demo -->
-        <h3 style="color: white; margin-bottom: 1.5rem; font-size: 1.3rem">
+        <h3 style="color: white; margin-bottom: 1.5rem; font-size: 1.3rem" data-en-html='<i class="fas fa-server" style="color: var(--secondary)"></i> Dashboard Example: Powered by Google Earth Engine™'>
           <i class="fas fa-server" style="color: var(--secondary)"></i>
           Ejemplo de Dashboard: Potenciado por Google Earth Engine™
         </h3>
-        <p style="color: rgba(255,255,255,0.7); margin-bottom: 1.5rem; max-width: 800px;">
+        <p style="color: rgba(255,255,255,0.7); margin-bottom: 1.5rem; max-width: 800px;" data-en="We process petabytes of satellite data in seconds using Google cloud infrastructure. Access massive computing capacity without managing your own servers.">
             Procesamos petabytes de datos satelitales en segundos utilizando la infraestructura en la nube de Google. 
             Accede a capacidad de cómputo masiva sin gestionar servidores propios.
         </p>
@@ -2528,6 +2521,7 @@
                   color: rgba(255, 255, 255, 0.7);
                   margin-bottom: 0.5rem;
                 "
+                data-en="Processing (EECU)"
               >
                 Procesamiento (EECU)
               </div>
@@ -2555,6 +2549,7 @@
                   color: rgba(255, 255, 255, 0.7);
                   margin-bottom: 0.5rem;
                 "
+                data-en="Analysis Latency"
               >
                 Latencia Análisis
               </div>
@@ -2576,6 +2571,7 @@
                   color: rgba(255, 255, 255, 0.7);
                   margin-bottom: 0.5rem;
                 "
+                data-en="Images/sec"
               >
                 Imágenes/seg
               </div>
@@ -2597,6 +2593,7 @@
                   color: rgba(255, 255, 255, 0.7);
                   margin-bottom: 0.5rem;
                 "
+                data-en="Risk Zones"
               >
                 Zonas de Riesgo
               </div>
@@ -2613,7 +2610,7 @@
               padding-top: 1.5rem;
             "
           >
-            <h4 style="color: white; margin-bottom: 1rem; font-size: 1rem">
+            <h4 style="color: white; margin-bottom: 1rem; font-size: 1rem" data-en-html='<i class="fas fa-bell" style="color: var(--accent)"></i> Latest Alerts'>
               <i class="fas fa-bell" style="color: var(--accent)"></i> Ultimas
               Alertas
             </h4>
@@ -2633,11 +2630,13 @@
                 <div style="flex: 1">
                   <div
                     style="font-weight: 600; color: white; font-size: 0.9rem"
+                    data-en="NDVI drop detected - North Sector"
                   >
                     Caida de NDVI detectada - Sector Norte
                   </div>
                   <div
                     style="font-size: 0.8rem; color: rgba(255, 255, 255, 0.6)"
+                    data-en="2 hours ago - Possible drought or logging"
                   >
                     Hace 2 horas - Posible sequia o tala
                   </div>
@@ -2650,6 +2649,7 @@
                     border-radius: 4px;
                     font-size: 0.7rem;
                   "
+                  data-en="CRITICAL"
                   >CRITICO</span
                 >
               </div>
@@ -2668,11 +2668,13 @@
                 <div style="flex: 1">
                   <div
                     style="font-weight: 600; color: white; font-size: 0.9rem"
+                    data-en="NDWI Increase - Quebrada El Frances"
                   >
                     Incremento NDWI - Quebrada El Frances
                   </div>
                   <div
                     style="font-size: 0.8rem; color: rgba(255, 255, 255, 0.6)"
+                    data-en="5 hours ago - Possible water accumulation"
                   >
                     Hace 5 horas - Posible acumulacion de agua
                   </div>
@@ -2685,6 +2687,7 @@
                     border-radius: 4px;
                     font-size: 0.7rem;
                   "
+                  data-en="MODERATE"
                   >MODERADO</span
                 >
               </div>
@@ -2706,11 +2709,13 @@
                 <div style="flex: 1">
                   <div
                     style="font-weight: 600; color: white; font-size: 0.9rem"
+                    data-en="Monitoring Completed - Coastal Area"
                   >
                     Monitoreo completado - Area Costera
                   </div>
                   <div
                     style="font-size: 0.8rem; color: rgba(255, 255, 255, 0.6)"
+                    data-en="1 day ago - No anomalies detected"
                   >
                     Hace 1 dia - Sin anomalias detectadas
                   </div>
@@ -2723,6 +2728,7 @@
                     border-radius: 4px;
                     font-size: 0.7rem;
                   "
+                  data-en="OK"
                   >OK</span
                 >
               </div>
@@ -2735,7 +2741,7 @@
             href="#contacto"
             class="btn btn-primary"
             style="font-size: 1.1rem; padding: 1rem 2rem"
-            ><i class="fas fa-envelope"></i> Solicitar Demo Completa</a
+            ><i class="fas fa-envelope"></i> <span data-en="Request Full Demo">Solicitar Demo Completa</span></a
           >
         </div>
       </div>
@@ -2812,12 +2818,13 @@
           <i class="fas fa-globe-americas"></i>GeoFeedback Chile
         </div>
         <div class="footer-links">
-          <a href="#demo">Demo</a>
-          <a href="/api/docs">API</a>
+          <a href="#demo" data-en="Demo">Demo</a>
+          <a href="/api/docs" data-en="API">API</a>
           <a
             href="https://github.com/theChosen16/Demo_geofeedback"
             target="_blank"
             rel="noopener noreferrer"
+            data-en="GitHub"
             >GitHub</a
           >
         </div>
@@ -2836,7 +2843,7 @@
     <div class="modal-overlay" id="interpretation-modal">
       <div class="modal-content">
         <div class="modal-header">
-          <h3>
+          <h3 data-en-html='<i class="fas fa-info-circle"></i> Result Interpretation'>
             <i class="fas fa-info-circle"></i> Interpretacion de Resultados
           </h3>
           <button class="modal-close" onclick="closeModal()">&times;</button>
@@ -2852,6 +2859,7 @@
       class="chat-toggle-btn"
       onclick="toggleChat()"
       title="Hablar con Asistente IA"
+      data-en-title="Talk to AI Assistant"
     >
       <i class="fas fa-robot"></i>
     </button>
@@ -2859,12 +2867,12 @@
     <!-- Chat Sidebar -->
     <div id="chat-sidebar" class="chat-sidebar">
       <div class="chat-header">
-        <h4><i class="fas fa-robot"></i> Asistente GeoFeedback</h4>
+        <h4 data-en-html='<i class="fas fa-robot"></i> GeoFeedback Assistant'><i class="fas fa-robot"></i> Asistente GeoFeedback</h4>
         <button class="chat-close" onclick="toggleChat()">&times;</button>
       </div>
       <div id="chat-messages" class="chat-messages">
         <div class="chat-message assistant">
-          <div class="message-bubble">
+          <div class="message-bubble" data-en="Hello! I'm the GeoFeedback AI assistant. I can help you understand territorial analysis, explain satellite indices like NDVI or NDWI, or answer questions about the platform. How can I help you today?">
             Hola! Soy el asistente de IA de GeoFeedback. Puedo ayudarte a
             entender los analisis territoriales, explicar indices satelitales
             como NDVI o NDWI, o responder preguntas sobre la plataforma. ¿En que
@@ -2878,6 +2886,7 @@
           id="chat-input"
           class="chat-input"
           placeholder="Escribe tu pregunta..."
+          data-en-placeholder="Type your question..."
           onkeypress="if (event.key === 'Enter') sendChatMessage();"
         />
         <button class="chat-send" onclick="sendChatMessage()">
@@ -4475,6 +4484,13 @@
         inputElements.forEach(el => {
             if (!el.dataset.originalPlaceholder) el.dataset.originalPlaceholder = el.placeholder;
             el.placeholder = isEn ? el.dataset.enPlaceholder : el.dataset.originalPlaceholder;
+        });
+
+        // Translate Titles (Tooltip)
+        const titleElements = document.querySelectorAll('[data-en-title]');
+        titleElements.forEach(el => {
+            if (!el.dataset.originalTitle) el.dataset.originalTitle = el.title;
+            el.title = isEn ? el.dataset.enTitle : el.dataset.originalTitle;
         });
       }
 
