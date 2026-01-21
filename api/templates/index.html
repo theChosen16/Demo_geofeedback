@@ -1401,12 +1401,21 @@
         >
         <div class="nav-links">
           <a href="#problema">Problema</a>
-          <a href="#solucion">Solucion</a>
-          <a href="#demo">Demo</a>
-          <a href="#servicios">Servicios</a>
+          <a href="#solucion" data-en="Solution">Solucion</a>
+          <a href="#demo" data-en="Demo">Demo</a>
+          <a href="#servicios" data-en="Services">Servicios</a>
           <a href="/api/docs" class="btn btn-primary"
             ><i class="fas fa-code"></i> API</a
           >
+          <button
+            class="btn btn-secondary"
+            id="lang-toggle"
+            onclick="toggleLanguage()"
+            style="padding: 0.5rem 0.75rem; min-width: auto;"
+            title="Switch Language"
+          >
+            <span id="lang-icon">🇺🇸</span> <span id="lang-text" style="font-size: 0.8rem">EN</span>
+          </button>
         </div>
       </div>
     </nav>
@@ -1414,8 +1423,8 @@
     <section id="demo" class="demo-section" style="padding-top: 8rem">
       <div class="demo-container">
         <div class="section-header intro_text">
-          <h2>Demo Interactivo</h2>
-          <p>
+          <h2 data-en="Interactive Demo">Demo Interactivo</h2>
+          <p data-en="Select location and approach to explore processed satellite data">
             Selecciona ubicacion y enfoque para explorar datos satelitales procesados
           </p>
         </div>
@@ -1424,8 +1433,8 @@
         <div style="background: #fff3cd; color: #856404; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; border: 1px solid #ffeeba; display: flex; gap: 1rem; align-items: flex-start; max-width: 900px; margin-left: auto; margin-right: auto;">
             <i class="fas fa-info-circle" style="margin-top: 0.25rem; font-size: 1.2rem;"></i>
             <div style="text-align: left;">
-                <strong style="display: block; margin-bottom: 0.25rem;">Nota sobre la frecuencia de datos:</strong>
-                <p style="margin: 0; font-size: 0.9rem; line-height: 1.5;">
+                <strong style="display: block; margin-bottom: 0.25rem;" data-en="Note on data frequency:">Nota sobre la frecuencia de datos:</strong>
+                <p style="margin: 0; font-size: 0.9rem; line-height: 1.5;" data-en="This demo uses the Google Earth Engine Research/Non-Commercial license. Images (Sentinel-2) have a 5-day frequency at the equator, but thanks to orbital overlap, at latitudes like Chile, this is reduced to <strong>2 to 3 days</strong>.<br/><i class='fas fa-check-circle' style='color: #2D5A4A; margin-right: 4px;'></i> <strong>'Real Time' (Live) monitoring is available exclusively in the Commercial Enterprise version.</strong>">
                     Esta demostracion utiliza la licencia de investigacion/no comercial de Google Earth Engine. Las imagenes (Sentinel-2) tienen un tiempo de frecuencia de 5 dias en el ecuador, pero gracias al solapamiento de orbitas, en latitudes como Chile, esto se reduce a <strong>2 a 3 dias</strong>.
                     <br/>
                     <i class="fas fa-check-circle" style="color: #2D5A4A; margin-right: 4px;"></i> <strong>El monitoreo en "Tiempo Real" (Live) esta disponible exclusivamente en la version Comercial Enterprise.</strong>
@@ -1472,7 +1481,7 @@
               </div>
             </div>
             <div class="panel">
-              <div class="panel-header">
+              <div class="panel-header" data-en='<i class="fas fa-search"></i> Search Location'>
                 <i class="fas fa-search"></i> Buscar Ubicacion
               </div>
               <div class="search-wrapper">
@@ -1507,7 +1516,7 @@
               </div>
             </div>
             <div class="panel">
-              <div class="panel-header">
+              <div class="panel-header" data-en='<i class="fas fa-crosshairs"></i> Select Approach'>
                 <i class="fas fa-crosshairs"></i> Seleccionar Enfoque
               </div>
               <select
@@ -1539,7 +1548,7 @@
               </div>
             </div>
             <div class="panel">
-              <div class="panel-header">
+              <div class="panel-header" data-en='<i class="fas fa-ruler-combined"></i> Analysis Radius'>
                 <i class="fas fa-ruler-combined"></i> Radio de Analisis
               </div>
               <select
@@ -1569,6 +1578,7 @@
                 id="analyze-btn"
                 onclick="analyzeTerritory()"
                 disabled
+                data-en='<i class="fas fa-satellite-dish"></i> Start Analysis'
               >
                 <i class="fas fa-satellite-dish"></i> Iniciar Analisis
               </button>
@@ -1612,17 +1622,17 @@
     </section>
     <section class="team-section" id="equipo">
       <div class="team-container">
-        <h2 class="section-title">
+        <h2 class="section-title" data-en='<i class="fas fa-users"></i> Our Team'>
           <i class="fas fa-users"></i> Nuestro Equipo
         </h2>
-        <p class="section-subtitle">
+        <p class="section-subtitle" data-en="Meet the founders of GeoFeedback Chile">
           Conoce a los fundadores de GeoFeedback Chile
         </p>
         <div class="team-grid">
           <div class="team-card">
             <div class="team-avatar"><i class="fas fa-user"></i></div>
             <h3 class="team-name">Consuelo Sebastian Silva</h3>
-            <p class="team-role">Fundadora</p>
+            <p class="team-role" data-en="Founder">Fundadora</p>
             <a
               href="https://www.linkedin.com/in/consuelo-sebastian-silva-b15407342/"
               target="_blank"
@@ -1635,7 +1645,7 @@
           <div class="team-card">
             <div class="team-avatar"><i class="fas fa-user"></i></div>
             <h3 class="team-name">Alejandro Hernandez Aguirre</h3>
-            <p class="team-role">Co-Fundador</p>
+            <p class="team-role" data-en="Co-Founder">Co-Fundador</p>
             <a
               href="https://www.linkedin.com/in/alejandro-hern%C3%A1ndez-aguirre-bb8967246/"
               target="_blank"
@@ -1651,13 +1661,13 @@
     <section class="hero">
       <div class="hero-content">
         <div class="hero-text">
-          <h1>Democratizando la <span>Inteligencia Territorial</span></h1>
-          <p>
+          <h1 data-en-html="Democratizing <span>Territorial Intelligence</span>">Democratizando la <span>Inteligencia Territorial</span></h1>
+          <p data-en="Open source platform that transforms satellite data into risk maps and water management tools for Chile.">
             Plataforma open source que transforma datos satelitales en mapas de
             riesgo y herramientas de gestion hidrica para Chile.
           </p>
           <div class="hero-buttons">
-            <a href="#demo" class="btn btn-primary"
+            <a href="#demo" class="btn btn-primary" data-en-html='<i class="fas fa-map-marked-alt"></i> Explore Demo'
               ><i class="fas fa-map-marked-alt"></i> Explorar Demo</a
             >
             <a
@@ -1745,14 +1755,14 @@
     <section id="problema" class="section section-dark">
       <div class="container">
         <div class="section-header">
-          <h2>El Problema</h2>
-          <p>Chile enfrenta desafios criticos en gestion territorial</p>
+          <h2 data-en="The Problem">El Problema</h2>
+          <p data-en="Chile faces critical challenges in territorial management">Chile enfrenta desafios criticos en gestion territorial</p>
         </div>
         <div class="cards-grid">
           <div class="card">
             <i class="fas fa-balance-scale"></i>
             <h3>Ley 21.364</h3>
-            <p>
+            <p data-en="Municipalities must develop emergency plans and risk maps, but lack accessible tools.">
               Municipios deben elaborar planes de emergencia y mapas de riesgo,
               pero carecen de herramientas accesibles.
             </p>
@@ -1760,15 +1770,15 @@
           <div class="card">
             <i class="fas fa-tint-slash"></i>
             <h3>Mega-sequia</h3>
-            <p>
-              15 anios de deficit hidrico. Agricultores necesitan datos para
+            <p data-en="15 years of water deficit. Farmers need data to optimize water use.">
+              15 años de deficit hidrico. Agricultores necesitan datos para
               optimizar uso del agua.
             </p>
           </div>
           <div class="card">
             <i class="fas fa-dollar-sign"></i>
             <h3>Alto Costo</h3>
-            <p>
+            <p data-en="Professional geospatial studies are expensive for rural municipalities.">
               Estudios geoespaciales profesionales son costosos para municipios
               rurales.
             </p>
@@ -1779,8 +1789,8 @@
     <section id="solucion" class="section section-light">
       <div class="container">
         <div class="section-header">
-          <h2>Nuestra Solucion</h2>
-          <p>
+          <h2 data-en="Our Solution">Nuestra Solucion</h2>
+          <p data-en="Territorial intelligence with Google Maps Platform + Google Earth Engine APIs">
             Inteligencia territorial con APIs de Google Maps Platform + Google
             Earth Engine
           </p>
@@ -1789,6 +1799,7 @@
         <!-- API Category: Satellite -->
         <h3
           style="color: var(--primary); margin-bottom: 1rem; font-size: 1.2rem"
+          data-en='<i class="fas fa-satellite" style="color: var(--secondary)"></i> Satellite Analysis'
         >
           <i class="fas fa-satellite" style="color: var(--secondary)"></i>
           Analisis Satelital
@@ -1901,33 +1912,33 @@
         <div class="cards-grid">
           <div class="card">
             <i class="fas fa-leaf"></i>
-            <h3>NDVI - Indice de Vegetacion</h3>
-            <p><strong>Formula:</strong> (NIR - Rojo) / (NIR + Rojo)</p>
+            <h3 data-en="NDVI - Vegetation Index">NDVI - Indice de Vegetacion</h3>
+            <p data-en="<strong>Formula:</strong> (NIR - Red) / (NIR + Red)"><strong>Formula:</strong> (NIR - Rojo) / (NIR + Rojo)</p>
             <p><strong>Bandas:</strong> (B8 - B4) / (B8 + B4)</p>
             <p><strong>Rango:</strong> -1 a +1</p>
-            <p>
+            <p data-en="Values > 0.3 indicate healthy vegetation. Used to monitor crop health and vegetation cover.">
               Valores &gt; 0.3 indican vegetacion saludable. Usado para
               monitorear salud de cultivos y cobertura vegetal.
             </p>
           </div>
           <div class="card">
             <i class="fas fa-water"></i>
-            <h3>NDWI - Indice de Agua</h3>
-            <p><strong>Formula:</strong> (Verde - NIR) / (Verde + NIR)</p>
+            <h3 data-en="NDWI - Water Index">NDWI - Indice de Agua</h3>
+            <p data-en="<strong>Formula:</strong> (Green - NIR) / (Green + NIR)"><strong>Formula:</strong> (Verde - NIR) / (Verde + NIR)</p>
             <p><strong>Bandas:</strong> (B3 - B8) / (B3 + B8)</p>
             <p><strong>Rango:</strong> -1 a +1</p>
-            <p>
+            <p data-en="Values > 0.3 indicate water presence. Detects water bodies, floods, and surface moisture.">
               Valores &gt; 0.3 indican presencia de agua. Detecta cuerpos de
               agua, inundaciones y humedad superficial.
             </p>
           </div>
           <div class="card">
             <i class="fas fa-tint"></i>
-            <h3>NDMI - Indice de Humedad</h3>
-            <p><strong>Formula:</strong> (NIR - SWIR) / (NIR + SWIR)</p>
+            <h3 data-en="NDMI - Moisture Index">NDMI - Indice de Humedad</h3>
+            <p data-en="<strong>Formula:</strong> (NIR - SWIR) / (NIR + SWIR)"><strong>Formula:</strong> (NIR - SWIR) / (NIR + SWIR)</p>
             <p><strong>Bandas:</strong> (B8 - B11) / (B8 + B11)</p>
             <p><strong>Rango:</strong> -1 a +1</p>
-            <p>
+            <p data-en="Values > 0.2 indicate high moisture. Evaluates water stress in vegetation.">
               Valores &gt; 0.2 indican alta humedad. Evalua estres hidrico en
               vegetacion y contenido de agua en plantas.
             </p>
@@ -1959,6 +1970,7 @@
                 align-items: center;
                 gap: 0.5rem;
               "
+              data-en='<i class="fas fa-lightbulb" style="animation: pulse 2s infinite"></i> How do these indices work?'
             >
               <i
                 class="fas fa-lightbulb"
@@ -2013,6 +2025,7 @@
                 align-items: center;
                 gap: 0.5rem;
               "
+              data-en='<i class="fas fa-satellite" style="animation: float 3s ease-in-out infinite"></i> Sentinel-2: Our eyes in space'
             >
               <i
                 class="fas fa-satellite"
@@ -2164,10 +2177,11 @@
                   font-size: 0.8rem;
                   font-weight: 600;
                 "
+                data-en="MONITORING"
                 >MONITOREO</span
               >
               <div style="font-size: 2rem; font-weight: 800; margin: 1rem 0">
-                $700.000<span style="font-size: 0.9rem; font-weight: 400">
+                $700.000<span style="font-size: 0.9rem; font-weight: 400" data-en=" CLP/mo">
                   CLP/mes</span
                 >
               </div>
@@ -2190,7 +2204,7 @@
                   class="fas fa-check"
                   style="color: var(--secondary); margin-right: 0.5rem"
                 ></i
-                ><strong>Licencia Comercial GEE</strong> incluida
+                ><strong data-en="GEE Commercial License">Licencia Comercial GEE</strong> <span data-en="included">incluida</span>
               </li>
               <li style="padding: 0.5rem 0">
                 <i
@@ -2267,10 +2281,11 @@
                   font-size: 0.8rem;
                   font-weight: 600;
                 "
+                data-en="PROFESSIONAL"
                 >PROFESIONAL</span
               >
               <div style="font-size: 2rem; font-weight: 800; margin: 1rem 0">
-                $2.800.000<span style="font-size: 0.9rem; font-weight: 400">
+                $2.800.000<span style="font-size: 0.9rem; font-weight: 400" data-en=" CLP/mo">
                   CLP/mes</span
                 >
               </div>
@@ -2727,15 +2742,15 @@
     </section>
     <section class="contact-section" id="contacto">
       <div class="contact-container">
-        <h2 class="section-title">
+        <h2 class="section-title" data-en='<i class="fas fa-envelope"></i> Contact Us'>
           <i class="fas fa-envelope"></i> Contactanos
         </h2>
-        <p class="section-subtitle">
+        <p class="section-subtitle" data-en="Have a question or proposal? Write to us">
           Tienes alguna pregunta o propuesta? Escribenos
         </p>
         <form class="contact-form" id="contact-form">
           <div class="form-group">
-            <label for="contact-name">Nombre *</label>
+            <label for="contact-name" data-en="Name *">Nombre *</label>
             <input
               type="text"
               id="contact-name"
@@ -2743,20 +2758,22 @@
               placeholder="Tu nombre completo"
               required
               autocomplete="name"
+              data-en-placeholder="Your full name"
             />
           </div>
           <div class="form-group">
-            <label for="contact-company">Empresa (opcional)</label>
+            <label for="contact-company" data-en="Company (optional)">Empresa (opcional)</label>
             <input
               type="text"
               id="contact-company"
               name="company"
               placeholder="Nombre de tu empresa"
               autocomplete="organization"
+              data-en-placeholder="Company name"
             />
           </div>
           <div class="form-group">
-            <label for="contact-email">Correo electronico *</label>
+            <label for="contact-email" data-en="Email *">Correo electronico *</label>
             <input
               type="email"
               id="contact-email"
@@ -2764,22 +2781,24 @@
               placeholder="tu@email.com"
               required
               autocomplete="email"
+              data-en-placeholder="you@email.com"
             />
           </div>
           <div class="form-group">
-            <label for="contact-message">Mensaje *</label>
+            <label for="contact-message" data-en="Message *">Mensaje *</label>
             <textarea
               id="contact-message"
               name="message"
               placeholder="Describe tu solicitud o consulta..."
               required
               autocomplete="off"
+              data-en-placeholder="Describe your request or question..."
             ></textarea>
           </div>
-          <button type="submit" class="btn-submit" id="contact-submit">
+          <button type="submit" class="btn-submit" id="contact-submit" data-en='<i class="fas fa-paper-plane"></i> Send Message'>
             <i class="fas fa-paper-plane"></i> Enviar Mensaje
           </button>
-          <div class="form-success" id="contact-success">
+          <div class="form-success" id="contact-success" data-en='<i class="fas fa-check-circle"></i> Message sent successfully. We will contact you soon.'>
             <i class="fas fa-check-circle"></i> Mensaje enviado exitosamente.
             Nos pondremos en contacto pronto.
           </div>
@@ -4415,6 +4434,48 @@
                   clearInterval(timer);
               }
           }, stepTime);
+      }
+
+
+      // ============================================================================
+      // LANGUAGE TOGGLE LOGIC
+      // ============================================================================
+      let currentLang = 'es';
+
+      function toggleLanguage() {
+        currentLang = currentLang === 'es' ? 'en' : 'es';
+        updateLanguage();
+      }
+
+      function updateLanguage() {
+        const isEn = currentLang === 'en';
+        
+        // Update Button
+        const langIcon = document.getElementById('lang-icon');
+        const langText = document.getElementById('lang-text');
+        if(langIcon) langIcon.textContent = isEn ? '🇨🇱' : '🇺🇸';
+        if(langText) langText.textContent = isEn ? 'ES' : 'EN';
+        
+        // Translate Elements with data-en
+        const elements = document.querySelectorAll('[data-en]');
+        elements.forEach(el => {
+            if (!el.dataset.original) el.dataset.original = el.textContent; // Cache original ES
+            el.textContent = isEn ? el.dataset.en : el.dataset.original;
+        });
+
+        // Translate Elements with data-en-html (preserve HTML inside)
+         const htmlElements = document.querySelectorAll('[data-en-html]');
+         htmlElements.forEach(el => {
+            if (!el.dataset.originalHtml) el.dataset.originalHtml = el.innerHTML; // Cache original ES HTML
+            el.innerHTML = isEn ? el.dataset.enHtml : el.dataset.originalHtml;
+        });
+
+        // Translate Placeholders
+        const inputElements = document.querySelectorAll('[data-en-placeholder]');
+        inputElements.forEach(el => {
+            if (!el.dataset.originalPlaceholder) el.dataset.originalPlaceholder = el.placeholder;
+            el.placeholder = isEn ? el.dataset.enPlaceholder : el.dataset.originalPlaceholder;
+        });
       }
 
       // Start the map initialization
