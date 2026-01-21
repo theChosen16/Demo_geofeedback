@@ -1622,7 +1622,7 @@
     </section>
     <section class="team-section" id="equipo">
       <div class="team-container">
-        <h2 class="section-title" data-en='<i class="fas fa-users"></i> Our Team'>
+        <h2 class="section-title" data-en-html='<i class="fas fa-users"></i> Our Team'>
           <i class="fas fa-users"></i> Nuestro Equipo
         </h2>
         <p class="section-subtitle" data-en="Meet the founders of GeoFeedback Chile">
@@ -1799,7 +1799,7 @@
         <!-- API Category: Satellite -->
         <h3
           style="color: var(--primary); margin-bottom: 1rem; font-size: 1.2rem"
-          data-en='<i class="fas fa-satellite" style="color: var(--secondary)"></i> Satellite Analysis'
+          data-en-html='<i class="fas fa-satellite" style="color: var(--secondary)"></i> Satellite Analysis'
         >
           <i class="fas fa-satellite" style="color: var(--secondary)"></i>
           Analisis Satelital
@@ -1860,28 +1860,29 @@
           <div class="card card-light">
             <i class="fas fa-mountain"></i>
             <h3>Elevation API</h3>
-            <p>Datos topograficos en tiempo real</p>
+            <p data-en="Real-time topographic data">Datos topograficos en tiempo real</p>
           </div>
           <div class="card card-light">
             <i class="fas fa-wind"></i>
             <h3>Air Quality API</h3>
-            <p>Calidad del aire resolucion 500m</p>
+            <p data-en="Air quality at 500m resolution">Calidad del aire resolucion 500m</p>
           </div>
           <div class="card card-light">
             <i class="fas fa-sun"></i>
             <h3>Solar API</h3>
-            <p>Potencial fotovoltaico de cubiertas</p>
+            <p data-en="Rooftop photovoltaic potential">Potencial fotovoltaico de cubiertas</p>
           </div>
           <div class="card card-light">
             <i class="fas fa-leaf"></i>
             <h3>Pollen API</h3>
-            <p>Niveles de polen y alergenos</p>
+            <p data-en="Pollen and allergen levels">Niveles de polen y alergenos</p>
           </div>
         </div>
 
         <!-- API Category: Visualization -->
         <h3
           style="color: var(--primary); margin-bottom: 1rem; font-size: 1.2rem"
+          data-en-html='<i class="fas fa-map" style="color: var(--secondary)"></i> Visualization'
         >
           <i class="fas fa-map" style="color: var(--secondary)"></i>
           Visualizacion
@@ -1890,17 +1891,17 @@
           <div class="card card-light">
             <i class="fas fa-map-marked-alt"></i>
             <h3>Maps JavaScript API</h3>
-            <p>Mapas interactivos web</p>
+            <p data-en="Interactive web maps">Mapas interactivos web</p>
           </div>
           <div class="card card-light">
             <i class="fas fa-image"></i>
             <h3>Maps Static API</h3>
-            <p>Mapas estaticos para reportes PDF</p>
+            <p data-en="Static maps for PDF reports">Mapas estaticos para reportes PDF</p>
           </div>
           <div class="card card-light">
             <i class="fas fa-database"></i>
             <h3>Maps Datasets API</h3>
-            <p>Gestion de datasets geoespaciales</p>
+            <p data-en="Geospatial dataset management">Gestion de datasets geoespaciales</p>
           </div>
         </div>
       </div>
@@ -1908,8 +1909,8 @@
     <section id="indices" class="section section-dark">
       <div class="container">
         <div class="section-header">
-          <h2>Indices Satelitales Sentinel-2</h2>
-          <p>Comprendiendo los datos que analizamos</p>
+          <h2 data-en="Sentinel-2 Satellite Indices">Indices Satelitales Sentinel-2</h2>
+          <p data-en="Understanding the data we analyze">Comprendiendo los datos que analizamos</p>
         </div>
         <div class="cards-grid">
           <div class="card">
@@ -1972,7 +1973,7 @@
                 align-items: center;
                 gap: 0.5rem;
               "
-              data-en='<i class="fas fa-lightbulb" style="animation: pulse 2s infinite"></i> How do these indices work?'
+              data-en-html='<i class="fas fa-lightbulb" style="animation: pulse 2s infinite"></i> How do these indices work?'
             >
               <i
                 class="fas fa-lightbulb"
@@ -2027,7 +2028,7 @@
                 align-items: center;
                 gap: 0.5rem;
               "
-              data-en='<i class="fas fa-satellite" style="animation: float 3s ease-in-out infinite"></i> Sentinel-2: Our eyes in space'
+              data-en-html='<i class="fas fa-satellite" style="animation: float 3s ease-in-out infinite"></i> Sentinel-2: Our eyes in space'
             >
               <i
                 class="fas fa-satellite"
@@ -2153,17 +2154,17 @@
       <div class="container">
         <div class="section-header">
           <h2>
-            <i class="fas fa-rocket" style="color: var(--accent)"></i> Servicios
-            Premium
+            <i class="fas fa-rocket" style="color: var(--accent)"></i> <span data-en="Premium Services">Servicios
+            Premium</span>
           </h2>
-          <p>
+          <p data-en="Professional territorial intelligence solutions for your organization">
             Soluciones profesionales de inteligencia territorial para tu
             organizacion
           </p>
         </div>
 
         <!-- Planes de Suscripcion -->
-        <h3 style="color: white; margin-bottom: 1.5rem; font-size: 1.3rem">
+        <h3 style="color: white; margin-bottom: 1.5rem; font-size: 1.3rem" data-en-html='<i class="fas fa-tags" style="color: var(--secondary)"></i> Subscription Plans'>
           <i class="fas fa-tags" style="color: var(--secondary)"></i> Planes de
           Suscripcion
         </h3>
@@ -2225,15 +2226,6 @@
                   class="fas fa-check"
                   style="color: var(--secondary); margin-right: 0.5rem"
                 ></i><span data-en="Email support">Soporte por email</span>
-              </li>
-                >Alertas por email
-              </li>
-              <li style="padding: 0.5rem 0">
-                <i
-                  class="fas fa-check"
-                  style="color: var(--secondary); margin-right: 0.5rem"
-                ></i
-                >Soporte por email
               </li>
             </ul>
             <a
@@ -2305,8 +2297,8 @@
                 <i
                   class="fas fa-check"
                   style="color: var(--secondary); margin-right: 0.5rem"
-                ></i
-              <li style="padding: 0.5rem 0">
+                ></i><strong data-en="All Monitoring Features">Todas las funciones de Monitoreo</strong>
+              </li>
                 <i
                   class="fas fa-check"
                   style="color: var(--secondary); margin-right: 0.5rem"
@@ -2444,7 +2436,7 @@
         </div>
 
         <!-- Servicios Profesionales -->
-        <h3 style="color: white; margin-bottom: 1.5rem; font-size: 1.3rem">
+        <h3 style="color: white; margin-bottom: 1.5rem; font-size: 1.3rem" data-en-html='<i class="fas fa-leaf" style="color: var(--secondary)"></i> <span data-en="Environmental Engineering Services">Environmental Engineering Services</span>'>
           <i class="fas fa-leaf" style="color: var(--secondary)"></i> <span data-en="Environmental Engineering Services">Servicios de Ingenieria Ambiental</span>
         </h3>
         <div class="cards-grid" style="margin-bottom: 3rem">
@@ -2748,7 +2740,7 @@
     </section>
     <section class="contact-section" id="contacto">
       <div class="contact-container">
-        <h2 class="section-title" data-en='<i class="fas fa-envelope"></i> Contact Us'>
+        <h2 class="section-title" data-en-html='<i class="fas fa-envelope"></i> Contact Us'>
           <i class="fas fa-envelope"></i> Contactanos
         </h2>
         <p class="section-subtitle" data-en="Have a question or proposal? Write to us">
@@ -2804,7 +2796,7 @@
           <button type="submit" class="btn-submit" id="contact-submit" data-en='<i class="fas fa-paper-plane"></i> Send Message'>
             <i class="fas fa-paper-plane"></i> Enviar Mensaje
           </button>
-          <div class="form-success" id="contact-success" data-en='<i class="fas fa-check-circle"></i> Message sent successfully. We will contact you soon.'>
+          <div class="form-success" id="form-success" data-en-html='<i class="fas fa-check-circle"></i> Message sent successfully. We will contact you soon.'>
             <i class="fas fa-check-circle"></i> Mensaje enviado exitosamente.
             Nos pondremos en contacto pronto.
           </div>
@@ -3559,18 +3551,22 @@
 
         // Update button text to show what's missing
         var missing = [];
-        if (!selectedPlace) missing.push("ubicación");
-        if (!selectedApproach) missing.push("enfoque");
-        if (!selectedRadius) missing.push("radio");
+        var isEn = typeof currentLang !== 'undefined' && currentLang === 'en';
+
+        if (!selectedPlace) missing.push(isEn ? "Location" : "ubicación");
+        if (!selectedApproach) missing.push(isEn ? "Approach" : "enfoque");
+        if (!selectedRadius) missing.push(isEn ? "Radius" : "radio");
 
         var hint = document.querySelector("#analyze-btn + p");
         if (hint) {
           if (missing.length > 0) {
-            hint.textContent = "Requiere: " + missing.join(", ");
+            hint.textContent = (isEn ? "Requires: " : "Requiere: ") + missing.join(", ");
+            hint.style.color = "var(--text-light)";
           } else {
-            hint.textContent = "✓ Listo para analizar";
+            hint.textContent = isEn ? "✓ Ready to analyze" : "✓ Listo para analizar";
             hint.style.color = "var(--secondary)";
           }
+        }
         }
       }
 
