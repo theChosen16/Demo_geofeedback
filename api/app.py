@@ -12,6 +12,8 @@ import datetime
 import json
 import time
 import hashlib
+import threading
+from collections import defaultdict
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import ee
@@ -55,7 +57,43 @@ def call_gemini_with_retry(prompt, max_retries=2, timeout=30):
     return None
 
 app = Flask(__name__)
-CORS(app)
+
+# CORS: restrict to known origins in production, allow all in development
+ALLOWED_ORIGINS = os.environ.get('ALLOWED_ORIGINS', '*')
+if ALLOWED_ORIGINS == '*':
+    CORS(app)
+else:
+    CORS(app, origins=[o.strip() for o in ALLOWED_ORIGINS.split(',')])
+
+
+# ============================================================================
+# Simple In-Memory Rate Limiter
+# ============================================================================
+class RateLimiter:
+    """Thread-safe sliding window rate limiter per IP."""
+    def __init__(self, max_requests=10, window_seconds=60):
+        self.max_requests = max_requests
+        self.window = window_seconds
+        self._requests = defaultdict(list)
+        self._lock = threading.Lock()
+
+    def is_allowed(self, key):
+        now = time.time()
+        with self._lock:
+            # Clean expired entries
+            self._requests[key] = [t for t in self._requests[key] if now - t < self.window]
+            if len(self._requests[key]) >= self.max_requests:
+                return False
+            self._requests[key].append(now)
+            return True
+
+# 10 analyses per minute, 5 contact submissions per minute
+analysis_limiter = RateLimiter(max_requests=10, window_seconds=60)
+contact_limiter = RateLimiter(max_requests=5, window_seconds=60)
+
+def get_client_ip():
+    """Get real client IP, respecting proxy headers."""
+    return request.headers.get('X-Forwarded-For', request.remote_addr or '127.0.0.1').split(',')[0].strip()
 
 # Inicializar Google Earth Engine
 gee_initialized = init_gee()
@@ -90,6 +128,9 @@ def calculate_indices(image):
 
 @app.route('/api/v1/analyze', methods=['POST'])
 def analyze_territory():
+    if not analysis_limiter.is_allowed(get_client_ip()):
+        return jsonify({"status": "error", "message": "Demasiadas solicitudes. Intenta en un minuto."}), 429
+
     if not gee_initialized:
         return jsonify({"status": "error", "message": "GEE no está inicializado"}), 500
     
@@ -317,6 +358,9 @@ def analyze_territory():
 @app.route('/api/v1/interpret', methods=['POST'])
 def interpret_analysis():
     """Generate AI interpretation of analysis results."""
+    if not analysis_limiter.is_allowed(get_client_ip()):
+        return jsonify({"status": "error", "message": "Demasiadas solicitudes. Intenta en un minuto."}), 429
+
     if not gemini_available:
         return jsonify({"status": "error", "message": "Gemini AI no disponible"}), 503
     
@@ -396,6 +440,9 @@ Genera una interpretación profesional de estos datos siguiendo la estructura in
 @app.route('/api/v1/chat', methods=['POST'])
 def chat_with_assistant():
     """Chat with GeoFeedback AI assistant."""
+    if not analysis_limiter.is_allowed(get_client_ip()):
+        return jsonify({"status": "error", "message": "Demasiadas solicitudes. Intenta en un minuto."}), 429
+
     if not gemini_available:
         return jsonify({"status": "error", "message": "Gemini AI no disponible"}), 503
     
@@ -548,6 +595,9 @@ Correo recibido automaticamente desde https://geofeedback.cl
 @app.route('/api/v1/contact', methods=['POST'])
 def contact_form():
     """Handle contact form submissions - SYNC version."""
+    if not contact_limiter.is_allowed(get_client_ip()):
+        return jsonify({"status": "error", "message": "Demasiadas solicitudes. Intenta en un minuto."}), 429
+
     try:
         data = request.json
         name = data.get('name', '').strip()

@@ -545,6 +545,15 @@
           align-items: flex-start;
           gap: 1rem;
           box-shadow: var(--shadow);
+          opacity: 0;
+          transform: translateY(15px);
+          animation: resultCardIn 0.4s ease forwards;
+      }
+      .result-card:nth-child(1) { animation-delay: 0s; }
+      .result-card:nth-child(2) { animation-delay: 0.1s; }
+      .result-card:nth-child(3) { animation-delay: 0.15s; }
+      @keyframes resultCardIn {
+          to { opacity: 1; transform: translateY(0); }
       }
       .result-icon { font-size: 2rem; color: var(--secondary); }
       .result-content h4 { font-size: 1rem; color: var(--primary); margin-bottom: 0.25rem; }
@@ -1181,6 +1190,85 @@
           transition: opacity 0.3s;
       }
 
+      /* Collapsible Panels (Mobile) */
+      @media (max-width: 768px) {
+          .panel-header.collapsible {
+              cursor: pointer;
+              user-select: none;
+              position: relative;
+              padding-right: 1.5rem;
+          }
+          .panel-header.collapsible::after {
+              content: '\f078';
+              font-family: 'Font Awesome 6 Free';
+              font-weight: 900;
+              position: absolute;
+              right: 0;
+              font-size: 0.7rem;
+              transition: transform 0.3s ease;
+          }
+          .panel-header.collapsible.collapsed::after {
+              transform: rotate(-90deg);
+          }
+          .panel-body-collapsible {
+              max-height: 600px;
+              overflow: hidden;
+              transition: max-height 0.35s ease;
+          }
+          .panel-body-collapsible.collapsed {
+              max-height: 0;
+          }
+      }
+
+      /* Skeleton Loading Screens */
+      .skeleton {
+          background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+          background-size: 200% 100%;
+          animation: shimmer 1.5s infinite;
+          border-radius: 6px;
+      }
+      .skeleton-text { height: 14px; margin-bottom: 8px; width: 80%; }
+      .skeleton-text.short { width: 50%; }
+      .skeleton-value { height: 20px; width: 60px; }
+      @keyframes shimmer {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+      }
+
+      /* Analysis History Panel */
+      .history-list {
+          max-height: 200px;
+          overflow-y: auto;
+          margin-top: 0.5rem;
+      }
+      .history-item {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          padding: 0.6rem 0.75rem;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: background 0.2s;
+          font-size: 0.82rem;
+          border-bottom: 1px solid var(--border);
+      }
+      .history-item:last-child { border-bottom: none; }
+      .history-item:hover { background: var(--background); }
+      .history-item i { color: var(--secondary); flex-shrink: 0; }
+      .history-item .history-name {
+          flex: 1;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          font-weight: 500;
+          color: var(--text);
+      }
+      .history-item .history-time {
+          font-size: 0.7rem;
+          color: var(--text-light);
+          flex-shrink: 0;
+      }
+
       /* Modal Styles */
       .modal-overlay {
           display: none;
@@ -1626,10 +1714,10 @@
                 class="approach-select"
                 onchange="onRadiusChange()"
               >
-                <option value="">-- Selecciona el radio --</option>
-                <option value="2000" selected>2 kilometros (~12.57 km²)</option>
-                <option value="5000">5 kilometros (~78.54 km²)</option>
-                <option value="10000">10 kilometros (~314.16 km²)</option>
+                <option value="" data-en="-- Select radius --">-- Selecciona el radio --</option>
+                <option value="2000" selected data-en="2 kilometers (~12.57 km²)">2 kilometros (~12.57 km²)</option>
+                <option value="5000" data-en="5 kilometers (~78.54 km²)">5 kilometros (~78.54 km²)</option>
+                <option value="10000" data-en="10 kilometers (~314.16 km²)">10 kilometros (~314.16 km²)</option>
               </select>
               <div
                 style="
@@ -1638,8 +1726,8 @@
                   margin-top: 0.5rem;
                 "
               >
-                <i class="fas fa-info-circle"></i> El radio define el area
-                circular alrededor del punto para el analisis.
+                <i class="fas fa-info-circle"></i> <span data-en="The radius defines the circular area around the point for analysis.">El radio define el area
+                circular alrededor del punto para el analisis.</span>
               </div>
             </div>
             <div class="panel">
@@ -1660,8 +1748,14 @@
                   text-align: center;
                 "
               >
-                Requiere ubicacion y enfoque seleccionados
+                <span data-en="Requires selected location and approach">Requiere ubicacion y enfoque seleccionados</span>
               </p>
+            </div>
+            <div class="panel" id="history-panel" style="display: none;">
+              <div class="panel-header" data-en-html='<i class="fas fa-history"></i> Recent Analyses'>
+                <i class="fas fa-history"></i> Analisis Recientes
+              </div>
+              <div class="history-list" id="history-list"></div>
             </div>
           </div>
         </div>
@@ -2988,6 +3082,164 @@
         }
       }
 
+      // ====== Phase 2: localStorage Persistence ======
+      function savePreferences() {
+        try {
+          var prefs = {};
+          if (selectedPlace) prefs.place = selectedPlace;
+          if (selectedApproach) prefs.approach = selectedApproach;
+          if (selectedRadius) prefs.radius = selectedRadius;
+          localStorage.setItem('gf_prefs', JSON.stringify(prefs));
+        } catch(e) { /* localStorage unavailable */ }
+      }
+
+      function loadPreferences() {
+        try {
+          var stored = localStorage.getItem('gf_prefs');
+          if (!stored) return null;
+          return JSON.parse(stored);
+        } catch(e) { return null; }
+      }
+
+      // ====== Analysis History ======
+      var analysisHistory = [];
+
+      function loadHistory() {
+        try {
+          var stored = localStorage.getItem('gf_history');
+          if (stored) analysisHistory = JSON.parse(stored);
+        } catch(e) { analysisHistory = []; }
+      }
+
+      function saveHistory() {
+        try {
+          localStorage.setItem('gf_history', JSON.stringify(analysisHistory.slice(0, 5)));
+        } catch(e) { /* ignored */ }
+      }
+
+      function addToHistory(place, approach, timestamp) {
+        analysisHistory.unshift({
+          name: place.name,
+          lat: place.lat,
+          lng: place.lng,
+          approach: approach,
+          time: timestamp || Date.now()
+        });
+        if (analysisHistory.length > 5) analysisHistory.pop();
+        saveHistory();
+        renderHistory();
+      }
+
+      function renderHistory() {
+        var container = document.getElementById('history-list');
+        var panel = document.getElementById('history-panel');
+        if (!container || !panel) return;
+        if (analysisHistory.length === 0) { panel.style.display = 'none'; return; }
+        panel.style.display = '';
+        var isEn = typeof currentLang !== 'undefined' && currentLang === 'en';
+        var html = '';
+        var approachNames = isEn ? {
+          mining: 'Mining', agriculture: 'Agro', energy: 'Energy',
+          'real-estate': 'Real Estate', 'fire-risk': 'Fire Risk',
+          'flood-risk': 'Flood Risk', 'water-management': 'Water',
+          environmental: 'Environmental', 'land-planning': 'Planning'
+        } : {
+          mining: 'Mineria', agriculture: 'Agro', energy: 'Energia',
+          'real-estate': 'Inmobiliario', 'fire-risk': 'Incendio',
+          'flood-risk': 'Inundacion', 'water-management': 'Hidrica',
+          environmental: 'Ambiental', 'land-planning': 'Territorial'
+        };
+        analysisHistory.forEach(function(item, i) {
+          var ago = getTimeAgo(item.time, isEn);
+          var icon = 'fas fa-map-marker-alt';
+          html += '<div class="history-item" onclick="replayHistory(' + i + ')" title="' + item.name + '">' +
+            '<i class="' + icon + '"></i>' +
+            '<span class="history-name">' + (approachNames[item.approach] || item.approach) + ' - ' + item.name.split(',')[0] + '</span>' +
+            '<span class="history-time">' + ago + '</span></div>';
+        });
+        container.innerHTML = html;
+      }
+
+      function getTimeAgo(ts, isEn) {
+        var diff = Math.floor((Date.now() - ts) / 1000);
+        if (diff < 60) return isEn ? 'now' : 'ahora';
+        if (diff < 3600) return Math.floor(diff / 60) + (isEn ? 'm ago' : 'm');
+        if (diff < 86400) return Math.floor(diff / 3600) + 'h';
+        return Math.floor(diff / 86400) + 'd';
+      }
+
+      function replayHistory(index) {
+        var item = analysisHistory[index];
+        if (!item) return;
+        selectedPlace = { lat: item.lat, lng: item.lng, name: item.name };
+        selectedApproach = item.approach;
+        document.getElementById('approach-select').value = item.approach;
+        onApproachChange();
+        if (map) {
+          map.setCenter({ lat: item.lat, lng: item.lng });
+          map.setZoom(12);
+        }
+        document.getElementById('location-name').textContent = item.name;
+        document.getElementById('location-coords').textContent = item.lat.toFixed(4) + ', ' + item.lng.toFixed(4);
+        document.getElementById('status-location').classList.add('ready');
+        checkReadyState();
+      }
+
+      // ====== Radius Circle on Map ======
+      var analysisCircle = null;
+
+      function updateAnalysisCircle() {
+        if (analysisCircle) { analysisCircle.setMap(null); analysisCircle = null; }
+        if (!selectedPlace || !selectedRadius || !map) return;
+        analysisCircle = new google.maps.Circle({
+          map: map,
+          center: { lat: selectedPlace.lat, lng: selectedPlace.lng },
+          radius: selectedRadius,
+          fillColor: '#2D5A4A',
+          fillOpacity: 0.08,
+          strokeColor: '#A68B5B',
+          strokeOpacity: 0.5,
+          strokeWeight: 2,
+          clickable: false
+        });
+      }
+
+      // ====== Skeleton Loading for Live Data ======
+      function showLiveDataSkeleton() {
+        var dataEl = document.getElementById('live-data');
+        dataEl.classList.add('active');
+        ['data-elevation', 'data-aqi', 'data-solar', 'data-slope'].forEach(function(id) {
+          document.getElementById(id).innerHTML = '<div class="skeleton skeleton-value"></div>';
+        });
+      }
+
+      // ====== Collapsible Panels (Mobile) ======
+      function initCollapsiblePanels() {
+        if (window.innerWidth > 768) return;
+        var panels = document.querySelectorAll('.sidebar .panel');
+        panels.forEach(function(panel, i) {
+          var header = panel.querySelector('.panel-header');
+          if (!header) return;
+          if (i === 0) return; // Skip status bar panel
+          header.classList.add('collapsible');
+          var body = document.createElement('div');
+          body.className = 'panel-body-collapsible';
+          while (header.nextSibling) {
+            body.appendChild(header.nextSibling);
+          }
+          panel.appendChild(body);
+          // Collapse radius and history by default on mobile
+          if (i >= 3) {
+            header.classList.add('collapsed');
+            body.classList.add('collapsed');
+          }
+          header.addEventListener('click', function() {
+            header.classList.toggle('collapsed');
+            body.classList.toggle('collapsed');
+          });
+        });
+      }
+
       var approaches = {
         mining: {
           name: "Mineria Sostenible",
@@ -3239,7 +3491,7 @@
             location: { lat: clickedLat, lng: clickedLng },
           });
 
-          let placeName = "Ubicación seleccionada";
+          let placeName = currentLang === 'en' ? "Selected location" : "Ubicación seleccionada";
           if (response.results && response.results[0]) {
             placeName = response.results[0].formatted_address;
           }
@@ -3266,11 +3518,14 @@
           document.getElementById("result-location").innerHTML =
             '<i class="fas fa-check-circle result-icon" style="color:var(--secondary)"></i><div class="result-content"><h4>' +
             placeName +
-            "</h4><p>Seleccionado en mapa</p></div>";
+            "</h4><p>" + (currentLang === 'en' ? 'Selected on map' : 'Seleccionado en mapa') + "</p></div>";
 
           checkReadyState();
+          updateAnalysisCircle();
+          savePreferences();
 
           // Fetch Live Data
+          showLiveDataSkeleton();
           fetchElevationAndSlope(clickedLat, clickedLng);
           fetchAirQuality(clickedLat, clickedLng);
           fetchSolarPotential(clickedLat, clickedLng);
@@ -3338,7 +3593,7 @@
 
               if (!place.location) {
                 console.error("Place has no location after fetchFields");
-                showToast('La ubicacion seleccionada no tiene coordenadas validas.', 'toast-warning');
+                showToast(currentLang === 'en' ? 'Selected location has no valid coordinates.' : 'La ubicacion seleccionada no tiene coordenadas validas.', 'toast-warning');
                 return;
               }
 
@@ -3361,7 +3616,7 @@
             }
           } catch (err) {
             console.error("Error processing place:", err);
-            showToast('Error al procesar el lugar: ' + err.message, 'toast-error');
+            showToast((currentLang === 'en' ? 'Error processing place: ' : 'Error al procesar el lugar: ') + err.message, 'toast-error');
           }
         };
 
@@ -3407,7 +3662,7 @@
         function handlePlaceSelection(location, name, viewport) {
           dismissMapHint();
           if (!location) {
-            showToast('No se encontraron detalles de ubicacion.', 'toast-warning');
+            showToast(currentLang === 'en' ? 'No location details found.' : 'No se encontraron detalles de ubicacion.', 'toast-warning');
             return;
           }
 
@@ -3444,11 +3699,27 @@
 
           // Enable analysis button
           checkReadyState();
+          updateAnalysisCircle();
+          savePreferences();
 
           // Fetch Live Data
+          showLiveDataSkeleton();
           fetchElevationAndSlope(selectedPlace.lat, selectedPlace.lng);
           fetchAirQuality(selectedPlace.lat, selectedPlace.lng);
           fetchSolarPotential(selectedPlace.lat, selectedPlace.lng);
+        }
+
+        // Restore saved preferences
+        var prefs = loadPreferences();
+        if (prefs) {
+          if (prefs.approach) {
+            document.getElementById('approach-select').value = prefs.approach;
+            onApproachChange();
+          }
+          if (prefs.radius) {
+            document.getElementById('radius-select').value = prefs.radius;
+            onRadiusChange();
+          }
         }
       }
 
@@ -3620,6 +3891,7 @@
           "</h4><p>" +
           config.indices.length +
           " capas de datos</p></div>";
+        savePreferences();
         checkReadyState();
       }
 
@@ -3631,6 +3903,8 @@
         } else {
           selectedRadius = parseInt(value);
         }
+        updateAnalysisCircle();
+        savePreferences();
         checkReadyState();
       }
 
@@ -3815,6 +4089,9 @@
               window.lastAnalysisMeta = data.meta;
               window.lastAnalysisArea = data.area_m2;
 
+              // Save to analysis history
+              if (selectedPlace) addToHistory(selectedPlace, selectedApproach);
+
               // Scroll to results
               resultsContainer.scrollIntoView({
                 behavior: "smooth",
@@ -3856,7 +4133,7 @@
               // Open Chat Sidebar with AI Interpretation
               var locationName = selectedPlace
                 ? selectedPlace.name
-                : "la ubicación seleccionada";
+                : currentLang === 'en' ? "the selected location" : "la ubicación seleccionada";
               analysisContext = {
                 approach: selectedApproach,
                 results: data.data,
@@ -4019,18 +4296,16 @@
         if (html === "") {
           html =
             '<div class="scale-section">' +
-            '<div class="scale-title"><i class="fas fa-chart-bar"></i> Resumen del Analisis</div>' +
-            '<p style="color:var(--text-light)">Los resultados muestran los valores calculados para la ubicacion seleccionada. ' +
-            "Valores positivos en indices de vegetacion indican mayor cobertura vegetal. " +
-            "Pendientes bajas son mejores para construccion.</p>" +
+            '<div class="scale-title"><i class="fas fa-chart-bar"></i> ' + (isEn ? 'Analysis Summary' : 'Resumen del Analisis') + '</div>' +
+            '<p style="color:var(--text-light)">' + (isEn ? 'Results show computed values for the selected location. Positive values in vegetation indices indicate greater vegetation cover. Low slopes are better for construction.' : 'Los resultados muestran los valores calculados para la ubicacion seleccionada. Valores positivos en indices de vegetacion indican mayor cobertura vegetal. Pendientes bajas son mejores para construccion.') + '</p>' +
             "</div>";
         }
 
         // Add satellite info
         html +=
           '<div style="margin-top:1rem; padding:1rem; background:#f0fdf4; border-radius:8px; font-size:0.85rem; color:var(--text-light);">' +
-          '<i class="fas fa-satellite" style="color:var(--secondary)"></i> <strong>Fuente:</strong> Sentinel-2 MSI + SRTM | ' +
-          '<i class="fas fa-calendar"></i> Imagen mas reciente disponible (ultimos 6 meses)' +
+          '<i class="fas fa-satellite" style="color:var(--secondary)"></i> <strong>' + (isEn ? 'Source' : 'Fuente') + ':</strong> Sentinel-2 MSI + SRTM | ' +
+          '<i class="fas fa-calendar"></i> ' + (isEn ? 'Most recent available image (last 6 months)' : 'Imagen mas reciente disponible (ultimos 6 meses)') +
           "</div>";
 
         modalBody.innerHTML = html;
@@ -4039,7 +4314,7 @@
         // Store context for chat
         var locationName = selectedPlace
           ? selectedPlace.name
-          : "ubicación seleccionada";
+          : currentLang === 'en' ? "selected location" : "ubicación seleccionada";
         analysisContext = {
           approach: approach,
           results: data,
@@ -4062,6 +4337,22 @@
         .addEventListener("click", function (e) {
           if (e.target === this) closeModal();
         });
+
+      // Close modal on ESC key
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          var modal = document.getElementById('interpretation-modal');
+          if (modal && modal.classList.contains('active')) {
+            closeModal();
+            e.preventDefault();
+          }
+          var chatSidebar = document.getElementById('chat-sidebar');
+          if (chatSidebar && chatSidebar.classList.contains('open')) {
+            toggleChat();
+            e.preventDefault();
+          }
+        }
+      });
 
       // ============================================================================
       // CHAT AND AI FUNCTIONS
@@ -4405,7 +4696,7 @@
             .catch((error) => {
               btn.innerHTML = originalText;
               btn.disabled = false;
-              showToast("Error de conexion. Intenta nuevamente.", 'toast-error');
+              showToast(currentLang === 'en' ? 'Connection error. Please try again.' : 'Error de conexion. Intenta nuevamente.', 'toast-error');
             });
         });
 
@@ -4584,7 +4875,24 @@
             if (!el.dataset.originalTitle) el.dataset.originalTitle = el.title;
             el.title = isEn ? el.dataset.enTitle : el.dataset.originalTitle;
         });
+
+        // Translate optgroup labels
+        const optgroupElements = document.querySelectorAll('[data-en-label]');
+        optgroupElements.forEach(el => {
+            if (!el.dataset.originalLabel) el.dataset.originalLabel = el.label;
+            el.label = isEn ? el.dataset.enLabel : el.dataset.originalLabel;
+        });
       }
+
+      // ============================================================================
+      // INITIALIZATION
+      // ============================================================================
+      loadHistory();
+      renderHistory();
+      initCollapsiblePanels();
+
+      // Restore saved preferences after map loads
+      var _origInitMap = typeof initMap === 'function' ? initMap : null;
 
       // Start the map initialization
       loadGoogleMaps();
