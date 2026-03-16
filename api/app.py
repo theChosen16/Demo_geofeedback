@@ -18,14 +18,12 @@ import ee
 from gee_config import init_gee
 import database # [NEW] Database module
 
-# ... (Gemini import remains same)
 try:
     from google import genai
-# ...
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
     if GEMINI_API_KEY:
         gemini_client = genai.Client(api_key=GEMINI_API_KEY)
-        gemini_model_name = 'gemini-3-flash-preview'  # Latest: Dec 2025
+        gemini_model_name = 'gemini-3-flash-preview'  # Gemini 3 Flash Preview - google.dev
         gemini_available = True
         print("Gemini AI (gemini-3-flash-preview) inicializado correctamente.")
     else:
@@ -387,7 +385,7 @@ Genera una interpretación profesional de estos datos siguiendo la estructura in
         return jsonify({
             "status": "success",
             "interpretation": response_text,
-            "model": "gemini-3-flash-preview"
+            "model": gemini_model_name
         })
         
     except Exception as e:
@@ -456,7 +454,7 @@ Responde de forma útil y amigable:"""
         return jsonify({
             "status": "success",
             "response": response_text,
-            "model": "gemini-3-flash-preview"
+            "model": gemini_model_name
         })
         
     except Exception as e:
