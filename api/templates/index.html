@@ -1117,6 +1117,70 @@
       }
       @keyframes spin { to { transform: rotate(360deg); } }
 
+      /* Map Click Hint Overlay */
+      .map-hint-overlay {
+          position: absolute;
+          top: 0; left: 0; right: 0; bottom: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: rgba(45, 90, 74, 0.15);
+          z-index: 5;
+          pointer-events: none;
+          transition: opacity 0.5s ease;
+      }
+      .map-hint-overlay.hidden { opacity: 0; pointer-events: none; }
+      .map-hint-content {
+          background: rgba(255, 255, 255, 0.95);
+          padding: 1rem 1.5rem;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+          font-size: 0.95rem;
+          font-weight: 500;
+          color: var(--primary);
+          animation: hintPulse 2s ease-in-out infinite;
+      }
+      .map-hint-content i { font-size: 1.3rem; color: var(--secondary); }
+      @keyframes hintPulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.03); }
+      }
+
+      /* Toast Notification */
+      .toast-notification {
+          position: fixed;
+          top: 80px;
+          right: 20px;
+          padding: 1rem 1.5rem;
+          border-radius: 10px;
+          color: white;
+          font-weight: 500;
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          z-index: 10000;
+          transform: translateX(120%);
+          transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+          box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+          max-width: 400px;
+      }
+      .toast-notification.show { transform: translateX(0); }
+      .toast-notification.toast-success { background: linear-gradient(135deg, #10b981, #059669); }
+      .toast-notification.toast-error { background: linear-gradient(135deg, #ef4444, #dc2626); }
+      .toast-notification.toast-warning { background: linear-gradient(135deg, #f59e0b, #d97706); }
+
+      /* Analysis radius circle indicator */
+      .radius-info {
+          font-size: 0.8rem;
+          color: var(--secondary);
+          margin-top: 0.25rem;
+          font-weight: 500;
+          transition: opacity 0.3s;
+      }
+
       /* Modal Styles */
       .modal-overlay {
           display: none;
@@ -1445,11 +1509,17 @@
             </div>
         </div>
         <div class="demo-layout">
-          <div class="map-container">
+          <div class="map-container" style="position: relative;">
             <div id="demo-map">
               <div class="map-placeholder" id="map-placeholder">
                 <i class="fas fa-map-marked-alt"></i>
                 <p>Cargando mapa...</p>
+              </div>
+            </div>
+            <div class="map-hint-overlay" id="map-hint">
+              <div class="map-hint-content">
+                <i class="fas fa-mouse-pointer"></i>
+                <span data-en="Click the map to select a location">Haz clic en el mapa para seleccionar una ubicacion</span>
               </div>
             </div>
             <div class="map-controls">
@@ -2899,6 +2969,24 @@
       var isSatellite = true;
       var chatHistory = [];
       var analysisContext = {};
+      var mapHintDismissed = false;
+
+      function showToast(message, type) {
+        type = type || 'toast-success';
+        var toast = document.getElementById('toast-notification');
+        toast.className = 'toast-notification ' + type;
+        toast.innerHTML = '<i class="fas fa-' + (type === 'toast-success' ? 'check-circle' : type === 'toast-error' ? 'exclamation-circle' : 'exclamation-triangle') + '"></i> ' + message;
+        toast.classList.add('show');
+        setTimeout(function() { toast.classList.remove('show'); }, 4000);
+      }
+
+      function dismissMapHint() {
+        if (!mapHintDismissed) {
+          mapHintDismissed = true;
+          var hint = document.getElementById('map-hint');
+          if (hint) hint.classList.add('hidden');
+        }
+      }
 
       var approaches = {
         mining: {
@@ -3141,6 +3229,7 @@
 
         // Map Click Listener
         map.addListener("click", async (e) => {
+          dismissMapHint();
           const clickedLat = e.latLng.lat();
           const clickedLng = e.latLng.lng();
 
@@ -3249,9 +3338,7 @@
 
               if (!place.location) {
                 console.error("Place has no location after fetchFields");
-                alert(
-                  "La ubicación seleccionada no tiene coordenadas válidas.",
-                );
+                showToast('La ubicacion seleccionada no tiene coordenadas validas.', 'toast-warning');
                 return;
               }
 
@@ -3274,7 +3361,7 @@
             }
           } catch (err) {
             console.error("Error processing place:", err);
-            alert("Error al procesar el lugar: " + err.message);
+            showToast('Error al procesar el lugar: ' + err.message, 'toast-error');
           }
         };
 
@@ -3318,8 +3405,9 @@
         });
 
         function handlePlaceSelection(location, name, viewport) {
+          dismissMapHint();
           if (!location) {
-            window.alert("No se encontraron detalles de ubicación.");
+            showToast('No se encontraron detalles de ubicacion.', 'toast-warning');
             return;
           }
 
@@ -3645,7 +3733,8 @@
         }
 
         var btn = document.getElementById("analyze-btn");
-        btn.innerHTML = '<span class="loading-spinner"></span> Procesando...';
+        var isEn = typeof currentLang !== 'undefined' && currentLang === 'en';
+        btn.innerHTML = '<span class="loading-spinner"></span> ' + (isEn ? 'Processing...' : 'Procesando...');
         btn.disabled = true;
 
         var payload = {
@@ -3662,8 +3751,9 @@
         })
           .then((response) => response.json())
           .then((data) => {
+            var isEn = typeof currentLang !== 'undefined' && currentLang === 'en';
             btn.innerHTML =
-              '<i class="fas fa-satellite-dish"></i> Iniciar Analisis';
+              '<i class="fas fa-satellite-dish"></i> ' + (isEn ? 'Start Analysis' : 'Iniciar Analisis');
             btn.disabled = false;
 
             if (data.status === "success") {
@@ -3778,17 +3868,18 @@
               // Open interpretation modal with AI analysis
               showInterpretationModal();
             } else if (data.status === "warning") {
-              alert("Aviso: " + data.message);
+              showToast(data.message, 'toast-warning');
             } else {
-              alert("Error en el analisis: " + data.message);
+              showToast("Error: " + data.message, 'toast-error');
             }
           })
           .catch((error) => {
             console.error("Error:", error);
+            var isEn = typeof currentLang !== 'undefined' && currentLang === 'en';
             btn.innerHTML =
-              '<i class="fas fa-satellite-dish"></i> Iniciar Analisis';
+              '<i class="fas fa-satellite-dish"></i> ' + (isEn ? 'Start Analysis' : 'Iniciar Analisis');
             btn.disabled = false;
-            alert("Error de conexión. Por favor intenta de nuevo.");
+            showToast(isEn ? 'Connection error. Please try again.' : 'Error de conexion. Intenta de nuevo.', 'toast-error');
           });
       }
 
@@ -4296,20 +4387,25 @@
               btn.innerHTML = originalText;
               btn.disabled = false;
               if (data.status === "success") {
-                document.getElementById("contact-success").style.display =
+                document.getElementById("form-success").style.display =
                   "block";
                 document.getElementById("contact-form").reset();
-                // El mensaje de éxito permanece visible
+                setTimeout(function() {
+                  document.getElementById("form-success").style.display = "none";
+                }, 6000);
+                var isEn = typeof currentLang !== 'undefined' && currentLang === 'en';
+                showToast(isEn ? 'Message sent successfully!' : 'Mensaje enviado correctamente!', 'toast-success');
               } else {
-                alert(
-                  "Error al enviar: " + (data.message || "Intenta nuevamente"),
+                showToast(
+                  "Error: " + (data.message || "Intenta nuevamente"),
+                  'toast-error'
                 );
               }
             })
             .catch((error) => {
               btn.innerHTML = originalText;
               btn.disabled = false;
-              alert("Error de conexion. Intenta nuevamente.");
+              showToast("Error de conexion. Intenta nuevamente.", 'toast-error');
             });
         });
 
@@ -4493,5 +4589,8 @@
       // Start the map initialization
       loadGoogleMaps();
     </script>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-notification" id="toast-notification"></div>
   </body>
 </html>
