@@ -47,3 +47,7 @@ Thumbs.db
 # Credentials
 service-account-key.json
 api/service-account-key.json
+
+
+#Ignore vscode AI rules
+.github\instructions\codacy.instructions.md
