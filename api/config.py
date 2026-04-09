@@ -99,11 +99,14 @@ class Config:
             # Resolver a IPv4 para evitar problemas de conectividad
             resolved_ip = resolve_ipv4(hostname)
 
+            db_name = url.path.lstrip('/')
+            db_port = url.port or 5432
+
             config = {
-                'dbname': url.path.lstrip('/'),
+                'dbname': db_name,
                 'user': url.username,
                 'password': url.password,
-                'port': url.port or 5432,
+                'port': db_port,
             }
 
             # Usar hostaddr para bypass DNS + host para SSL verification
@@ -115,13 +118,14 @@ class Config:
 
             # SSL mode según el entorno
             if 'supabase' in hostname or 'neon' in hostname:
-                config['sslmode'] = 'require'
+                sslmode = 'require'
             elif 'railway' in hostname or 'localhost' in hostname:
-                config['sslmode'] = 'disable'
+                sslmode = 'disable'
             else:
-                config['sslmode'] = 'prefer'
+                sslmode = 'prefer'
+            config['sslmode'] = sslmode
 
-            logger.info(f"DB Config: ***:{config['port']}/{config['dbname']} (sslmode={config['sslmode']})")
+            logger.info(f"DB Config: ***:{db_port}/{db_name} (sslmode={sslmode})")
             return config
 
         # Fallback: Variables individuales (desarrollo local)
