@@ -121,7 +121,7 @@ class Config:
             else:
                 config['sslmode'] = 'prefer'
 
-            logger.info(f"DB Config: {hostname}:{config['port']}/{config['dbname']} (sslmode={config['sslmode']})")
+            logger.info(f"DB Config: ***:{config['port']}/{config['dbname']} (sslmode={config['sslmode']})")
             return config
 
         # Fallback: Variables individuales (desarrollo local)

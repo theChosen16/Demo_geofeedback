@@ -45,14 +45,13 @@ def log_analysis(endpoint, location_name, lat, lng, approach, status='success'):
         with conn.cursor() as cur:
             # Create a simple point geometry from lat/lng
             # SRID 4326 is WGS84 (standard lat/lng)
-            geom_sql = f"ST_SetSRID(ST_MakePoint({lng}, {lat}), 4326)"
-            
+            # Use parameterized query to prevent SQL injection
             cur.execute(
-                f"""
+                """
                 INSERT INTO metadata.api_usage_logs (endpoint, location_name, coordinates, approach, status)
-                VALUES (%s, %s, {geom_sql}, %s, %s)
+                VALUES (%s, %s, ST_SetSRID(ST_MakePoint(%s, %s), 4326), %s, %s)
                 """,
-                (endpoint, location_name, approach, status)
+                (endpoint, location_name, float(lng), float(lat), approach, status)
             )
         conn.commit()
     except Exception as e:

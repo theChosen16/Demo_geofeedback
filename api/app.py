@@ -348,7 +348,7 @@ def analyze_territory():
 
     except Exception as e:
         print(f"Error en análisis GEE: {e}")
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return jsonify({"status": "error", "message": "Error interno en el análisis. Por favor intenta de nuevo."}), 500
 
 
 # ============================================================================
@@ -639,7 +639,7 @@ def contact_form():
         print(f"Error en formulario de contacto: {e}")
         import traceback
         traceback.print_exc()
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return jsonify({"status": "error", "message": "Error interno en el formulario. Por favor intenta de nuevo."}), 500
 
 
 LANDING_HTML = '''<!DOCTYPE html>
@@ -3672,7 +3672,7 @@ def stats():
         return jsonify(public_stats)
     except Exception as e:
         print(f"Error getting stats: {e}")
-        return jsonify({"visits": 0, "analyses": 0, "error": str(e)})
+        return jsonify({"visits": 0, "analyses": 0})
 
 @app.route('/api/v1/infrastructure')
 def infrastructure():
