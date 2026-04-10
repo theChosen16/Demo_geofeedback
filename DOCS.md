@@ -1,6 +1,6 @@
 # GeoFeedback Chile - Documentación Técnica
 
-> **Versión:** 3.0 | **Fecha:** Diciembre 2025
+> **Versión:** 3.1 | **Fecha:** Abril 2026
 > **Demo en vivo:** https://geofeedback.cl
 
 ---
@@ -209,19 +209,35 @@ Los índices funcionan gracias a las propiedades de absorción y reflexión de l
 
 ## Seguridad y Auditoría
 
-**Auditoría Enero 2026: ✅ PASADO** with observations.
+**Auditoría Abril 2026: ✅ PASADO — 0 alertas activas** ([ver historial completo](./SECURITY_AUDIT.md))
+
+### Correcciones Aplicadas (Abril 2026)
+
+| Vulnerabilidad | Archivo | Estado |
+|----------------|---------|--------|
+| Flask CVE-2026-27205 | `requirements.txt` | ✅ Upgrade `>=3.1.3` |
+| SQL Injection (`lat`/`lng`) | `database.py` | ✅ Query parametrizado |
+| Clear-text logging (password taint) | `config.py` | ✅ Variables descontaminadas |
+| Stack trace en respuestas API | `app.py` (×3) | ✅ Mensajes genéricos |
+| Google API Key expuesta en git | Historial | ✅ Reescrito con `git-filter-repo` |
 
 ### Gestión de Credenciales
 
 - **Local:** Se usa `service-account-key.json` (protegido por `.gitignore`) y `.env`.
-- **Producción:** Se inyectan credenciales exclusivamente vía Variables de Entorno (ver `gee_config.py`).
-- **Código:** Se han eliminado defaults inseguros de `config.py`.
+- **Producción:** Credenciales exclusivamente vía Variables de Entorno (ver `gee_config.py`).
+- **Código:** Sin defaults inseguros en `config.py`.
+
+### Configuración GCP - API Key Maps Platform
+
+- **Restricciones de dominio activas:** `browserKeyRestrictions` — solo acepta requests desde `geofeedback.cl` y subdominos Railway.
+- **Restricciones de API:** Sin límite (configurado vía CLI, la UI de GCP Maps Platform no expone esta opción).
+- **Historial limpio:** Key rotada y commits anteriores reescritos.
 
 ### Privacidad de Datos
 
 - Las coordenadas de usuario no se almacenan de forma persistente.
 - PII (Información Personal) se maneja con logs mínimos.
-- API Keys de frontend se inyectan en tiempo de ejecución.
+- API Keys de frontend se inyectan en tiempo de ejecución (servidor-side rendering).
 
 ---
 
@@ -264,4 +280,4 @@ Google Earth Engine requiere licencias Enterprise para uso comercial. GeoFeedbac
 
 ---
 
-_© 2025 GeoFeedback Chile - Todos los derechos reservados_
+_© 2025-2026 GeoFeedback Chile - Todos los derechos reservados_

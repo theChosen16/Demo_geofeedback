@@ -4,6 +4,7 @@
 
 [![Demo](https://img.shields.io/badge/Demo-geofeedback.cl-blue)](https://demogeofeedback-production.up.railway.app)
 [![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red)](#)
+[![Security](https://img.shields.io/badge/Security-0%20alertas%20activas-brightgreen)](./SECURITY_AUDIT.md)
 
 ---
 
@@ -55,4 +56,4 @@ Este proyecto es una demo técnica. Ver [LICENSE](./LICENSE) para detalles.
 
 ---
 
-_Última actualización: 19 de Enero de 2026_
+_Última actualización: 9 de Abril de 2026_
