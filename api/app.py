@@ -13,7 +13,9 @@ import json
 import time
 import hashlib
 import threading
+import logging
 from collections import defaultdict
+import redis
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import ee
@@ -95,20 +97,53 @@ def set_security_headers(response):
 
 
 # ============================================================================
-# Simple In-Memory Rate Limiter
+# Structured JSON Logging & Redis Orchestration 
 # ============================================================================
+logger = logging.getLogger('geofeedback')
+logger.setLevel(logging.INFO)
+# Configurar formato nativo para mejor integración con Loki
+formatter = logging.Formatter('%(message)s')
+ch = logging.StreamHandler()
+ch.setFormatter(formatter)
+if not logger.handlers:
+    logger.addHandler(ch)
+
+def log_event(event_type, **kwargs):
+    """Genera logs en formato JSON para Grafana/Loki Stack."""
+    log_data = {
+        "timestamp": datetime.datetime.now(datetime.UTC).isoformat(),
+        "event": event_type,
+        "environment": os.environ.get('RAILWAY_ENVIRONMENT', 'local'),
+        **kwargs
+    }
+    logger.info(json.dumps(log_data))
+
+# Attempt to connect to Redis
+REDIS_URL = os.environ.get('REDIS_URL')
+redis_client = None
+if REDIS_URL:
+    try:
+        redis_client = redis.from_url(REDIS_URL)
+        redis_client.ping()
+        log_event('redis_init', status='connected')
+    except Exception as e:
+        log_event('redis_init', status='failed', error=str(e))
+        redis_client = None
+
 class RateLimiter:
-    """Thread-safe sliding window rate limiter per IP with periodic cleanup."""
-    def __init__(self, max_requests=10, window_seconds=60):
+    """Hybrid Rate Limiter: Redis-first, fallback to Thread-safe In-Memory."""
+    def __init__(self, key_prefix, max_requests=10, window_seconds=60):
+        self.prefix = key_prefix
         self.max_requests = max_requests
         self.window = window_seconds
+        
+        # In-Memory Fallback
         self._requests = defaultdict(list)
         self._lock = threading.Lock()
         self._last_cleanup = time.time()
-        self._cleanup_interval = 300  # Cleanup cada 5 minutos
+        self._cleanup_interval = 300
 
     def _cleanup_old_entries(self, now):
-        """Remove stale IP entries to prevent memory leak."""
         if now - self._last_cleanup < self._cleanup_interval:
             return
         self._last_cleanup = now
@@ -116,20 +151,41 @@ class RateLimiter:
         for k in stale_keys:
             del self._requests[k]
 
-    def is_allowed(self, key):
+    def is_allowed(self, client_ip):
+        # Redis Primary Approach
+        if redis_client:
+            redis_key = f"rate_limit:{self.prefix}:{client_ip}"
+            try:
+                # Transacción Atómica
+                pipe = redis_client.pipeline()
+                pipe.incr(redis_key)
+                pipe.expire(redis_key, self.window, nx=True) # set expire solo si no tiene uno
+                results = pipe.execute()
+                request_count = results[0]
+                
+                if request_count > self.max_requests:
+                    log_event('rate_limit_exceeded', ip=client_ip, prefix=self.prefix, backend='redis')
+                    return False
+                return True
+            except Exception as e:
+                # Fallback to local memory if Redis crashes
+                log_event('redis_error', error=str(e), action='fallback_to_memory')
+        
+        # Memory Standard Approach
         now = time.time()
         with self._lock:
             self._cleanup_old_entries(now)
-            # Clean expired entries for this key
-            self._requests[key] = [t for t in self._requests[key] if now - t < self.window]
-            if len(self._requests[key]) >= self.max_requests:
+            self._requests[client_ip] = [t for t in self._requests[client_ip] if now - t < self.window]
+            if len(self._requests[client_ip]) >= self.max_requests:
+                log_event('rate_limit_exceeded', ip=client_ip, prefix=self.prefix, backend='memory')
                 return False
-            self._requests[key].append(now)
+            self._requests[client_ip].append(now)
             return True
 
 # 10 analyses per minute, 5 contact submissions per minute
-analysis_limiter = RateLimiter(max_requests=10, window_seconds=60)
-contact_limiter = RateLimiter(max_requests=5, window_seconds=60)
+analysis_limiter = RateLimiter(key_prefix='analyze', max_requests=10, window_seconds=60)
+contact_limiter = RateLimiter(key_prefix='contact', max_requests=5, window_seconds=60)
+
 
 def get_client_ip():
     """Get real client IP from trusted proxy headers."""
@@ -210,6 +266,10 @@ def analyze_territory():
         return jsonify({"status": "error", "message": f"Enfoque no válido"}), 400
     if radius < 100:
         radius = 100
+
+    client_ip = get_client_ip()
+    log_event('api_call', endpoint='/analyze', ip=client_ip, approach=approach, radius=radius,
+              coords={'lat': lat, 'lng': lng})
 
     try:
         point = ee.Geometry.Point([lng, lat])
@@ -518,13 +578,15 @@ def chat_with_assistant():
         data = request.json
         message = str(data.get('message', ''))[:500]
         context = data.get('context', {})
-        history = data.get('history', [])[-5:]
+        history = data.get('history', [])
         
-        # Build conversation history for context
         chat_history = ""
-        for msg in history[-5:]:  # Last 5 messages for context
-            role = "Usuario" if msg.get('role') == 'user' else "Asistente"
-            chat_history += f"{role}: {msg.get('content', '')}\n"
+        for i, msg in enumerate(history):
+            role = msg.get('role', 'user')
+            text = msg.get('text', '')[:1000] # Cap contextual history length
+            chat_history += f"{role}: {text}\n"
+
+        log_event('api_call', endpoint='/chat', ip=get_client_ip(), message_length=len(message))
         
         # GeoBot system personality
         system_prompt = """Eres GeoBot, el asistente experto de GeoFeedback Chile. 
@@ -573,7 +635,7 @@ Responde de forma útil y amigable:"""
         })
         
     except Exception as e:
-        print(f"Error en chat AI: {e}")
+        log_event('chat_error', error=str(e))
         return jsonify({
             "status": "error", 
             "message": "Error de conexión temporal. Por favor intenta de nuevo.",
@@ -592,42 +654,18 @@ def send_email_resend(name, company, email, message):
     from_email = "GeoFeedback <contacto@geofeedback.cl>"
     destination_email = os.environ.get('RESEND_TO_EMAIL', 'GeoFeedback.cl@gmail.com')
     
-    print(f"📧 Intentando enviar email via Resend API...")
-    print(f"   RESEND_API_KEY configurado: {'Sí' if resend_api_key else 'NO - FALTA!'}")
-    print(f"   Email desde: {from_email}")
-    print(f"   Email destino: {destination_email}")
-    
     if not resend_api_key:
-        error_msg = "RESEND_API_KEY no configurado"
-        print(f"⚠ {error_msg}")
-        return False, error_msg
+        return False, "RESEND_API_KEY no configurado"
     
     try:
-        # Construir el email
         email_data = {
             "from": from_email,
             "to": [destination_email],
             "reply_to": email,
             "subject": f"[GeoFeedback Web] Nuevo contacto de {name}",
-            "text": f"""
-===========================================
-NUEVO MENSAJE DE CONTACTO - GEOFEEDBACK.CL
-===========================================
-
-Nombre: {name}
-Empresa: {company if company else 'No especificada'}
-Email de contacto: {email}
-
-Mensaje:
-{message}
-
--------------------------------------------
-Responde directamente a este correo para contactar al usuario.
-Correo recibido automaticamente desde https://geofeedback.cl
-            """
+            "text": f"Nombre: {name}\nEmpresa: {company}\nEmail: {email}\n\nMensaje: {message}"
         }
         
-        # Enviar via API HTTP
         req = urllib.request.Request(
             'https://api.resend.com/emails',
             data=json.dumps(email_data).encode('utf-8'),
@@ -638,27 +676,17 @@ Correo recibido automaticamente desde https://geofeedback.cl
             method='POST'
         )
         
-        print("📧 Enviando via Resend API...")
-        with urllib.request.urlopen(req, timeout=30) as response:
-            result = json.loads(response.read().decode('utf-8'))
-            print(f"✅ EMAIL ENVIADO EXITOSAMENTE via Resend. ID: {result.get('id', 'N/A')}")
-            return True, "Email enviado correctamente"
+        with urllib.request.urlopen(req, timeout=30) as res:
+            if res.status in [200, 201]:
+                log_event('contact_email_sent', status='success', destination=destination_email)
+                return True, "Enviado"
+            else:
+                log_event('contact_email_error', status_code=res.status)
+                return False, "Error API"
             
-    except urllib.error.HTTPError as e:
-        error_body = e.read().decode('utf-8') if e.fp else str(e)
-        error_msg = f"Error HTTP de Resend ({e.code}): {error_body}"
-        print(f"❌ {error_msg}")
-        return False, error_msg
-    except urllib.error.URLError as e:
-        error_msg = f"Error de conexión a Resend: {e.reason}"
-        print(f"❌ {error_msg}")
-        return False, error_msg
     except Exception as e:
-        error_msg = f"Error inesperado: {type(e).__name__}: {e}"
-        print(f"❌ {error_msg}")
-        import traceback
-        traceback.print_exc()
-        return False, error_msg
+        log_event('contact_system_error', error=str(e))
+        return False, str(e)
 
 @app.route('/api/v1/contact', methods=['POST'])
 def contact_form():
@@ -673,39 +701,21 @@ def contact_form():
         email = data.get('email', '').strip()
         message = data.get('message', '').strip()
         
-        # Validate required fields
         if not name or not email or not message:
             return jsonify({"status": "error", "message": "Campos requeridos incompletos"}), 400
         
-        # Log the contact request (sin PII)
-        print(f"\n{'='*50}")
-        print(f"=== NUEVO CONTACTO RECIBIDO ===")
-        print(f"Campos: nombre={'sí' if name else 'no'}, empresa={'sí' if company else 'no'}, email={'sí' if email else 'no'}")
-        print(f"Longitud mensaje: {len(message)} caracteres")
-        print(f"{'='*50}\n")
+        log_event('contact_received', ip=get_client_ip(), has_name=bool(name))
         
-        # Send email via Resend API (HTTP-based, works on Railway)
         success, error_detail = send_email_resend(name, company, email, message)
         
         if success:
-            return jsonify({
-                "status": "success",
-                "message": "Mensaje enviado correctamente. Te contactaremos pronto."
-            })
+            return jsonify({"status": "success", "message": "Mensaje enviado correctamente"})
         else:
-            # Log error but don't expose internal details to user
-            print(f"⚠ Error enviando email: {error_detail}")
-            return jsonify({
-                "status": "success",  # Decimos success para no frustrar al usuario
-                "message": "Mensaje recibido. Te contactaremos pronto.",
-                "warning": "El sistema de notificación tuvo un problema pero tu mensaje fue registrado."
-            })
+            return jsonify({"status": "error", "message": "Error al enviar el mensaje por API"}), 500
         
     except Exception as e:
-        print(f"Error en formulario de contacto: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({"status": "error", "message": "Error interno en el formulario. Por favor intenta de nuevo."}), 500
+        log_event('contact_system_error', error=str(e))
+        return jsonify({"status": "error", "message": "Falla interna del sistema"}), 500
 
 
 LANDING_HTML = '''<!DOCTYPE html>
