@@ -5,7 +5,7 @@ set -e
 echo "Starting application..."
 echo "Current user: $(whoami)"
 echo "Environment variables:"
-env | grep -v "SECRET" | sort
+env | grep -viE "SECRET|KEY|PASSWORD|TOKEN|CREDENTIALS" | sort
 
 # Ensure PORT is set
 PORT="${PORT:-8080}"

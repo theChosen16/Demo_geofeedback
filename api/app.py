@@ -58,29 +58,69 @@ def call_gemini_with_retry(prompt, max_retries=2, timeout=30):
 
 app = Flask(__name__)
 
-# CORS: restrict to known origins in production, allow all in development
-ALLOWED_ORIGINS = os.environ.get('ALLOWED_ORIGINS', '*')
-if ALLOWED_ORIGINS == '*':
+# CORS: restrict to known origins — NO wildcard default in production
+ALLOWED_ORIGINS = os.environ.get('ALLOWED_ORIGINS', '')
+if not ALLOWED_ORIGINS or ALLOWED_ORIGINS == '*':
+    import warnings
+    warnings.warn("ALLOWED_ORIGINS no configurado. CORS abierto — solo aceptable en desarrollo local.")
     CORS(app)
 else:
     CORS(app, origins=[o.strip() for o in ALLOWED_ORIGINS.split(',')])
 
 
 # ============================================================================
+# Security Headers
+# ============================================================================
+@app.after_request
+def set_security_headers(response):
+    """Aplica headers de seguridad HTTP en todas las respuestas."""
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    response.headers['Permissions-Policy'] = 'geolocation=(self), camera=(), microphone=()'
+    # HSTS solo en producción (Railway provee HTTPS)
+    if os.environ.get('RAILWAY_ENVIRONMENT'):
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    # CSP: permite Google Maps, fonts, Earth Engine
+    response.headers['Content-Security-Policy'] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://cdnjs.cloudflare.com; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; "
+        "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; "
+        "img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com https://earthengine.googleapis.com https://*.google.com; "
+        "connect-src 'self' https://*.googleapis.com https://earthengine.googleapis.com https://api.resend.com; "
+        "frame-src 'none'"
+    )
+    return response
+
+
+# ============================================================================
 # Simple In-Memory Rate Limiter
 # ============================================================================
 class RateLimiter:
-    """Thread-safe sliding window rate limiter per IP."""
+    """Thread-safe sliding window rate limiter per IP with periodic cleanup."""
     def __init__(self, max_requests=10, window_seconds=60):
         self.max_requests = max_requests
         self.window = window_seconds
         self._requests = defaultdict(list)
         self._lock = threading.Lock()
+        self._last_cleanup = time.time()
+        self._cleanup_interval = 300  # Cleanup cada 5 minutos
+
+    def _cleanup_old_entries(self, now):
+        """Remove stale IP entries to prevent memory leak."""
+        if now - self._last_cleanup < self._cleanup_interval:
+            return
+        self._last_cleanup = now
+        stale_keys = [k for k, v in self._requests.items() if not v or now - v[-1] > self.window]
+        for k in stale_keys:
+            del self._requests[k]
 
     def is_allowed(self, key):
         now = time.time()
         with self._lock:
-            # Clean expired entries
+            self._cleanup_old_entries(now)
+            # Clean expired entries for this key
             self._requests[key] = [t for t in self._requests[key] if now - t < self.window]
             if len(self._requests[key]) >= self.max_requests:
                 return False
@@ -92,8 +132,15 @@ analysis_limiter = RateLimiter(max_requests=10, window_seconds=60)
 contact_limiter = RateLimiter(max_requests=5, window_seconds=60)
 
 def get_client_ip():
-    """Get real client IP, respecting proxy headers."""
-    return request.headers.get('X-Forwarded-For', request.remote_addr or '127.0.0.1').split(',')[0].strip()
+    """Get real client IP from trusted proxy headers."""
+    real_ip = request.headers.get('X-Real-IP')
+    if real_ip:
+        return real_ip.strip()
+    forwarded = request.headers.get('X-Forwarded-For')
+    if forwarded:
+        ips = [ip.strip() for ip in forwarded.split(',')]
+        return ips[0] if len(ips) == 1 else ips[-2] if len(ips) > 1 else ips[0]
+    return request.remote_addr or '127.0.0.1'
 
 # Inicializar Google Earth Engine
 gee_initialized = init_gee()
@@ -126,6 +173,14 @@ def calculate_indices(image):
     ndmi = image.normalizedDifference(['B8', 'B11']).rename('NDMI')
     return image.addBands([ndvi, ndwi, ndmi])
 
+# Enfoques válidos (whitelist)
+VALID_APPROACHES = {
+    'mining', 'agriculture', 'energy', 'real-estate',
+    'flood-risk', 'water-management', 'environmental',
+    'land-planning', 'fire-risk'
+}
+MAX_RADIUS = 50000
+
 @app.route('/api/v1/analyze', methods=['POST'])
 def analyze_territory():
     if not analysis_limiter.is_allowed(get_client_ip()):
@@ -135,17 +190,30 @@ def analyze_territory():
         return jsonify({"status": "error", "message": "GEE no está inicializado"}), 500
     
     data = request.json
-    lat = data.get('lat')
-    lng = data.get('lng')
-    approach = data.get('approach')
-    radius = data.get('radius', 1000)  # Default 1km
-    
-    if not lat or not lng or not approach:
-        return jsonify({"status": "error", "message": "Faltan parámetros"}), 400
+    if not data:
+        return jsonify({"status": "error", "message": "Body JSON requerido"}), 400
+
+    try:
+        lat = float(data.get('lat', 0))
+        lng = float(data.get('lng', 0))
+        radius = min(int(data.get('radius', 1000)), MAX_RADIUS)
+    except (TypeError, ValueError):
+        return jsonify({"status": "error", "message": "lat, lng y radius deben ser numéricos"}), 400
+
+    approach = str(data.get('approach', '')).strip()
+
+    if not (-90 <= lat <= 90) or not (-180 <= lng <= 180):
+        return jsonify({"status": "error", "message": "Coordenadas fuera de rango válido"}), 400
+    if lat == 0 and lng == 0:
+        return jsonify({"status": "error", "message": "Coordenadas requeridas"}), 400
+    if approach not in VALID_APPROACHES:
+        return jsonify({"status": "error", "message": f"Enfoque no válido"}), 400
+    if radius < 100:
+        radius = 100
 
     try:
         point = ee.Geometry.Point([lng, lat])
-        roi = point.buffer(radius)  # Dynamic radius from frontend
+        roi = point.buffer(radius)
         
         # Datos Base
         srtm = ee.Image('CGIAR/SRTM90_V4')
@@ -448,9 +516,9 @@ def chat_with_assistant():
     
     try:
         data = request.json
-        message = data.get('message', '')
+        message = str(data.get('message', ''))[:500]
         context = data.get('context', {})
-        history = data.get('history', [])
+        history = data.get('history', [])[-5:]
         
         # Build conversation history for context
         chat_history = ""
@@ -609,13 +677,11 @@ def contact_form():
         if not name or not email or not message:
             return jsonify({"status": "error", "message": "Campos requeridos incompletos"}), 400
         
-        # Log the contact request
+        # Log the contact request (sin PII)
         print(f"\n{'='*50}")
         print(f"=== NUEVO CONTACTO RECIBIDO ===")
-        print(f"Nombre: {name}")
-        print(f"Empresa: {company if company else 'No especificada'}")
-        print(f"Email: {email}")
-        print(f"Mensaje: {message[:100]}...")
+        print(f"Campos: nombre={'sí' if name else 'no'}, empresa={'sí' if company else 'no'}, email={'sí' if email else 'no'}")
+        print(f"Longitud mensaje: {len(message)} caracteres")
         print(f"{'='*50}\n")
         
         # Send email via Resend API (HTTP-based, works on Railway)
@@ -3346,11 +3412,18 @@ LANDING_HTML = '''<!DOCTYPE html>
             });
         }
         
+        function sanitizeHTML(str) {
+            var div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
         function addChatMessage(text, role) {
             var messagesContainer = document.getElementById('chat-messages');
             var time = new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+            var safeText = sanitizeHTML(text).replace(/\n/g, '<br>');
             var html = '<div class="chat-message ' + role + '">' +
-                '<div class="message-bubble">' + text.replace(/\\n/g, '<br>') + '</div>' +
+                '<div class="message-bubble">' + safeText + '</div>' +
                 '<div class="message-time">' + time + '</div></div>';
             messagesContainer.insertAdjacentHTML('beforeend', html);
             scrollChatToBottom();

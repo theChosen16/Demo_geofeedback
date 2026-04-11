@@ -10,12 +10,18 @@ try:
         print(f"Usando DATABASE_URL...")
         conn = psycopg2.connect(DATABASE_URL)
     else:
-        # Fallback a variables individuales
-        DB_HOST = os.getenv('DB_HOST', 'shuttle.proxy.rlwy.net')
-        DB_PORT = os.getenv('DB_PORT', '12458')
-        DB_USER = os.getenv('DB_USER', 'postgres')
-        DB_PASSWORD = os.getenv('DB_PASSWORD', 'RAILWAY_DB_PASSWORD_REDACTED')
+        # Variables individuales (OBLIGATORIAS — no usar defaults inseguros)
+        DB_HOST = os.getenv('DB_HOST')
+        DB_PORT = os.getenv('DB_PORT')
+        DB_USER = os.getenv('DB_USER')
+        DB_PASSWORD = os.getenv('DB_PASSWORD')
         DB_NAME = os.getenv('DB_NAME', 'railway')
+
+        if not all([DB_HOST, DB_PORT, DB_USER, DB_PASSWORD]):
+            raise ValueError(
+                "Variables de entorno requeridas: DB_HOST, DB_PORT, DB_USER, DB_PASSWORD. "
+                "Configúralas antes de ejecutar este script."
+            )
 
         print(f"Conectando a {DB_HOST}:{DB_PORT} como {DB_USER}...")
         conn = psycopg2.connect(

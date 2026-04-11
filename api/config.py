@@ -57,7 +57,11 @@ class Config:
     # =========================================================================
     # FLASK
     # =========================================================================
-    SECRET_KEY = os.getenv('SECRET_KEY', 'dev-key-only-for-local-testing')
+    SECRET_KEY = os.environ.get('SECRET_KEY')
+    if not SECRET_KEY:
+        import warnings
+        warnings.warn("SECRET_KEY no configurada. Usando key temporal para desarrollo local SOLAMENTE.")
+        SECRET_KEY = 'dev-key-DO-NOT-USE-IN-PRODUCTION-' + str(id(object()))
     DEBUG = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
     ENV = os.getenv('FLASK_ENV', 'production')
 

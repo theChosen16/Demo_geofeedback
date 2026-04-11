@@ -23,8 +23,9 @@ if __name__ == '__main__':
     print("="*50)
     print("STARTING SIMPLE APP")
     print("Environment:")
+    SENSITIVE_PATTERNS = ('SECRET', 'KEY', 'PASSWORD', 'TOKEN', 'CREDENTIALS')
     for k, v in os.environ.items():
-        if "SECRET" not in k:
+        if not any(p in k.upper() for p in SENSITIVE_PATTERNS):
             print(f"{k}={v}")
     print("="*50)
     
