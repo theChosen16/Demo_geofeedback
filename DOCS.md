@@ -280,4 +280,16 @@ Google Earth Engine requiere licencias Enterprise para uso comercial. GeoFeedbac
 
 ---
 
+## Ecosistema y Workflows de Desarrollo
+
+Para garantizar la estabilidad y continua integración del proyecto **GeoFeedback**, se han definido flujos de trabajo orientados a la automatización de infraestructura:
+
+1. **Gestión Satelital (GEE):** Control y parseo de las credenciales de Google Earth Engine, asegurando rotaciones consistentes.
+2. **Sincronización Transversal:** Asegurar validación en CI/CD antes de pushes a producción.
+3. **Despliegues Predictivos:** Automatización coordinada hacia el entorno de Railway para `Demo_geofeedback`, usando el workflow oficial.
+
+Se pueden encontrar los procedimientos de agentes recomendados en el directorio `workflows/`.
+
+---
+
 _© 2025-2026 GeoFeedback Chile - Todos los derechos reservados_
