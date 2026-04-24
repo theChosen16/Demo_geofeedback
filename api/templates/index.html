@@ -898,6 +898,20 @@
           .stars-container .star:nth-child(-n+4) {
               display: block;
           }
+            #stats-widget {
+              position: static !important;
+              top: auto !important;
+              left: auto !important;
+              margin: 0 auto 1rem !important;
+              padding: 0.65rem 1rem !important;
+              gap: 1rem !important;
+              max-width: 100% !important;
+            }
+            #stats-widget #stat-visits,
+            #stats-widget #stat-analyses {
+              font-size: 1.1rem !important;
+            }
+
           .nav-links { display: none; }
           .section-header h2 {
               font-size: 1.5rem !important;
@@ -1846,7 +1860,7 @@
         <div class="hero-visual">
           <div class="earth-atmosphere"></div>
            <!-- [NEW] Optimized Stats Widget Position - Top Left to avoid any overlap -->
-          <div class="stats-widget" id="stats-widget" style="position: absolute; top: -50px; left: -20px; background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); padding: 0.8rem 1.5rem; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 100; display: flex; gap: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
+          <div class="stats-widget" id="stats-widget" style="position: absolute; top: 12px; left: 12px; background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); padding: 0.8rem 1.5rem; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.1); z-index: 100; display: flex; gap: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.4);">
               <div class="stat-item" style="text-align: center;">
                   <span id="stat-visits" style="display: block; font-size: 1.5rem; font-weight: 800; color: #10b981; text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);">-</span>
                   <span style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; font-weight: 600; letter-spacing: 1px;" data-en="Visits">Visitas</span>
@@ -4810,28 +4824,78 @@
 
       // [NEW] Fetch Public Stats
       function fetchPublicStats() {
-          fetch('/api/v1/stats')
-            .then(response => response.json())
-            .then(data => {
-                if(data.visits !== undefined) {
-                    animateValue("stat-visits", 0, data.visits, 2000);
-                    animateValue("stat-analyses", 0, data.analyses, 2000);
+          fetch('/api/v1/stats', {
+            headers: {
+              Accept: 'application/json',
+            },
+          })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
                 }
+                return response.json();
             })
-            .catch(err => console.error("Error fetching stats:", err));
+            .then(data => {
+                var visits = Number.isFinite(Number(data && data.visits))
+                  ? Math.max(0, Math.floor(Number(data.visits)))
+                  : 0;
+                var analyses = Number.isFinite(Number(data && data.analyses))
+                  ? Math.max(0, Math.floor(Number(data.analyses)))
+                  : 0;
+
+                animateValue("stat-visits", 0, visits, 2000);
+                animateValue("stat-analyses", 0, analyses, 2000);
+            })
+            .catch(err => {
+                console.error("Error fetching stats:", err);
+                setStatValue("stat-visits", 0);
+                setStatValue("stat-analyses", 0);
+            });
+      }
+
+      function setStatValue(id, value) {
+          var obj = document.getElementById(id);
+          if (!obj) return;
+
+          var safeValue = Number.isFinite(Number(value))
+            ? Math.max(0, Math.floor(Number(value)))
+            : 0;
+
+          obj.innerHTML = safeValue.toLocaleString();
       }
 
       function animateValue(id, start, end, duration) {
-          if (start === end) return;
-          var range = end - start;
-          var current = start;
-          var increment = end > start ? 1 : -1;
-          var stepTime = Math.abs(Math.floor(duration / range));
           var obj = document.getElementById(id);
+          if (!obj) return;
+
+          var safeStart = Number.isFinite(Number(start))
+            ? Math.max(0, Math.floor(Number(start)))
+            : 0;
+          var safeEnd = Number.isFinite(Number(end))
+            ? Math.max(0, Math.floor(Number(end)))
+            : 0;
+
+          if (safeStart === safeEnd) {
+              obj.innerHTML = safeEnd.toLocaleString();
+              return;
+          }
+
+          var range = safeEnd - safeStart;
+          var current = safeStart;
+          var steps = Math.min(120, Math.max(1, Math.abs(range)));
+          var increment = range / steps;
+          var stepTime = Math.max(16, Math.floor(duration / steps));
+
           var timer = setInterval(function() {
               current += increment;
-              obj.innerHTML = current.toLocaleString();
-              if (current == end) {
+
+              if ((range > 0 && current >= safeEnd) || (range < 0 && current <= safeEnd)) {
+                  current = safeEnd;
+              }
+
+              obj.innerHTML = Math.round(current).toLocaleString();
+
+              if (current === safeEnd) {
                   clearInterval(timer);
               }
           }, stepTime);

@@ -16,7 +16,7 @@ import threading
 import logging
 from collections import defaultdict
 import redis
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, redirect
 from flask_cors import CORS
 import ee
 from gee_config import init_gee
@@ -3756,6 +3756,16 @@ def stats():
     except Exception as e:
         print(f"Error getting stats: {e}")
         return jsonify({"visits": 0, "analyses": 0})
+
+@app.route('/api')
+@app.route('/api/')
+def api_redirect():
+    return redirect('/api/docs', code=302)
+
+@app.route('/contact')
+@app.route('/contact/')
+def contact_redirect():
+    return redirect('/#contacto', code=302)
 
 @app.route('/api/v1/infrastructure')
 def infrastructure():

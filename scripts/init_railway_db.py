@@ -54,6 +54,14 @@ try:
         cur.execute(sql_clean)
     print("Funciones creadas.")
 
+    # 3. Leer y ejecutar tablas de analytics (06_create_analytics_tables.sql)
+    print("Ejecutando 06_create_analytics_tables.sql...")
+    with open('scripts/sql/06_create_analytics_tables.sql', 'r', encoding='utf-8') as f:
+        sql_analytics = f.read()
+        sql_clean = "\n".join([line for line in sql_analytics.splitlines() if not line.startswith('\\')])
+        cur.execute(sql_clean)
+    print("Tablas de analytics creadas.")
+
     cur.close()
     conn.close()
     print("\n✅ Inicialización de Base de Datos COMPLETADA.")

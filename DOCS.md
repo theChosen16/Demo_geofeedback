@@ -1,6 +1,6 @@
 # GeoFeedback Chile - Documentación Técnica
 
-> **Versión:** 3.1 | **Fecha:** Abril 2026
+> **Versión:** 3.2 | **Fecha:** Abril 2026
 > **Demo en vivo:** https://geofeedback.cl
 
 ---
@@ -12,8 +12,11 @@
 3. [APIs Integradas](#apis-integradas)
 4. [Índices Satelitales](#índices-satelitales)
 5. [Configuración de Railway](#configuración-de-railway)
-6. [Variables de Entorno](#variables-de-entorno)
-7. [Endpoints de la API](#endpoints-de-la-api)
+6. [Seguridad y Auditoría](#seguridad-y-auditoría)
+7. [Transparencia Metodológica](#transparencia-metodológica)
+8. [Servicios y Licenciamiento](#servicios-y-licenciamiento)
+9. [Operación Analytics y Contador Público](#operación-analytics-y-contador-público)
+10. [CI/CD y Validación](#cicd-y-validación)
 
 ---
 
@@ -205,6 +208,16 @@ Los índices funcionan gracias a las propiedades de absorción y reflexión de l
   startCommand = "gunicorn app:app --bind 0.0.0.0:$PORT"
 ```
 
+### Bootstrap de Base de Datos (Railway)
+
+El script `scripts/init_railway_db.py` ejecuta en orden:
+
+1. `01_setup_postgis_schema.sql`
+2. `04_create_functions.sql`
+3. `06_create_analytics_tables.sql`
+
+Esto asegura la creación de `metadata.page_visits` y `metadata.api_usage_logs`, tablas necesarias para el contador público de visitas/análisis.
+
 ---
 
 ## Seguridad y Auditoría
@@ -280,15 +293,47 @@ Google Earth Engine requiere licencias Enterprise para uso comercial. GeoFeedbac
 
 ---
 
-## Ecosistema y Workflows de Desarrollo
+## Operación Analytics y Contador Público
 
-Para garantizar la estabilidad y continua integración del proyecto **GeoFeedback**, se han definido flujos de trabajo orientados a la automatización de infraestructura:
+### Endpoint público
 
-1. **Gestión Satelital (GEE):** Control y parseo de las credenciales de Google Earth Engine, asegurando rotaciones consistentes.
-2. **Sincronización Transversal:** Asegurar validación en CI/CD antes de pushes a producción.
-3. **Despliegues Predictivos:** Automatización coordinada hacia el entorno de Railway para `Demo_geofeedback`, usando el workflow oficial.
+- `GET /api/v1/stats` retorna:
 
-Se pueden encontrar los procedimientos de agentes recomendados en el directorio `workflows/`.
+```json
+{
+  "visits": 0,
+  "analyses": 0
+}
+```
+
+### Flujo de datos
+
+1. El frontend solicita `/api/v1/stats` al cargar la home.
+2. El backend consulta `metadata.page_visits` y `metadata.api_usage_logs`.
+3. El contador anima valores y, si ambos son 0, renderiza `0` explícitamente (sin placeholders).
+
+### Registro de eventos
+
+- Visitas: se registran en la ruta `/` vía `database.log_visit(...)`.
+- Análisis exitosos: se registran en `/api/v1/analyze` vía `database.log_analysis(...)`.
+
+## CI/CD y Validación
+
+### Workflow de GitHub Actions
+
+- Archivo: `.github/workflows/ci.yml`
+- Triggers: `push` y `pull_request` sobre `master` y `main`
+- Etapas:
+  - Instalación de dependencias (`api/requirements.txt`)
+  - Validación de sintaxis (`python -m compileall api scripts tests`)
+  - Pruebas (`python -m unittest discover -s tests -p "test_*.py" -v`)
+
+### Pruebas de regresión incluidas
+
+- Contrato de `GET /api/v1/stats` (claves y tipos)
+- Fallback de stats cuando falla BD
+- Redirects de UX (`/api/` y `/contact`)
+- Presencia del fix de render en cero y del bootstrap analytics
 
 ---
 

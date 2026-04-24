@@ -2,6 +2,17 @@
 
 API RESTful construida con Flask para consultar datos de riesgo de inundación e infraestructura crítica del municipio de Papudo.
 
+## Nota de actualización (Abril 2026)
+
+- El contador público de la home usa `GET /api/v1/stats` con contrato `{ "visits": int, "analyses": int }`.
+- La inicialización de base de datos para Railway (`scripts/init_railway_db.py`) ahora ejecuta también `scripts/sql/06_create_analytics_tables.sql`.
+- Se recomienda ejecutar CI local con:
+
+```bash
+python -m compileall api scripts tests
+python -m unittest discover -s tests -p "test_*.py" -v
+```
+
 ## Características
 
 - **RESTful API** con endpoints documentados

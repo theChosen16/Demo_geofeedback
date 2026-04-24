@@ -5,6 +5,7 @@
 [![Demo](https://img.shields.io/badge/Demo-geofeedback.cl-blue)](https://demogeofeedback-production.up.railway.app)
 [![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red)](#)
 [![Security](https://img.shields.io/badge/Security-0%20alertas%20activas-brightgreen)](./SECURITY_AUDIT.md)
+[![CI](https://github.com/theChosen16/Demo_geofeedback/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/theChosen16/Demo_geofeedback/actions/workflows/ci.yml)
 
 ---
 
@@ -27,6 +28,16 @@
 
 ---
 
+## ✅ Cambios Abril 2026
+
+- Contador público de métricas reforzado: ahora renderiza `0` explícitamente cuando no hay datos.
+- Fetch de `/api/v1/stats` endurecido con validación de respuesta HTTP y fallback seguro.
+- UX de rutas mejorada: `/api` redirige a `/api/docs` y `/contact` redirige a `/#contacto`.
+- Bootstrap de base de datos en Railway actualizado para crear tablas de analytics (`06_create_analytics_tables.sql`).
+- Pipeline de CI agregado con GitHub Actions en `.github/workflows/ci.yml` + pruebas de regresión en `tests/`.
+
+---
+
 ## 📚 Documentación
 
 Ver [DOCS.md](./DOCS.md) para documentación técnica completa:
@@ -35,7 +46,8 @@ Ver [DOCS.md](./DOCS.md) para documentación técnica completa:
 - APIs integradas y su uso
 - Índices satelitales y fórmulas
 - Configuración de Railway
-- Endpoints de la API
+- Operación del contador público y analytics
+- Pipeline CI (`.github/workflows/ci.yml`) y pruebas de regresión
 
 ---
 
@@ -56,4 +68,4 @@ Este proyecto es una demo técnica. Ver [LICENSE](./LICENSE) para detalles.
 
 ---
 
-_Última actualización: 9 de Abril de 2026_
+_Última actualización: 23 de Abril de 2026_
