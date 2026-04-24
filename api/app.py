@@ -86,12 +86,13 @@ def set_security_headers(response):
     # CSP: permite Google Maps, fonts, Earth Engine
     response.headers['Content-Security-Policy'] = (
         "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://cdnjs.cloudflare.com; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://maps.googleapis.com https://*.gstatic.com https://cdnjs.cloudflare.com; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; "
-        "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; "
+        "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com; "
         "img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com https://earthengine.googleapis.com https://*.google.com; "
-        "connect-src 'self' https://*.googleapis.com https://earthengine.googleapis.com https://api.resend.com; "
-        "frame-src 'none'"
+        "connect-src 'self' https://*.googleapis.com https://*.gstatic.com https://earthengine.googleapis.com https://api.resend.com; "
+        "worker-src 'self' blob:; "
+        "frame-src 'self' https://*.google.com https://*.googleapis.com https://*.gstatic.com"
     )
     return response
 

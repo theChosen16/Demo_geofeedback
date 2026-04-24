@@ -48,6 +48,14 @@ class RedirectRoutesTests(unittest.TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response.headers.get("Location", "").endswith("/#contacto"))
 
+    def test_csp_allows_google_maps_runtime_resources(self):
+        response = self.client.get("/api/v1/health")
+        self.assertEqual(response.status_code, 200)
+
+        csp = response.headers.get("Content-Security-Policy", "")
+        self.assertIn("https://*.gstatic.com", csp)
+        self.assertIn("worker-src 'self' blob:", csp)
+
 
 class FrontendAndBootstrapRegressionTests(unittest.TestCase):
     def test_stats_zero_state_is_rendered_explicitly(self):
@@ -57,6 +65,8 @@ class FrontendAndBootstrapRegressionTests(unittest.TestCase):
 
         self.assertIn("if (safeStart === safeEnd)", template)
         self.assertIn("obj.innerHTML = safeEnd.toLocaleString();", template)
+        self.assertIn("function syncDemoMapLayout()", template)
+        self.assertIn("--demo-map-height", template)
 
     def test_railway_init_includes_analytics_sql(self):
         init_script = os.path.join(ROOT_DIR, "scripts", "init_railway_db.py")

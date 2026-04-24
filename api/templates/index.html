@@ -35,6 +35,7 @@
           --border: #D4CFC4;
           --shadow: 0 4px 6px -1px rgba(45, 90, 74, 0.1);
           --shadow-lg: 0 10px 15px -3px rgba(45, 90, 74, 0.15);
+          --demo-map-height: 550px;
           /* Modern Typography */
           --font-accent: 'Outfit', sans-serif;
           --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -392,9 +393,10 @@
       .demo-container { max-width: 1400px; margin: 0 auto; }
       .demo-layout {
           display: grid;
-          grid-template-columns: 1fr 420px;
+          grid-template-columns: minmax(0, 1fr) minmax(340px, 420px);
           gap: 1.5rem;
           margin-top: 2rem;
+          align-items: start;
       }
       .map-container {
           background: white;
@@ -402,8 +404,14 @@
           overflow: hidden;
           box-shadow: var(--shadow-lg);
           position: relative;
+          min-height: var(--demo-map-height);
       }
-      #demo-map { width: 100%; height: 550px; background: #e5e7eb; }
+        #demo-map {
+          width: 100%;
+          height: var(--demo-map-height);
+          min-height: 420px;
+          background: #e5e7eb;
+        }
       .map-controls {
           position: absolute;
           top: 1rem; right: 1rem;
@@ -433,6 +441,7 @@
       }
       .map-placeholder i { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
       .sidebar { display: flex; flex-direction: column; gap: 1rem; }
+      .sidebar { min-width: 0; }
       .panel {
           background: white;
           border-radius: 12px;
@@ -748,6 +757,21 @@
           display: none;
       }
 
+        @media (max-width: 1280px) {
+          .demo-layout {
+            grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
+          }
+          .hero-visual {
+            min-height: 320px;
+          }
+          #stats-widget {
+            position: static !important;
+            top: auto !important;
+            left: auto !important;
+            margin: 0 auto 1rem !important;
+          }
+        }
+
       @media (max-width: 1024px) {
           .demo-layout {
               grid-template-columns: 1fr;
@@ -755,6 +779,7 @@
           }
           .sidebar { order: 2; }
           .map-container { order: 1; }
+          .map-container { min-height: auto; }
           #demo-map { height: 50vh; min-height: 400px; }
           .results-grid { grid-template-columns: 1fr; }
       }
@@ -817,10 +842,12 @@
             .map-container {
                 border-radius: 0 !important;
                 border: none !important;
+              min-height: auto !important;
             }
             #demo-map {
                 height: 55vh !important;
-                min-height: 400px !important;
+              min-height: 320px !important;
+              max-height: 460px !important;
                 border-radius: 0 !important;
             }
           .map-control-btn {
@@ -3096,6 +3123,47 @@
         }
       }
 
+      function showMapStatus(message, isError) {
+        var placeholder = document.getElementById('map-placeholder');
+        if (!placeholder) return;
+
+        placeholder.style.display = 'block';
+        placeholder.innerHTML =
+          '<i class="fas fa-' + (isError ? 'triangle-exclamation' : 'map-marked-alt') + '"></i>' +
+          '<p>' + message + '</p>';
+      }
+
+      function syncDemoMapLayout() {
+        var mapElement = document.getElementById('demo-map');
+        var mapContainer = document.querySelector('.map-container');
+        if (!mapElement || !mapContainer) return;
+
+        var viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+        var viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+        var nextHeight = 550;
+
+        if (viewportWidth <= 768) {
+          nextHeight = Math.min(Math.max(Math.round(viewportHeight * 0.52), 320), 460);
+        } else if (viewportWidth <= 1280) {
+          nextHeight = Math.min(Math.max(Math.round(viewportHeight * 0.56), 420), 620);
+        } else {
+          nextHeight = Math.min(Math.max(Math.round(viewportHeight * 0.64), 520), 760);
+        }
+
+        document.documentElement.style.setProperty('--demo-map-height', nextHeight + 'px');
+        mapElement.style.height = nextHeight + 'px';
+        mapContainer.style.minHeight = nextHeight + 'px';
+
+        if (map && typeof map.getCenter === 'function') {
+          var center = map.getCenter();
+          window.requestAnimationFrame(function () {
+            if (center) {
+              map.setCenter(center);
+            }
+          });
+        }
+      }
+
       // ====== Phase 2: localStorage Persistence ======
       function savePreferences() {
         try {
@@ -3463,23 +3531,48 @@
           "&libraries=places,marker&callback=initMap&v=weekly&loading=async";
         script.async = true;
         script.defer = true;
+        script.onerror = function () {
+          console.error("No se pudo cargar Google Maps.");
+          showMapStatus(
+            currentLang === 'en'
+              ? 'Could not load the map. Reload the page or disable extensions that block Google Maps.'
+              : 'No se pudo cargar el mapa. Recarga la pagina o desactiva extensiones que bloqueen Google Maps.',
+            true,
+          );
+        };
         document.head.appendChild(script);
       }
 
       async function initMap() {
         if (!MAPS_API_KEY || MAPS_API_KEY.length < 20) {
           console.error("API Key no configurada o invalida");
+          showMapStatus(
+            currentLang === 'en'
+              ? 'Maps API key is missing or invalid.'
+              : 'La API key de Maps no esta configurada o es invalida.',
+            true,
+          );
           return;
         }
 
-        // Import libraries
-        // Import libraries
-        // Import libraries
-        const { Map } = await google.maps.importLibrary("maps");
-        const { AdvancedMarkerElement } =
-          await google.maps.importLibrary("marker");
-        const { Place, PlaceAutocompleteElement } =
-          await google.maps.importLibrary("places");
+        var Map;
+        var AdvancedMarkerElement;
+        var PlaceAutocompleteElement;
+
+        try {
+          ({ Map } = await google.maps.importLibrary("maps"));
+          ({ AdvancedMarkerElement } = await google.maps.importLibrary("marker"));
+          ({ PlaceAutocompleteElement } = await google.maps.importLibrary("places"));
+        } catch (error) {
+          console.error("Error inicializando Google Maps:", error);
+          showMapStatus(
+            currentLang === 'en'
+              ? 'Google Maps resources were blocked by the browser or CSP.'
+              : 'Los recursos de Google Maps fueron bloqueados por el navegador o la CSP.',
+            true,
+          );
+          return;
+        }
 
         map = new Map(document.getElementById("demo-map"), {
           center: { lat: -33.4489, lng: -70.6693 }, // Santiago
@@ -3492,6 +3585,13 @@
           streetViewControl: false,
           fullscreenControl: true,
         });
+
+        syncDemoMapLayout();
+
+        var placeholder = document.getElementById("map-placeholder");
+        if (placeholder) {
+          placeholder.style.display = "none";
+        }
 
         // Map Click Listener
         map.addListener("click", async (e) => {
@@ -4815,9 +4915,11 @@
 
       // Initialize mobile mode and add scroll listener
       window.addEventListener("resize", initMobileMode);
+      window.addEventListener("resize", syncDemoMapLayout);
       window.addEventListener("scroll", updateActiveTabOnScroll);
       document.addEventListener("DOMContentLoaded", function () {
         initMobileMode();
+        syncDemoMapLayout();
         updateActiveTabOnScroll();
         fetchPublicStats(); // [NEW] Fetch stats on load
       });
@@ -4963,6 +5065,7 @@
       loadHistory();
       renderHistory();
       initCollapsiblePanels();
+      syncDemoMapLayout();
 
       // Restore saved preferences after map loads
       var _origInitMap = typeof initMap === 'function' ? initMap : null;
