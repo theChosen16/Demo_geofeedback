@@ -38,7 +38,7 @@
 - `scripts/monitor_deploy.py` ya no depende de `requests`: usa librería estándar, URL configurable y modo `--once` para smoke checks.
 - UX de rutas mejorada: `/api` redirige a `/api/docs` y `/contact` redirige a `/#contacto`.
 - Bootstrap de base de datos en Railway actualizado para crear tablas de analytics (`06_create_analytics_tables.sql`).
-- Pipeline de CI reforzado con regresión dedicada de observability y validación de la CLI de monitoreo en `.github/workflows/ci.yml`.
+- Pipeline de CI reforzado con regresión dedicada de observability, validación de la CLI de monitoreo y smoke check contra el deployment productivo en `.github/workflows/ci.yml`.
 
 ---
 

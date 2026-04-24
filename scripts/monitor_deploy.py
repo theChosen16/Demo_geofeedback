@@ -116,11 +116,28 @@ def run_checks(base_url, endpoints):
     return all(result["healthy"] for result in results)
 
 
+def run_with_retries(base_url, endpoints, retries=1, retry_delay=5):
+    attempts = max(int(retries), 1)
+    last_result = False
+
+    for attempt in range(1, attempts + 1):
+        last_result = run_checks(base_url, endpoints)
+        if last_result:
+            return True
+        if attempt < attempts:
+            print(f"[!] Check failed. Retrying in {retry_delay}s ({attempt}/{attempts - 1})...")
+            time.sleep(retry_delay)
+
+    return last_result
+
+
 def build_parser():
     parser = argparse.ArgumentParser(description="Monitor GeoFeedback deployment health and observability.")
     parser.add_argument("--url", default=DEFAULT_URL, help="Base URL to monitor.")
     parser.add_argument("--interval", type=int, default=5, help="Seconds between checks in loop mode.")
     parser.add_argument("--once", action="store_true", help="Run a single monitoring cycle and exit.")
+    parser.add_argument("--retries", type=int, default=1, help="How many times to retry before failing in once mode.")
+    parser.add_argument("--retry-delay", type=int, default=5, help="Seconds to wait between retries in once mode.")
     return parser
 
 
@@ -132,9 +149,16 @@ def main():
     print("-" * 72)
     try:
         while True:
-            all_healthy = run_checks(args.url, DEFAULT_ENDPOINTS)
             if args.once:
+                all_healthy = run_with_retries(
+                    args.url,
+                    DEFAULT_ENDPOINTS,
+                    retries=args.retries,
+                    retry_delay=args.retry_delay,
+                )
                 return 0 if all_healthy else 1
+
+            all_healthy = run_checks(args.url, DEFAULT_ENDPOINTS)
             if not all_healthy:
                 print("[!] One or more checks failed.")
             print("-" * 72)

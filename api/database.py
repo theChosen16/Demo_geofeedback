@@ -130,6 +130,19 @@ def get_db_connection():
         logger.error(f"Error connecting to database: {e}")
         return None
 
+
+def ensure_analytics_ready():
+    """Eagerly bootstrap analytics tables to avoid first-request warnings."""
+    conn = get_db_connection()
+    if not conn:
+        logger.warning("Analytics bootstrap skipped because database connection is unavailable.")
+        return False
+
+    try:
+        return _ensure_analytics_tables(conn)
+    finally:
+        conn.close()
+
 def log_visit(page='/', user_agent=None, ip_hash=None):
     """Logs a page visit to metadata.page_visits."""
     conn = get_db_connection()

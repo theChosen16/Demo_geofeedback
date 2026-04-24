@@ -59,7 +59,7 @@ CMD ["sh", "-c", "gunicorn \
     --threads 2 \
     --timeout 120 \
     --preload \
-    --access-logfile - \
-    --error-logfile - \
+    --access-logfile /dev/stdout \
+    --error-logfile /dev/stdout \
     --log-level info \
     app:app"]
