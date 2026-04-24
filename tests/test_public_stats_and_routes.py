@@ -101,6 +101,32 @@ class ObservabilityRouteTests(unittest.TestCase):
         self.assertFalse(payload["optional_checks"]["redis"])
 
 
+class AnalyticsBootstrapMiddlewareTests(unittest.TestCase):
+    def setUp(self):
+        self.client = app_module.app.test_client()
+
+    @patch.object(app_module.database, "ensure_analytics_ready", return_value=True)
+    def test_bootstrap_runs_before_request_when_enabled(self, _mock_bootstrap):
+        previous_ready = app_module._analytics_bootstrap_state["ready"]
+        previous_last_attempt = app_module._analytics_bootstrap_state["last_attempt"]
+        previous_enabled = app_module._ANALYTICS_BOOTSTRAP_ENABLED
+
+        try:
+            app_module._analytics_bootstrap_state["ready"] = False
+            app_module._analytics_bootstrap_state["last_attempt"] = 0.0
+            app_module._ANALYTICS_BOOTSTRAP_ENABLED = True
+
+            response = self.client.get("/api/v1/health")
+            self.assertEqual(response.status_code, 200)
+
+            _mock_bootstrap.assert_called_once()
+            self.assertTrue(app_module._analytics_bootstrap_state["ready"])
+        finally:
+            app_module._analytics_bootstrap_state["ready"] = previous_ready
+            app_module._analytics_bootstrap_state["last_attempt"] = previous_last_attempt
+            app_module._ANALYTICS_BOOTSTRAP_ENABLED = previous_enabled
+
+
 class RedirectRoutesTests(unittest.TestCase):
     def setUp(self):
         self.client = app_module.app.test_client()

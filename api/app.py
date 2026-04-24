@@ -14,6 +14,7 @@ import time
 import hashlib
 import threading
 import logging
+import sys
 from collections import defaultdict
 import redis
 from flask import Flask, jsonify, request, redirect, Response
@@ -114,7 +115,7 @@ logger = logging.getLogger('geofeedback')
 logger.setLevel(logging.INFO)
 # Configurar formato nativo para mejor integración con Loki
 formatter = logging.Formatter('%(message)s')
-ch = logging.StreamHandler()
+ch = logging.StreamHandler(sys.stdout)
 ch.setFormatter(formatter)
 if not logger.handlers:
     logger.addHandler(ch)
@@ -211,6 +212,50 @@ def get_client_ip():
 
 # Inicializar Google Earth Engine
 gee_initialized = init_gee()
+_ANALYTICS_BOOTSTRAP_LOCK = threading.Lock()
+_ANALYTICS_BOOTSTRAP_RETRY_SECONDS = 30
+_ANALYTICS_BOOTSTRAP_ENABLED = os.environ.get(
+    "ENABLE_ANALYTICS_BOOTSTRAP",
+    "true" if os.environ.get("RAILWAY_ENVIRONMENT") else "false"
+).lower() == "true"
+_analytics_bootstrap_state = {
+    "ready": False,
+    "last_attempt": 0.0
+}
+
+
+def ensure_analytics_bootstrap_once(force=False):
+    """Try to create analytics tables once per retry window before handling traffic."""
+    if _analytics_bootstrap_state["ready"]:
+        return True
+
+    now = time.time()
+    if not force and (now - _analytics_bootstrap_state["last_attempt"]) < _ANALYTICS_BOOTSTRAP_RETRY_SECONDS:
+        return False
+
+    with _ANALYTICS_BOOTSTRAP_LOCK:
+        if _analytics_bootstrap_state["ready"]:
+            return True
+
+        now = time.time()
+        if not force and (now - _analytics_bootstrap_state["last_attempt"]) < _ANALYTICS_BOOTSTRAP_RETRY_SECONDS:
+            return False
+
+        _analytics_bootstrap_state["last_attempt"] = now
+        ready = database.ensure_analytics_ready()
+        if ready:
+            _analytics_bootstrap_state["ready"] = True
+            log_event("analytics_bootstrap", status="ready")
+        else:
+            log_event("analytics_bootstrap", status="deferred")
+
+        return _analytics_bootstrap_state["ready"]
+
+
+@app.before_request
+def bootstrap_analytics_before_traffic():
+    if _ANALYTICS_BOOTSTRAP_ENABLED and not _analytics_bootstrap_state["ready"]:
+        ensure_analytics_bootstrap_once()
 
 def get_sentinel2_image(roi):
     """Obtiene la imagen Sentinel-2 más reciente y libre de nubes para la ROI."""

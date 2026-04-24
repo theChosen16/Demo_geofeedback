@@ -17,6 +17,7 @@ Fecha: Noviembre 2025
 import os
 import logging
 import socket
+import sys
 from urllib.parse import urlparse
 
 # Cargar .env solo si existe (desarrollo local)
@@ -29,7 +30,8 @@ except ImportError:
 # Configurar logging
 logging.basicConfig(
     level=os.getenv('LOG_LEVEL', 'INFO'),
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    stream=sys.stdout
 )
 logger = logging.getLogger(__name__)
 
