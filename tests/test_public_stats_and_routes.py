@@ -53,8 +53,13 @@ class RedirectRoutesTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
         csp = response.headers.get("Content-Security-Policy", "")
+        self.assertIn("connect-src 'self' data:", csp)
         self.assertIn("https://*.gstatic.com", csp)
         self.assertIn("worker-src 'self' blob:", csp)
+
+    def test_favicon_route_does_not_404(self):
+        response = self.client.get("/favicon.ico")
+        self.assertEqual(response.status_code, 204)
 
 
 class FrontendAndBootstrapRegressionTests(unittest.TestCase):

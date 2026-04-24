@@ -16,7 +16,7 @@ import threading
 import logging
 from collections import defaultdict
 import redis
-from flask import Flask, jsonify, request, redirect
+from flask import Flask, jsonify, request, redirect, Response
 from flask_cors import CORS
 import ee
 from gee_config import init_gee
@@ -90,11 +90,16 @@ def set_security_headers(response):
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; "
         "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com; "
         "img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com https://earthengine.googleapis.com https://*.google.com; "
-        "connect-src 'self' https://*.googleapis.com https://*.gstatic.com https://earthengine.googleapis.com https://api.resend.com; "
+        "connect-src 'self' data: https://*.googleapis.com https://*.gstatic.com https://earthengine.googleapis.com https://api.resend.com; "
         "worker-src 'self' blob:; "
         "frame-src 'self' https://*.google.com https://*.googleapis.com https://*.gstatic.com"
     )
     return response
+
+
+@app.route('/favicon.ico')
+def favicon():
+    return Response(status=204)
 
 
 # ============================================================================
