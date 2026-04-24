@@ -6,11 +6,15 @@ API RESTful construida con Flask para consultar datos de riesgo de inundación e
 
 - El contador público de la home usa `GET /api/v1/stats` con contrato `{ "visits": int, "analyses": int }`.
 - La inicialización de base de datos para Railway (`scripts/init_railway_db.py`) ahora ejecuta también `scripts/sql/06_create_analytics_tables.sql`.
+- Si las tablas `metadata.page_visits` o `metadata.api_usage_logs` faltan en runtime, `api/database.py` las crea de forma idempotente y reintenta la operación una vez.
+- `GET /api/v1/observability` expone estado crítico del servicio y retorna `503` cuando analytics o dependencias clave están degradadas.
+- `scripts/monitor_deploy.py` permite monitoreo reusable con `--url` y `--once`, sin dependencia de `requests`.
 - Se recomienda ejecutar CI local con:
 
 ```bash
 python -m compileall api scripts tests
 python -m unittest discover -s tests -p "test_*.py" -v
+python scripts/monitor_deploy.py --url https://geofeedback.cl --once
 ```
 
 ## Características
@@ -101,6 +105,59 @@ Verifica el estado de la API y la conexión a la base de datos.
   "status": "healthy",
   "timestamp": "2025-11-18T15:30:00",
   "database": { "connected": true, "version": "PostgreSQL 16.10" }
+}
+```
+
+### Observability
+
+```
+GET /api/v1/observability
+```
+
+Entrega un snapshot operativo del servicio, incluyendo checks críticos, dependencias opcionales y estado del contador público.
+
+**Respuesta saludable:**
+```json
+{
+  "status": "healthy",
+  "critical_checks": {
+    "database": true,
+    "analytics": true,
+    "google_earth_engine": true,
+    "google_maps_key": true
+  },
+  "optional_checks": {
+    "gemini": true,
+    "redis": true
+  },
+  "analytics": {
+    "page_visits_table": true,
+    "api_usage_logs_table": true,
+    "role_configured": true,
+    "ready": true
+  },
+  "public_stats": {
+    "visits": 120,
+    "analyses": 48
+  }
+}
+```
+
+Cuando el estado crítico está degradado, el endpoint responde `503` para que el monitor o el despliegue puedan detectarlo.
+
+### Métricas Públicas
+
+```
+GET /api/v1/stats
+```
+
+Retorna únicamente el contador público usado en la home.
+
+**Respuesta:**
+```json
+{
+  "visits": 120,
+  "analyses": 48
 }
 ```
 

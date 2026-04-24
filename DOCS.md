@@ -311,11 +311,19 @@ Google Earth Engine requiere licencias Enterprise para uso comercial. GeoFeedbac
 1. El frontend solicita `/api/v1/stats` al cargar la home.
 2. El backend consulta `metadata.page_visits` y `metadata.api_usage_logs`.
 3. El contador anima valores y, si ambos son 0, renderiza `0` explícitamente (sin placeholders).
+4. Si Railway devuelve `undefined_table`, `api/database.py` crea de forma lazy el schema analytics acotado y reintenta la operación una vez.
 
 ### Registro de eventos
 
 - Visitas: se registran en la ruta `/` vía `database.log_visit(...)`.
 - Análisis exitosos: se registran en `/api/v1/analyze` vía `database.log_analysis(...)`.
+
+### Observability y monitoreo
+
+- `GET /api/v1/observability` combina checks críticos (`database`, `analytics`, `google_earth_engine`, `google_maps_key`) con checks opcionales (`gemini`, `redis`).
+- Si algún check crítico falla, el endpoint responde `503` con payload diagnóstico en vez de degradar silenciosamente.
+- `scripts/monitor_deploy.py` usa librería estándar, soporta `--url` y `--once`, y falla si observability reporta estado degradado o analytics no está listo.
+- `GET /robots.txt` evita ruido de `404` en logs y simplifica la lectura operativa de Railway.
 
 ## CI/CD y Validación
 
@@ -326,13 +334,17 @@ Google Earth Engine requiere licencias Enterprise para uso comercial. GeoFeedbac
 - Etapas:
   - Instalación de dependencias (`api/requirements.txt`)
   - Validación de sintaxis (`python -m compileall api scripts tests`)
+  - Regresión dedicada de observability (`test_public_stats_and_routes.py`)
+  - Validación de la CLI de monitoreo (`python scripts/monitor_deploy.py --help`)
   - Pruebas (`python -m unittest discover -s tests -p "test_*.py" -v`)
 
 ### Pruebas de regresión incluidas
 
 - Contrato de `GET /api/v1/stats` (claves y tipos)
 - Fallback de stats cuando falla BD
+- Contrato saludable/degradado de `GET /api/v1/observability`
 - Redirects de UX (`/api/` y `/contact`)
+- `GET /robots.txt` sin `404`
 - Presencia del fix de render en cero y del bootstrap analytics
 
 ---

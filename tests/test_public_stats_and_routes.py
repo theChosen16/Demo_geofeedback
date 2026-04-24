@@ -34,6 +34,73 @@ class StatsEndpointTests(unittest.TestCase):
         self.assertEqual(response.get_json(), {"visits": 0, "analyses": 0})
 
 
+class ObservabilityRouteTests(unittest.TestCase):
+    def setUp(self):
+        self.client = app_module.app.test_client()
+
+    @patch.dict(os.environ, {"GOOGLE_MAPS_API_KEY": "test-maps-key"}, clear=False)
+    @patch.object(app_module, "gee_initialized", True)
+    @patch.object(app_module, "gemini_available", True)
+    @patch.object(app_module, "redis_client", object())
+    @patch.object(
+        app_module.database,
+        "get_observability_snapshot",
+        return_value={
+            "database": {"connected": True},
+            "analytics": {
+                "page_visits_table": True,
+                "api_usage_logs_table": True,
+                "role_configured": True,
+                "ready": True,
+            },
+            "public_stats": {"visits": 12, "analyses": 4},
+        },
+    )
+    def test_observability_returns_healthy_contract(self, _mock_snapshot):
+        response = self.client.get("/api/v1/observability")
+        self.assertEqual(response.status_code, 200)
+
+        payload = response.get_json()
+        self.assertEqual(payload["status"], "healthy")
+        self.assertEqual(payload["public_stats"], {"visits": 12, "analyses": 4})
+        self.assertTrue(payload["critical_checks"]["database"])
+        self.assertTrue(payload["critical_checks"]["analytics"])
+        self.assertTrue(payload["critical_checks"]["google_earth_engine"])
+        self.assertTrue(payload["critical_checks"]["google_maps_key"])
+        self.assertTrue(payload["optional_checks"]["gemini"])
+        self.assertTrue(payload["optional_checks"]["redis"])
+        self.assertIn("checked_at", payload)
+
+    @patch.dict(os.environ, {"GOOGLE_MAPS_API_KEY": ""}, clear=False)
+    @patch.object(app_module, "gee_initialized", True)
+    @patch.object(app_module, "gemini_available", False)
+    @patch.object(app_module, "redis_client", None)
+    @patch.object(
+        app_module.database,
+        "get_observability_snapshot",
+        return_value={
+            "database": {"connected": True},
+            "analytics": {
+                "page_visits_table": False,
+                "api_usage_logs_table": False,
+                "role_configured": True,
+                "ready": False,
+            },
+            "public_stats": {"visits": 0, "analyses": 0},
+        },
+    )
+    def test_observability_returns_503_when_critical_check_is_degraded(self, _mock_snapshot):
+        response = self.client.get("/api/v1/observability")
+        self.assertEqual(response.status_code, 503)
+
+        payload = response.get_json()
+        self.assertEqual(payload["status"], "degraded")
+        self.assertFalse(payload["critical_checks"]["analytics"])
+        self.assertFalse(payload["critical_checks"]["google_maps_key"])
+        self.assertFalse(payload["optional_checks"]["gemini"])
+        self.assertFalse(payload["optional_checks"]["redis"])
+
+
 class RedirectRoutesTests(unittest.TestCase):
     def setUp(self):
         self.client = app_module.app.test_client()
@@ -60,6 +127,11 @@ class RedirectRoutesTests(unittest.TestCase):
     def test_favicon_route_does_not_404(self):
         response = self.client.get("/favicon.ico")
         self.assertEqual(response.status_code, 204)
+
+    def test_robots_route_does_not_404(self):
+        response = self.client.get("/robots.txt")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("User-agent: *", response.get_data(as_text=True))
 
 
 class FrontendAndBootstrapRegressionTests(unittest.TestCase):

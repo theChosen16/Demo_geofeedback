@@ -32,9 +32,13 @@
 
 - Contador público de métricas reforzado: ahora renderiza `0` explícitamente cuando no hay datos.
 - Fetch de `/api/v1/stats` endurecido con validación de respuesta HTTP y fallback seguro.
+- `api/database.py` ahora autocrea las tablas de analytics en caliente si Railway responde con `undefined_table`, y reintenta la operación una vez.
+- Nuevo endpoint `GET /api/v1/observability` con checks críticos de BD, analytics, GEE y Maps; devuelve `503` cuando el estado está degradado.
+- Nuevo `GET /robots.txt` para eliminar ruido de `404` en logs de Railway.
+- `scripts/monitor_deploy.py` ya no depende de `requests`: usa librería estándar, URL configurable y modo `--once` para smoke checks.
 - UX de rutas mejorada: `/api` redirige a `/api/docs` y `/contact` redirige a `/#contacto`.
 - Bootstrap de base de datos en Railway actualizado para crear tablas de analytics (`06_create_analytics_tables.sql`).
-- Pipeline de CI agregado con GitHub Actions en `.github/workflows/ci.yml` + pruebas de regresión en `tests/`.
+- Pipeline de CI reforzado con regresión dedicada de observability y validación de la CLI de monitoreo en `.github/workflows/ci.yml`.
 
 ---
 
@@ -47,6 +51,7 @@ Ver [DOCS.md](./DOCS.md) para documentación técnica completa:
 - Índices satelitales y fórmulas
 - Configuración de Railway
 - Operación del contador público y analytics
+- Endpoint de observability y monitor operativo
 - Pipeline CI (`.github/workflows/ci.yml`) y pruebas de regresión
 
 ---
@@ -68,4 +73,4 @@ Este proyecto es una demo técnica. Ver [LICENSE](./LICENSE) para detalles.
 
 ---
 
-_Última actualización: 23 de Abril de 2026_
+_Última actualización: 24 de Abril de 2026_

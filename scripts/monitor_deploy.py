@@ -1,64 +1,148 @@
-import time
-import requests
+import argparse
+import json
+import os
 import sys
+import time
 from datetime import datetime
+from urllib import error, request
 
-# Configuration
-URL = "https://demogeofeedback-production.up.railway.app"
-ENDPOINTS = [
+
+DEFAULT_URL = os.environ.get(
+    "GEOFEEDBACK_MONITOR_URL",
+    "https://demogeofeedback-production.up.railway.app",
+)
+DEFAULT_ENDPOINTS = (
     "/",
     "/api/v1/health",
-    "/api/v1/stats"
-]
-INTERVAL = 5  # seconds
+    "/api/v1/stats",
+    "/api/v1/observability",
+)
 
-def check_endpoint(endpoint):
-    full_url = f"{URL}{endpoint}"
+
+def fetch_endpoint(base_url, endpoint, timeout=10):
+    full_url = f"{base_url.rstrip('/')}{endpoint}"
+    started_at = time.time()
+    body = ""
+    status_code = None
+
     try:
-        start_time = time.time()
-        response = requests.get(full_url, timeout=10)
-        elapsed = (time.time() - start_time) * 1000
-        
-        status_code = response.status_code
-        
-        # Color coding
-        if status_code == 200:
-            status_str = f"\033[92m{status_code} OK\033[0m"
-        elif status_code == 502:
-            status_str = f"\033[91m{status_code} BAD GATEWAY\033[0m"
-        else:
-            status_str = f"\033[93m{status_code}\033[0m"
-            
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] {endpoint:<20} | {status_str} | {elapsed:.0f}ms")
-        return status_code == 200
-    except requests.exceptions.RequestException as e:
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] {endpoint:<20} | \033[91mERROR\033[0m | {str(e)}")
-        return False
+        with request.urlopen(full_url, timeout=timeout) as response:
+            status_code = response.status
+            body = response.read().decode("utf-8", errors="replace")
+    except error.HTTPError as exc:
+        status_code = exc.code
+        body = exc.read().decode("utf-8", errors="replace")
+    except error.URLError as exc:
+        elapsed_ms = (time.time() - started_at) * 1000
+        return {
+            "endpoint": endpoint,
+            "status_code": None,
+            "elapsed_ms": elapsed_ms,
+            "healthy": False,
+            "reason": str(exc.reason),
+            "payload": None,
+        }
+
+    elapsed_ms = (time.time() - started_at) * 1000
+    payload = None
+    try:
+        payload = json.loads(body) if body else None
+    except json.JSONDecodeError:
+        payload = None
+
+    healthy, reason = evaluate_response(endpoint, status_code, payload)
+    return {
+        "endpoint": endpoint,
+        "status_code": status_code,
+        "elapsed_ms": elapsed_ms,
+        "healthy": healthy,
+        "reason": reason,
+        "payload": payload,
+    }
+
+
+def evaluate_response(endpoint, status_code, payload):
+    if endpoint == "/":
+        return status_code == 200, "landing page unavailable" if status_code != 200 else "ok"
+
+    if endpoint == "/api/v1/health":
+        if status_code != 200:
+            return False, f"unexpected health status {status_code}"
+        if not isinstance(payload, dict) or payload.get("status") != "healthy":
+            return False, "health payload invalid"
+        return True, "ok"
+
+    if endpoint == "/api/v1/stats":
+        if status_code != 200:
+            return False, f"unexpected stats status {status_code}"
+        if not isinstance(payload, dict):
+            return False, "stats payload invalid"
+        visits = payload.get("visits")
+        analyses = payload.get("analyses")
+        if not isinstance(visits, int) or not isinstance(analyses, int):
+            return False, "stats payload missing integer counters"
+        return True, "ok"
+
+    if endpoint == "/api/v1/observability":
+        if not isinstance(payload, dict):
+            return False, "observability payload invalid"
+        if payload.get("status") != "healthy":
+            return False, "observability reports degraded state"
+        critical_checks = payload.get("critical_checks", {})
+        analytics = payload.get("analytics", {})
+        if not isinstance(critical_checks, dict) or not all(critical_checks.values()):
+            return False, "critical observability check failed"
+        if not analytics.get("ready"):
+            return False, "analytics bootstrap still not ready"
+        return status_code == 200, f"unexpected observability status {status_code}" if status_code != 200 else "ok"
+
+    return status_code == 200, "ok" if status_code == 200 else f"unexpected status {status_code}"
+
+
+def print_result(result):
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    status_label = result["status_code"] if result["status_code"] is not None else "ERR"
+    state = "OK" if result["healthy"] else "FAIL"
+    print(
+        f"[{timestamp}] {result['endpoint']:<22} | {status_label:<4} | {state:<4} | "
+        f"{result['elapsed_ms']:.0f}ms | {result['reason']}"
+    )
+
+
+def run_checks(base_url, endpoints):
+    results = [fetch_endpoint(base_url, endpoint) for endpoint in endpoints]
+    for result in results:
+        print_result(result)
+    return all(result["healthy"] for result in results)
+
+
+def build_parser():
+    parser = argparse.ArgumentParser(description="Monitor GeoFeedback deployment health and observability.")
+    parser.add_argument("--url", default=DEFAULT_URL, help="Base URL to monitor.")
+    parser.add_argument("--interval", type=int, default=5, help="Seconds between checks in loop mode.")
+    parser.add_argument("--once", action="store_true", help="Run a single monitoring cycle and exit.")
+    return parser
+
 
 def main():
-    print(f"Starting monitor for {URL}")
-    print("Press Ctrl+C to stop")
-    print("-" * 60)
-    
+    parser = build_parser()
+    args = parser.parse_args()
+
+    print(f"Monitoring {args.url}")
+    print("-" * 72)
     try:
         while True:
-            all_healthy = True
-            for endpoint in ENDPOINTS:
-                if not check_endpoint(endpoint):
-                    all_healthy = False
-            
+            all_healthy = run_checks(args.url, DEFAULT_ENDPOINTS)
+            if args.once:
+                return 0 if all_healthy else 1
             if not all_healthy:
-                print("\033[91m[!] Some endpoints are failing\033[0m")
-            
-            print("-" * 60)
-            time.sleep(INTERVAL)
+                print("[!] One or more checks failed.")
+            print("-" * 72)
+            time.sleep(args.interval)
     except KeyboardInterrupt:
         print("\nMonitor stopped")
+        return 130
+
 
 if __name__ == "__main__":
-    try:
-        import colorama
-        colorama.init()
-    except ImportError:
-        pass
-    main()
+    sys.exit(main())

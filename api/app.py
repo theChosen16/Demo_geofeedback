@@ -102,6 +102,11 @@ def favicon():
     return Response(status=204)
 
 
+@app.route('/robots.txt')
+def robots_txt():
+    return Response("User-agent: *\nAllow: /\n", mimetype='text/plain')
+
+
 # ============================================================================
 # Structured JSON Logging & Redis Orchestration 
 # ============================================================================
@@ -3753,6 +3758,34 @@ def landing():
 @app.route('/api/v1/health')
 def health():
     return jsonify({"status": "healthy", "service": "GeoFeedback API", "version": "1.0.0"})
+
+
+@app.route('/api/v1/observability')
+def observability():
+    snapshot = database.get_observability_snapshot()
+    critical_checks = {
+        "database": bool(snapshot["database"]["connected"]),
+        "analytics": bool(snapshot["analytics"]["ready"]),
+        "google_earth_engine": bool(gee_initialized),
+        "google_maps_key": bool(os.environ.get('GOOGLE_MAPS_API_KEY'))
+    }
+    optional_checks = {
+        "gemini": bool(gemini_available),
+        "redis": bool(redis_client)
+    }
+    overall_status = "healthy" if all(critical_checks.values()) else "degraded"
+    payload = {
+        "status": overall_status,
+        "service": "GeoFeedback API",
+        "version": "1.0.0",
+        "checked_at": datetime.datetime.now(datetime.UTC).isoformat(),
+        "critical_checks": critical_checks,
+        "optional_checks": optional_checks,
+        "analytics": snapshot["analytics"],
+        "public_stats": snapshot["public_stats"]
+    }
+    status_code = 200 if overall_status == "healthy" else 503
+    return jsonify(payload), status_code
 
 @app.route('/api/v1/stats')
 def stats():
