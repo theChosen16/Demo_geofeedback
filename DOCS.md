@@ -1,6 +1,6 @@
 # GeoFeedback Chile - Documentación Técnica
 
-> **Versión:** 3.3 | **Fecha:** Mayo 2026
+> **Versión:** 3.4 | **Fecha:** Mayo 2026 (UI/UX)
 > **Demo en vivo:** https://geofeedback.cl
 
 ---
