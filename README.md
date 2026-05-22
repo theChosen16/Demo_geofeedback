@@ -56,6 +56,21 @@ Ver [DOCS.md](./DOCS.md) para documentación técnica completa:
 
 ---
 
+## 🛠️ Despliegue Rápido en Railway
+
+El proyecto está configurado para un despliegue de "cero-configuración" en Railway.
+
+1. **Configurar el Servicio:** Conecta el repositorio de GitHub al servicio `Demo_geofeedback` en tu panel de Railway. La plataforma detectará automáticamente el `Dockerfile` y el `railway.toml` de la raíz del repositorio.
+2. **Agregar Base de Datos y Caché:** Añade los servicios oficiales de **PostGIS** y **Redis** en tu proyecto de Railway y conéctalos al servicio principal. Railway inyectará de forma automática las variables `DATABASE_URL` y `REDIS_URL`.
+3. **Inicializar la Base de Datos (PostGIS):**
+   Ejecuta el bootstrap del esquema espacial de forma segura desde tu terminal local de Windows usando la CLI de Railway:
+   ```powershell
+   railway run python scripts/init_railway_db.py
+   ```
+4. **Listo:** La plataforma se desplegará con observabilidad JSON integrada para el Grafana Stack.
+
+---
+
 ## 🔒 Licencia
 
 **© 2025 Alejandro Hernández Aguirre - Todos los derechos reservados**
