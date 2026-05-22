@@ -182,41 +182,87 @@ Los índices funcionan gracias a las propiedades de absorción y reflexión de l
 
 ---
 
-## Configuración de Railway
+## Configuración y Operación en Railway
+
+La plataforma **GeoFeedback Chile** está diseñada para ejecutarse sobre una arquitectura escalable y moderna en **Railway**. El ecosistema productivo se integra de forma nativa con los siguientes servicios de Railway:
+
+*   **Demo_geofeedback (Flask API):** El servicio de backend principal que procesa la lógica satelital y de IA.
+*   **PostGIS:** Base de datos relacional PostgreSQL con extensiones espaciales PostGIS para el cálculo de riesgos geométricos.
+*   **Redis:** Caché de alto rendimiento utilizado para el limitador de peticiones híbrido (*Rate Limiter*).
+*   **Grafana Stack (Prometheus, Loki, Tempo, Grafana):** Pila de observabilidad y telemetría en tiempo real que ingesta de forma nativa los registros estructurados del API.
+
+---
 
 ### Variables de Entorno Requeridas
 
-| Variable                              | Descripción                            |
-| ------------------------------------- | -------------------------------------- |
-| `GOOGLE_MAPS_API_KEY`                 | API Key para Maps Platform             |
-| `GOOGLE_APPLICATION_CREDENTIALS_JSON` | Contenido del service-account-key.json |
-| `GEMINI_API_KEY`                      | API Key de Gemini AI                   |
-| `PORT`                                | (Automático) Puerto del servidor       |
+Estas variables deben configurarse en el panel de **Railway → Service → Variables** del servicio `Demo_geofeedback`:
 
-### Configuración de Build
+| Variable | Descripción | ¿Requerida? |
+| :--- | :--- | :--- |
+| `DATABASE_URL` | Inyectada automáticamente por Railway al conectar el servicio de PostGIS. Contiene las credenciales de conexión. | **Sí (Automática)** |
+| `REDIS_URL` | Inyectada automáticamente al conectar el servicio Redis. Habilita la caché y rate-limiting centralizado. | **Sí (Automática)** |
+| `GOOGLE_MAPS_API_KEY` | Clave API de Google Maps Platform con restricciones para el dominio productivo. | **Sí** |
+| `GOOGLE_APPLICATION_CREDENTIALS_JSON` | Contenido de texto **completo** (JSON sin saltos de línea) de tu archivo `service-account-key.json` de Google Earth Engine. | **Sí** |
+| `GEMINI_API_KEY` | Clave de API de Google AI Studio para las consultas automatizadas a Gemini 3. | **Sí** |
+| `PORT` | Puerto asignado de forma dinámica por Railway para exponer la aplicación (por defecto `5000`). | **Sí (Automática)** |
+| `RAILWAY_ENVIRONMENT` | Seteada automáticamente por Railway (ej. `production` o `staging`). | **Sí (Automática)** |
 
-- `GOOGLE_APPLICATION_CREDENTIALS_JSON`: Contenido **completo** del archivo `service-account-key.json` (copiar y pegar el JSON como texto).
-- `SECRET_KEY`, `DB_PASSWORD`, etc.: Variables críticas que DEBEN definirse en producción.
+---
 
-```toml
-# railway.toml
-[build]
-  builder = "dockerfile"
-  dockerfilePath = "api/Dockerfile"
+### Mecanismos de Compilación y Configuración (*Config as Code*)
 
-[deploy]
-  startCommand = "gunicorn app:app --bind 0.0.0.0:$PORT"
+Para brindar soporte integral ante cualquier flujo de trabajo, el repositorio incluye dos formas compatibles de despliegue:
+
+#### A. Despliegue en la Raíz (Predeterminado y Recomendado)
+Cuando Railway construye desde la raíz del repositorio, utiliza el archivo [Dockerfile](file:///c:/Users/alean/Desktop/Geofeedback/Demo/Dockerfile) y el archivo [railway.toml](file:///c:/Users/alean/Desktop/Geofeedback/Demo/railway.toml) ubicados en la raíz.
+*   El `Dockerfile` de la raíz copia `api/requirements.txt`, instala todas las dependencias y traslada el código de `api/` y `scripts/` al directorio de trabajo `/app`.
+*   Esto asegura una construcción inmediata sin necesidad de alterar los ajustes de ruta en el GUI de Railway.
+
+#### B. Despliegue en Subdirectorio (`api/`)
+Si has configurado explícitamente `api` como el *Root Directory* de tu servicio en el panel de Railway, la plataforma utilizará de forma aislada [api/Dockerfile](file:///c:/Users/alean/Desktop/Geofeedback/Demo/api/Dockerfile) y [api/railway.toml](file:///c:/Users/alean/Desktop/Geofeedback/Demo/api/railway.toml). Ambos están optimizados con los mismos límites de memoria para el tier gratuito (512MB RAM).
+
+---
+
+### Uso de la CLI de Railway para Operaciones de Producción
+
+La CLI oficial de Railway permite interactuar de forma segura con la infraestructura de producción directamente desde tu consola local de Windows.
+
+#### 1. Autenticación y Conexión al Proyecto
+Inicia sesión en tu cuenta y vincula tu consola local con el proyecto productivo en Railway:
+```powershell
+# Iniciar sesión desde el navegador
+railway login
+
+# Vincular la terminal con el proyecto productivo
+railway link
 ```
+*Durante `railway link`, selecciona tu Workspace (`thechosen16's Projects`), el proyecto (`thorough-emotion`), el entorno (`production`), y el servicio (`Demo_geofeedback`).*
 
-### Bootstrap de Base de Datos (Railway)
+#### 2. Inicialización Segura de la Base de Datos (PostGIS)
+El script de inicialización [init_railway_db.py](file:///c:/Users/alean/Desktop/Geofeedback/Demo/scripts/init_railway_db.py) configura todo el esquema espacial de PostGIS, funciones almacenadas y tablas de métricas de analítica.
 
-El script `scripts/init_railway_db.py` ejecuta en orden:
+Para ejecutar este script contra la base de datos real de producción **sin exponer credenciales ni contraseñas en texto plano**, utiliza el comando `railway run`:
+```powershell
+railway run python scripts/init_railway_db.py
+```
+> [!NOTE]
+> `railway run` consulta las variables del entorno productivo asociadas (como `DATABASE_URL`), las inyecta de forma dinámica en el entorno de ejecución temporal de tu terminal de Windows y ejecuta el script local contra la base de datos remota de Railway de forma totalmente segura.
 
-1. `01_setup_postgis_schema.sql`
-2. `04_create_functions.sql`
-3. `06_create_analytics_tables.sql`
+El script de inicialización realiza la carga secuencial de los siguientes recursos:
+1.  `scripts/sql/01_setup_postgis_schema.sql` (Extensiones, esquemas espaciales y geometría)
+2.  `scripts/sql/04_create_functions.sql` (Funciones de cruce geográfico optimizadas)
+3.  `scripts/sql/06_create_analytics_tables.sql` (Tablas `metadata.page_visits` y `metadata.api_usage_logs` para el visor de visitas)
 
-Esto asegura la creación de `metadata.page_visits` y `metadata.api_usage_logs`, tablas necesarias para el contador público de visitas/análisis.
+---
+
+### Monitoreo y Observabilidad en Tiempo Real
+
+El sistema está configurado para entregar logs enriquecidos e integrarse de manera automática con tu panel de **Grafana Stack** (Loki / Prometheus):
+
+1.  **Logs en formato JSON:** El API no emite texto plano convencional; en su lugar, utiliza la función `log_event()` para estructurar todos los eventos significativos en strings JSON de una sola línea (ej. `{"timestamp": "...", "event": "api_usage", "status": "success"}`).
+2.  **Integración con Loki:** Promtail ingesta y parsea nativamente estas líneas de JSON desde el contenedor de Railway. Esto te permite crear tableros personalizados de Grafana basados en los campos JSON (como IP enmascarada, código de respuesta HTTP, tipo de análisis y tiempo de respuesta) sin necesidad de complejos analizadores de expresiones regulares.
+3.  **Endpoint de Observabilidad Dedicado:**
+    El API expone la ruta `GET /api/v1/observability` que analiza de forma holística el estado del sistema. Si algún servicio crítico (como PostGIS o Google Earth Engine) sufre una degradación, el endpoint responde con código de estado HTTP `503 Service Unavailable`, permitiendo que las alertas o sistemas de orquestación de Railway detecten y manejen el incidente de inmediato.
 
 ---
 

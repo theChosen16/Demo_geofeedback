@@ -1,9 +1,9 @@
 [build]
 builder = "dockerfile"
-dockerfilePath = "api/Dockerfile"
+dockerfilePath = "Dockerfile"
 
 [deploy]
-service = "api"
+service = "Demo_geofeedback"
 
 healthcheckPath = "/api/v1/health"
 healthcheckTimeout = 100
