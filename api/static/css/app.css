@@ -707,13 +707,15 @@
       }
       .indices-panel.active { display: block; }
       .indices-title {
-          font-size: 0.85rem;
-          font-weight: 600;
+          font-size: 0.88rem;
+          font-weight: 700;
           color: var(--primary);
           margin-bottom: 0.75rem;
+          letter-spacing: 0.01em;
       }
       .index-item {
-          background: var(--background);
+          background: rgba(45, 90, 74, 0.06);
+          border: 1px solid rgba(45, 90, 74, 0.1);
           border-radius: 8px;
           padding: 0.75rem;
           margin-bottom: 0.5rem;
@@ -724,16 +726,18 @@
           gap: 0.5rem;
           margin-bottom: 0.25rem;
       }
-      .index-color { width: 12px; height: 12px; border-radius: 3px; }
-      .index-name { font-weight: 600; font-size: 0.85rem; color: var(--primary); }
-      .index-desc { font-size: 0.8rem; color: var(--text-light); line-height: 1.4; }
+      .index-color { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+      .index-name { font-weight: 700; font-size: 0.88rem; color: var(--primary); }
+      .index-desc { font-size: 0.82rem; color: var(--text); opacity: 0.8; line-height: 1.4; font-weight: 500; }
       .index-api {
           font-size: 0.7rem;
           background: var(--primary);
           color: white;
-          padding: 0.15rem 0.4rem;
+          padding: 0.15rem 0.5rem;
           border-radius: 4px;
           margin-left: auto;
+          font-weight: 600;
+          flex-shrink: 0;
       }
       #analyze-btn { width: 100%; padding: 1rem; font-size: 1rem; margin-top: 0.5rem; }
       .status-bar { display: flex; gap: 1rem; margin-bottom: 1rem; }
@@ -771,8 +775,8 @@
           to { opacity: 1; transform: translateY(0); }
       }
       .result-icon { font-size: 2rem; color: var(--secondary); }
-      .result-content h4 { font-size: 1rem; color: var(--primary); margin-bottom: 0.25rem; }
-      .result-content p { font-size: 0.85rem; color: var(--text-light); margin: 0; }
+      .result-content h4 { font-size: 1rem; color: var(--primary); margin-bottom: 0.25rem; font-weight: 700; }
+      .result-content p { font-size: 0.85rem; color: var(--text); opacity: 0.75; margin: 0; font-weight: 500; }
       .live-data {
           display: none;
           margin-top: 1rem;
@@ -1903,8 +1907,37 @@
           background: rgba(26, 36, 32, 0.95);
       }
       [data-theme="dark"] .result-card {
-          background: var(--white);
-          border: 1px solid var(--border);
+          background: var(--white) !important;
+          border: 1px solid rgba(255, 255, 255, 0.08) !important;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important;
+      }
+      [data-theme="dark"] .result-content h4 {
+          color: var(--text) !important;
+      }
+      [data-theme="dark"] .result-content p {
+          color: var(--text-light) !important;
+          opacity: 1 !important;
+      }
+      [data-theme="dark"] .result-icon {
+          color: var(--secondary) !important;
+      }
+      [data-theme="dark"] .indices-title {
+          color: var(--text) !important;
+      }
+      [data-theme="dark"] .index-item {
+          background: rgba(255, 255, 255, 0.04) !important;
+          border: 1px solid rgba(255, 255, 255, 0.07) !important;
+      }
+      [data-theme="dark"] .index-name {
+          color: var(--text) !important;
+      }
+      [data-theme="dark"] .index-desc {
+          color: var(--text-light) !important;
+          opacity: 1 !important;
+      }
+      [data-theme="dark"] .index-api {
+          background: var(--secondary) !important;
+          color: white !important;
       }
       [data-theme="dark"] .result-box {
           background: var(--white) !important;
