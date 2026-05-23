@@ -162,14 +162,14 @@ class RedirectRoutesTests(unittest.TestCase):
 
 class FrontendAndBootstrapRegressionTests(unittest.TestCase):
     def test_stats_zero_state_is_rendered_explicitly(self):
-        template_path = os.path.join(API_DIR, "templates", "index.html")
-        with open(template_path, "r", encoding="utf-8") as file_obj:
-            template = file_obj.read()
+        js_path = os.path.join(API_DIR, "static", "js", "app.js")
+        with open(js_path, "r", encoding="utf-8") as file_obj:
+            js_content = file_obj.read()
 
-        self.assertIn("if (safeStart === safeEnd)", template)
-        self.assertIn("obj.innerHTML = safeEnd.toLocaleString();", template)
-        self.assertIn("function syncDemoMapLayout()", template)
-        self.assertIn("--demo-map-height", template)
+        self.assertIn("if (safeStart === safeEnd)", js_content)
+        self.assertIn("obj.innerHTML = safeEnd.toLocaleString();", js_content)
+        self.assertIn("function syncDemoMapLayout()", js_content)
+        self.assertIn("--demo-map-height", js_content)
 
     def test_railway_init_includes_analytics_sql(self):
         init_script = os.path.join(ROOT_DIR, "scripts", "init_railway_db.py")
