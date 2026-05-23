@@ -552,11 +552,22 @@
       .satellite-info-box {
           margin-top: 1rem;
           padding: 1rem;
-          background: rgba(0, 0, 0, 0.03);
+          background: rgba(42, 157, 143, 0.06);
           border-radius: 8px;
-          font-size: 0.85rem;
-          color: var(--text-light);
+          font-size: 0.88rem;
+          color: var(--primary);
           border-left: 4px solid var(--secondary);
+          line-height: 1.5;
+      }
+      .satellite-info-box strong {
+          color: var(--primary);
+      }
+      .satellite-info-box .archive-warning {
+          display: block;
+          margin-top: 0.35rem;
+          font-size: 0.8rem;
+          color: #b45309;
+          font-weight: 600;
       }
       .demo-section {
           background: linear-gradient(180deg, var(--background) 0%, #e2e8f0 100%);
@@ -1102,7 +1113,7 @@
           }
             #stats-widget {
               position: absolute !important;
-              top: -35px !important;
+              top: -10px !important;
               left: 50% !important;
               transform: translateX(-50%) !important;
               margin: 0 !important;
@@ -1545,18 +1556,20 @@
       .modal-close:hover { opacity: 1; }
       .modal-body { padding: 1.5rem; }
       .scale-section {
-          background: var(--background);
+          background: rgba(45, 90, 74, 0.04);
+          border: 1px solid rgba(45, 90, 74, 0.08);
           border-radius: 12px;
-          padding: 1rem;
-          margin-bottom: 1rem;
+          padding: 1.25rem;
+          margin-bottom: 1.25rem;
       }
       .scale-title {
-          font-weight: 600;
+          font-weight: 700;
           color: var(--primary);
-          margin-bottom: 0.5rem;
+          margin-bottom: 0.75rem;
           display: flex;
           align-items: center;
           gap: 0.5rem;
+          font-size: 1.05rem;
       }
       .scale-bar {
           height: 20px;
@@ -1569,17 +1582,63 @@
       .scale-labels {
           display: flex;
           justify-content: space-between;
-          font-size: 0.75rem;
-          color: var(--text-light);
+          font-size: 0.8rem;
+          color: var(--primary-light);
+          font-weight: 600;
+          margin-top: 0.25rem;
       }
       .interpretation-text {
-          background: white;
+          background: #ffffff;
+          color: var(--text);
           border-left: 4px solid var(--secondary);
           padding: 0.75rem 1rem;
-          margin-top: 0.75rem;
+          margin-top: 0.85rem;
           border-radius: 0 8px 8px 0;
           font-size: 0.9rem;
-          line-height: 1.5;
+          line-height: 1.55;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+          font-weight: 500;
+      }
+      .ai-interpretation {
+          margin-top: 1.75rem;
+          padding: 1.25rem;
+          background: rgba(42, 157, 143, 0.05);
+          border-radius: 12px;
+          border-left: 4px solid var(--secondary);
+          border-top: 1px solid rgba(42, 157, 143, 0.1);
+          border-right: 1px solid rgba(42, 157, 143, 0.1);
+          border-bottom: 1px solid rgba(42, 157, 143, 0.1);
+      }
+      .ai-interpretation h5 {
+          margin: 0 0 1rem;
+          color: var(--primary);
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          font-size: 1.1rem;
+          font-weight: 700;
+      }
+      .ai-content {
+          line-height: 1.7;
+          color: var(--text);
+          font-size: 0.95rem;
+      }
+      .ai-section {
+          margin-bottom: 1.25rem;
+      }
+      .ai-section:last-child {
+          margin-bottom: 0;
+      }
+      .ai-section-title {
+          color: var(--primary);
+          margin: 0 0 0.6rem;
+          padding-bottom: 0.3rem;
+          border-bottom: 1.5px solid rgba(45, 90, 74, 0.15);
+          font-size: 0.95rem;
+          font-weight: 700;
+      }
+      .ai-section-content {
+          padding-left: 0.5rem;
       }
       .value-badge {
           display: inline-block;
@@ -1835,8 +1894,56 @@
           border-bottom-color: var(--border) !important;
       }
       [data-theme="dark"] .satellite-info-box {
-          background: rgba(255, 255, 255, 0.05) !important;
+          background: rgba(255, 255, 255, 0.04) !important;
           color: var(--text) !important;
+          border-left-color: var(--secondary) !important;
+      }
+      [data-theme="dark"] .satellite-info-box strong {
+          color: var(--text) !important;
+      }
+      [data-theme="dark"] .satellite-info-box .archive-warning {
+          color: var(--accent) !important;
+      }
+      [data-theme="dark"] .modal-content {
+          background: var(--background) !important;
+          color: var(--text) !important;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6) !important;
+          border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      }
+      [data-theme="dark"] .modal-header {
+          background: linear-gradient(135deg, var(--white), var(--primary)) !important;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+      }
+      [data-theme="dark"] .scale-section {
+          background: var(--white) !important;
+          border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      }
+      [data-theme="dark"] .scale-title {
+          color: var(--text) !important;
+      }
+      [data-theme="dark"] .scale-labels {
+          color: var(--text-light) !important;
+      }
+      [data-theme="dark"] .interpretation-text {
+          background: rgba(0, 0, 0, 0.25) !important;
+          color: var(--text) !important;
+          border-left: 4px solid var(--secondary) !important;
+          box-shadow: none !important;
+      }
+      [data-theme="dark"] .ai-interpretation {
+          background: rgba(255, 255, 255, 0.03) !important;
+          border: 1px solid rgba(255, 255, 255, 0.05) !important;
+          border-left: 4px solid var(--secondary) !important;
+      }
+      [data-theme="dark"] .ai-interpretation h5 {
+          color: var(--text) !important;
+      }
+      [data-theme="dark"] .ai-content {
+          color: var(--text) !important;
+      }
+      [data-theme="dark"] .ai-section-title {
+          color: var(--text-light) !important;
+          border-bottom-color: rgba(255, 255, 255, 0.1) !important;
       }
       [data-theme="dark"] .chat-input-wrapper {
           background: var(--white) !important;

@@ -1359,7 +1359,7 @@
           '<div class="satellite-info-box">' +
           '<i class="fas fa-satellite" style="color:var(--secondary)"></i> <strong>' + (isEn ? 'Source' : 'Fuente') + ':</strong> Sentinel-2 MSI + SRTM | ' +
           '<i class="fas fa-calendar"></i> ' + (isEn ? 'Satellite Image Date: ' : 'Fecha Imagen Satelital: ') + '<strong>' + imageDateStr + '</strong>' +
-          ' <span style="display:block; margin-top:0.25rem; font-size:0.75rem; color:#f59e0b; font-weight: 500;"><i class="fas fa-exclamation-triangle"></i> ' +
+          ' <span class="archive-warning"><i class="fas fa-exclamation-triangle"></i> ' +
           (isEn ? 'Archive imagery (non-contemporary) due to GEE Free limits.' : 'Imágenes de archivo (no contemporáneas) por límites de licencia gratuita GEE.') + '</span>' +
           "</div>";
 
@@ -1374,6 +1374,8 @@
           approach: approach,
           results: data,
           location: locationName,
+          meta_date: window.lastAnalysisMeta && window.lastAnalysisMeta.date ? window.lastAnalysisMeta.date : null,
+          satellite: window.lastAnalysisMeta && window.lastAnalysisMeta.satellite ? window.lastAnalysisMeta.satellite : "Sentinel-2 MSI (Level-2A)"
         };
 
         // Fetch AI interpretation
@@ -1625,6 +1627,7 @@
             results: results,
             approach: approach,
             location: locationName,
+            meta_date: window.lastAnalysisMeta && window.lastAnalysisMeta.date ? window.lastAnalysisMeta.date : null,
           }),
         })
           .then((response) => response.json())
@@ -1674,26 +1677,17 @@
               formattedText = formattedText.replace(/^<\/div><\/div>/, "");
 
               var aiHtml =
-                '<div class="ai-interpretation" style="margin-top:1.5rem; padding:1rem; background:linear-gradient(135deg, #f0fdf4 0%, #ecfeff 100%); border-radius:12px; border-left:4px solid var(--secondary);">' +
-                '<h5 style="margin:0 0 1rem; color:var(--primary); display:flex; align-items:center; gap:0.5rem;"><i class="fas fa-robot"></i> Interpretación del Asistente IA</h5>' +
-                '<div class="ai-content" style="line-height:1.7; color:var(--text);">' +
+                '<div class="ai-interpretation">' +
+                '<h5><i class="fas fa-robot"></i> Interpretación del Asistente IA</h5>' +
+                '<div class="ai-content">' +
                 formattedText +
                 "</div>" +
                 "</div>";
 
-              // Add section styles dynamically
-              if (!document.getElementById("ai-section-styles")) {
-                var styles = document.createElement("style");
-                styles.id = "ai-section-styles";
-                styles.textContent =
-                  ".ai-section { margin-bottom:1rem; } .ai-section-title { color:var(--primary); margin:0 0 0.5rem; padding-bottom:0.3rem; border-bottom:1px solid rgba(45,90,74,0.2); font-size:0.9rem; font-weight:600; } .ai-section-content { padding-left:0.5rem; }";
-                document.head.appendChild(styles);
-              }
-
               modalBody.insertAdjacentHTML("beforeend", aiHtml);
             } else {
               var errorHtml =
-                '<div class="ai-interpretation" style="margin-top:1rem; padding:1rem; background:#fef2f2; border-radius:8px; color:#dc2626;">' +
+                '<div class="ai-interpretation" style="border-left-color: #dc2626; background: rgba(220, 38, 38, 0.05); color: #dc2626;">' +
                 '<i class="fas fa-exclamation-circle"></i> No se pudo generar la interpretación. Intenta de nuevo.' +
                 "</div>";
               modalBody.insertAdjacentHTML("beforeend", errorHtml);

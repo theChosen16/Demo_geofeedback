@@ -560,6 +560,7 @@ def interpret_analysis():
         results = data.get('results', {})
         approach = data.get('approach', '')
         location = data.get('location', 'ubicación seleccionada')
+        meta_date = data.get('meta_date', 'Desconocida')
         
         approach_names = {
             'mining': 'Minería Sostenible',
@@ -573,7 +574,7 @@ def interpret_analysis():
         }
         
         # System prompt for expert personality
-        system_prompt = """PERSONALIDAD Y ROL:
+        system_prompt = f"""PERSONALIDAD Y ROL:
 Eres GeoBot, el asistente experto de GeoFeedback Chile. Eres un especialista en análisis geoespacial, teledetección satelital e índices ambientales. Tu rol es explicar datos técnicos de forma clara y accesible para cualquier usuario, sin perder rigor científico.
 
 ESTILO DE COMUNICACIÓN:
@@ -586,9 +587,10 @@ ESTILO DE COMUNICACIÓN:
 
 INFORMACIÓN METODOLÓGICA (OBLIGATORIO MENCIONAR):
 - Muestra explícitamente el nombre del satélite (Sentinel-2) y la fecha de la imagen analizada.
+- OBLIGATORIO: Usa única y exclusivamente la fecha real de la imagen satelital proporcionada en el contexto de los datos ({meta_date}), NO inventes, simules ni alucines ninguna otra fecha bajo ninguna circunstancia. Si la fecha es "Desconocida" o nula, indícalo tal cual, pero jamás inventes fechas falsas (como 12 de marzo de 2024).
 - Explica que los índices se calculan procesando bandas espectrales de luz no visible.
 - Indica que los resultados presentados son el promedio de la respuesta satelital en toda la zona (promedio de índices según el área de análisis en km²).
-- IMPORTANTE: Reitera que esta demo usa imágenes de archivo reciente (no tiempo real). El monitoreo en vivo es comercial.
+- IMPORTANTE: Reitera que esta demo usa imágenes de archivo reciente (no tiempo real) debido a los límites de la licencia gratuita de GEE. El monitoreo en vivo es comercial.
 
 ESTRUCTURA DE RESPUESTA:
 Organiza tu respuesta en estas secciones claramente separadas:
@@ -603,6 +605,7 @@ Organiza tu respuesta en estas secciones claramente separadas:
 DATOS A INTERPRETAR:
 Tipo de análisis: {approach_names.get(approach, approach)}
 Ubicación: {location}
+Fecha de la imagen satelital analizada: {meta_date}
 
 Resultados del análisis satelital:
 {json.dumps(results, indent=2, ensure_ascii=False)}
@@ -642,6 +645,7 @@ def chat_with_assistant():
         message = str(data.get('message', ''))[:500]
         context = data.get('context', {})
         history = data.get('history', [])
+        meta_date = context.get('meta_date', 'Desconocida') if context else 'Desconocida'
         
         chat_history = ""
         for i, msg in enumerate(history):
@@ -652,7 +656,7 @@ def chat_with_assistant():
         log_event('api_call', endpoint='/chat', ip=get_client_ip(), message_length=len(message))
         
         # GeoBot system personality
-        system_prompt = """Eres GeoBot, el asistente experto de GeoFeedback Chile. 
+        system_prompt = f"""Eres GeoBot, el asistente experto de GeoFeedback Chile. 
 Eres un especialista en análisis geoespacial, teledetección satelital e índices ambientales.
 Tu rol es responder preguntas de forma clara, útil y accesible.
 
@@ -665,6 +669,7 @@ REGLAS:
 
 CONTEXTO CLAVE:
 - Esta es una DEMO. Usa imágenes Sentinel-2 recientes, no tiempo real.
+- OBLIGATORIO: Si hablas de la fecha de la imagen del análisis, debes usar obligatoriamente la fecha real provista en el contexto: {meta_date}. NO inventes, simules ni alucines ninguna otra fecha bajo ninguna circunstancia.
 - El monitoreo en TIEMPO REAL es exclusivo de la versión COMERCIAL.
 - Metodología: Los datos son promedios calculados mediante procesamiento de bandas espectrales sobre el área circular seleccionada (km²).
 - Debes mencionar el satélite Sentinel-2 y la fecha cuando hables de análisis.
