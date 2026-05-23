@@ -534,6 +534,30 @@
       .demo-alert-card.ok .alert-badge {
           background: var(--secondary);
       }
+      .result-box {
+          background: white;
+          color: var(--primary);
+          border: 1px solid var(--secondary);
+          border-radius: 8px;
+          padding: 1rem;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      }
+      .result-box h4 {
+          color: var(--primary);
+          margin-top: 0;
+          margin-bottom: 0.5rem;
+          border-bottom: 1px solid #eee;
+          padding-bottom: 0.5rem;
+      }
+      .satellite-info-box {
+          margin-top: 1rem;
+          padding: 1rem;
+          background: rgba(0, 0, 0, 0.03);
+          border-radius: 8px;
+          font-size: 0.85rem;
+          color: var(--text-light);
+          border-left: 4px solid var(--secondary);
+      }
       .demo-section {
           background: linear-gradient(180deg, var(--background) 0%, #e2e8f0 100%);
           padding: 6rem 2rem;
@@ -1799,6 +1823,20 @@
       [data-theme="dark"] .result-card {
           background: var(--white);
           border: 1px solid var(--border);
+      }
+      [data-theme="dark"] .result-box {
+          background: var(--white) !important;
+          color: var(--text) !important;
+          border-color: var(--border) !important;
+          box-shadow: 0 4px 10px rgba(0,0,0,0.3) !important;
+      }
+      [data-theme="dark"] .result-box h4 {
+          color: var(--text) !important;
+          border-bottom-color: var(--border) !important;
+      }
+      [data-theme="dark"] .satellite-info-box {
+          background: rgba(255, 255, 255, 0.05) !important;
+          color: var(--text) !important;
       }
       [data-theme="dark"] .chat-input-wrapper {
           background: var(--white) !important;

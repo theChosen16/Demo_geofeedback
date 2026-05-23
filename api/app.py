@@ -500,6 +500,13 @@ def analyze_territory():
         import math
         area_m2 = int(math.pi * radius * radius)
 
+        # Get actual image date from Sentinel-2 metadata
+        try:
+            image_date = ee.Date(s2_image.get('system:time_start')).format('YYYY-MM-dd').getInfo()
+        except Exception as e:
+            print(f"Error getting image date from GEE: {e}")
+            image_date = datetime.datetime.now().strftime("%Y-%m-%d")
+
         # [NEW] Log analysis to database
         try:
             database.log_analysis(
@@ -525,7 +532,7 @@ def analyze_territory():
             "meta": {
                 "satellite": "Sentinel-2 MSI (Level-2A)",
                 "terrain": "SRTM v4",
-                "date": datetime.datetime.now().strftime("%Y-%m-%d"),
+                "date": image_date,
                 "buffer_radius_m": radius
             }
         })

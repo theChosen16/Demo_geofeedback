@@ -1082,15 +1082,27 @@
 
               // Add area info
               var areaKm2 = (data.area_m2 / 1000000).toFixed(2);
+              var areaLabel = currentLang === 'en' ? 'Analysis area' : 'Área de análisis';
+              var radiusLabel = currentLang === 'en' ? 'Radius' : 'Radio';
               var areaInfo =
-                '<div style="margin-top:0.5rem; padding:0.5rem; background:#f8fafc; border-radius:6px; font-size:0.8rem; color:var(--text-light);">' +
-                '<i class="fas fa-ruler-combined"></i> Area de analisis: <strong>' +
+                '<div style="margin-top:0.5rem; padding:0.5rem; background:rgba(0,0,0,0.03); border-radius:6px; font-size:0.8rem; color:var(--text-light);">' +
+                '<i class="fas fa-ruler-combined"></i> ' + areaLabel + ': <strong>' +
                 data.area_m2.toLocaleString() +
                 " m²</strong> (" +
                 areaKm2 +
-                " km²) | Radio: " +
+                " km²) | " + radiusLabel + ": " +
                 (data.meta.buffer_radius_m || 1000) +
                 "m" +
+                "</div>";
+
+              // Add GEE satellite image date & free license info
+              var imageDateStr = data.meta && data.meta.date ? data.meta.date : (currentLang === 'en' ? 'Unknown' : 'Desconocida');
+              var satelliteLabel = currentLang === 'en' ? 'Satellite Image Date' : 'Fecha Imagen Satelital';
+              var warningLabel = currentLang === 'en' ? 'Archive imagery (non-contemporary) due to free GEE limits' : 'Imágenes de archivo (no contemporáneas) por límites de licencia gratuita GEE';
+              var satelliteInfo =
+                '<div style="margin-top:0.5rem; padding:0.5rem; background:rgba(245,158,11,0.08); border-radius:6px; font-size:0.8rem; color:var(--text-light); display:flex; flex-direction:column; gap:0.25rem; border-left: 3px solid #f59e0b;">' +
+                '<div><i class="fas fa-satellite" style="color:var(--secondary)"></i> ' + satelliteLabel + ': <strong>' + imageDateStr + '</strong></div>' +
+                '<div style="font-size:0.75rem; color:#f59e0b; font-weight: 500;"><i class="fas fa-exclamation-triangle"></i> ' + warningLabel + '</div>' +
                 "</div>";
 
               // Display in Analysis Results Container
@@ -1107,12 +1119,15 @@
                 );
               }
 
+              var resultsTitle = currentLang === 'en' ? 'Analysis Results' : 'Resultados del Análisis';
+              var scalesBtnLabel = currentLang === 'en' ? 'View Scales' : 'Ver Escalas';
               resultsContainer.innerHTML =
-                '<div class="result-box" style="background:white; border:1px solid var(--secondary); border-radius:8px; padding:1rem; box-shadow:0 2px 4px rgba(0,0,0,0.05);">' +
-                '<h4 style="color:var(--primary); margin-top:0; margin-bottom:0.5rem; border-bottom:1px solid #eee; padding-bottom:0.5rem;"><i class="fas fa-chart-bar"></i> Resultados del Análisis</h4>' +
+                '<div class="result-box">' +
+                '<h4><i class="fas fa-chart-bar"></i> ' + resultsTitle + '</h4>' +
                 tableHtml +
                 areaInfo +
-                '<button onclick="showInterpretationModal()" style="margin-top:1rem; width:100%;" class="btn btn-secondary"><i class="fas fa-info-circle"></i> Ver Escalas</button>' +
+                satelliteInfo +
+                '<button onclick="showInterpretationModal()" style="margin-top:1rem; width:100%;" class="btn btn-secondary"><i class="fas fa-info-circle"></i> ' + scalesBtnLabel + '</button>' +
                 "</div>";
               resultsContainer.style.display = "block";
 
@@ -1339,10 +1354,13 @@
         }
 
         // Add satellite info
+        var imageDateStr = window.lastAnalysisMeta && window.lastAnalysisMeta.date ? window.lastAnalysisMeta.date : (isEn ? 'Unknown' : 'Desconocida');
         html +=
-          '<div style="margin-top:1rem; padding:1rem; background:#f0fdf4; border-radius:8px; font-size:0.85rem; color:var(--text-light);">' +
+          '<div class="satellite-info-box">' +
           '<i class="fas fa-satellite" style="color:var(--secondary)"></i> <strong>' + (isEn ? 'Source' : 'Fuente') + ':</strong> Sentinel-2 MSI + SRTM | ' +
-          '<i class="fas fa-calendar"></i> ' + (isEn ? 'Most recent available image (last 6 months)' : 'Imagen mas reciente disponible (ultimos 6 meses)') +
+          '<i class="fas fa-calendar"></i> ' + (isEn ? 'Satellite Image Date: ' : 'Fecha Imagen Satelital: ') + '<strong>' + imageDateStr + '</strong>' +
+          ' <span style="display:block; margin-top:0.25rem; font-size:0.75rem; color:#f59e0b; font-weight: 500;"><i class="fas fa-exclamation-triangle"></i> ' +
+          (isEn ? 'Archive imagery (non-contemporary) due to GEE Free limits.' : 'Imágenes de archivo (no contemporáneas) por límites de licencia gratuita GEE.') + '</span>' +
           "</div>";
 
         modalBody.innerHTML = html;
