@@ -463,6 +463,77 @@
           border-radius: 12px;
           text-align: center;
       }
+      .demo-alerts-list {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+      }
+      .demo-alert-card {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          padding: 0.75rem 1rem;
+          border-radius: 8px;
+          transition: all 0.3s ease;
+          flex-wrap: nowrap !important;
+      }
+      .demo-alert-card .alert-icon {
+          font-size: 1.2rem;
+          flex-shrink: 0;
+      }
+      .demo-alert-card .alert-content {
+          flex: 1;
+          min-width: 0;
+      }
+      .demo-alert-card .alert-title {
+          font-weight: 600;
+          color: white;
+          font-size: 0.9rem;
+      }
+      .demo-alert-card .alert-desc {
+          font-size: 0.8rem;
+          color: rgba(255, 255, 255, 0.6);
+      }
+      .demo-alert-card .alert-badge {
+          flex-shrink: 0;
+          padding: 0.2rem 0.5rem;
+          border-radius: 4px;
+          font-size: 0.7rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          white-space: nowrap;
+          color: white;
+      }
+      .demo-alert-card.critical {
+          background: rgba(239, 68, 68, 0.15);
+          border-left: 3px solid #ef4444;
+      }
+      .demo-alert-card.critical .alert-icon {
+          color: #ef4444;
+      }
+      .demo-alert-card.critical .alert-badge {
+          background: #ef4444;
+      }
+      .demo-alert-card.moderate {
+          background: rgba(245, 158, 11, 0.15);
+          border-left: 3px solid #f59e0b;
+      }
+      .demo-alert-card.moderate .alert-icon {
+          color: #f59e0b;
+      }
+      .demo-alert-card.moderate .alert-badge {
+          background: #f59e0b;
+      }
+      .demo-alert-card.ok {
+          background: rgba(16, 185, 129, 0.15);
+          border-left: 3px solid var(--secondary);
+      }
+      .demo-alert-card.ok .alert-icon {
+          color: var(--secondary);
+      }
+      .demo-alert-card.ok .alert-badge {
+          background: var(--secondary);
+      }
       .demo-section {
           background: linear-gradient(180deg, var(--background) 0%, #e2e8f0 100%);
           padding: 6rem 2rem;
@@ -1185,10 +1256,9 @@
               max-width: 100vw !important;
           }
 
-          /* Alert/notification cards */
-          [style*="display:flex"][style*="align-items:center"][style*="gap:1rem"] {
-              flex-wrap: wrap !important;
-              gap: 0.5rem !important;
+          /* Alert/notification cards mobile */
+          .demo-alerts-list {
+              padding-right: 3.5rem !important;
           }
 
           /* Pricing cards equal height */

@@ -1309,123 +1309,60 @@
               <i class="fas fa-bell" style="color: var(--accent)"></i> Ultimas
               Alertas
             </h4>
-            <div style="display: flex; flex-direction: column; gap: 0.75rem">
-              <div
-                style="
-                  display: flex;
-                  align-items: center;
-                  gap: 1rem;
-                  background: rgba(239, 68, 68, 0.15);
-                  padding: 0.75rem 1rem;
-                  border-radius: 8px;
-                  border-left: 3px solid #ef4444;
-                "
-              >
-                <i class="fas fa-exclamation-circle" style="color: #ef4444"></i>
-                <div style="flex: 1">
+            <div class="demo-alerts-list">
+              <div class="demo-alert-card critical">
+                <i class="fas fa-exclamation-circle alert-icon"></i>
+                <div class="alert-content">
                   <div
-                    style="font-weight: 600; color: white; font-size: 0.9rem"
+                    class="alert-title"
                     data-en="NDVI drop detected - North Sector"
                   >
                     Caida de NDVI detectada - Sector Norte
                   </div>
                   <div
-                    style="font-size: 0.8rem; color: rgba(255, 255, 255, 0.6)"
+                    class="alert-desc"
                     data-en="2 hours ago - Possible drought or logging"
                   >
                     Hace 2 horas - Posible sequia o tala
                   </div>
                 </div>
-                <span
-                  style="
-                    background: #ef4444;
-                    color: white;
-                    padding: 0.2rem 0.5rem;
-                    border-radius: 4px;
-                    font-size: 0.7rem;
-                  "
-                  data-en="CRITICAL"
-                  >CRITICO</span
-                >
+                <span class="alert-badge" data-en="CRITICAL">CRITICO</span>
               </div>
-              <div
-                style="
-                  display: flex;
-                  align-items: center;
-                  gap: 1rem;
-                  background: rgba(245, 158, 11, 0.15);
-                  padding: 0.75rem 1rem;
-                  border-radius: 8px;
-                  border-left: 3px solid #f59e0b;
-                "
-              >
-                <i class="fas fa-water" style="color: #f59e0b"></i>
-                <div style="flex: 1">
+              <div class="demo-alert-card moderate">
+                <i class="fas fa-water alert-icon"></i>
+                <div class="alert-content">
                   <div
-                    style="font-weight: 600; color: white; font-size: 0.9rem"
+                    class="alert-title"
                     data-en="NDWI Increase - Quebrada El Frances"
                   >
                     Incremento NDWI - Quebrada El Frances
                   </div>
                   <div
-                    style="font-size: 0.8rem; color: rgba(255, 255, 255, 0.6)"
+                    class="alert-desc"
                     data-en="5 hours ago - Possible water accumulation"
                   >
                     Hace 5 horas - Posible acumulacion de agua
                   </div>
                 </div>
-                <span
-                  style="
-                    background: #f59e0b;
-                    color: white;
-                    padding: 0.2rem 0.5rem;
-                    border-radius: 4px;
-                    font-size: 0.7rem;
-                  "
-                  data-en="MODERATE"
-                  >MODERADO</span
-                >
+                <span class="alert-badge" data-en="MODERATE">MODERADO</span>
               </div>
-              <div
-                style="
-                  display: flex;
-                  align-items: center;
-                  gap: 1rem;
-                  background: rgba(16, 185, 129, 0.15);
-                  padding: 0.75rem 1rem;
-                  border-radius: 8px;
-                  border-left: 3px solid var(--secondary);
-                "
-              >
-                <i
-                  class="fas fa-check-circle"
-                  style="color: var(--secondary)"
-                ></i>
-                <div style="flex: 1">
+              <div class="demo-alert-card ok">
+                <i class="fas fa-check-circle alert-icon"></i>
+                <div class="alert-content">
                   <div
-                    style="font-weight: 600; color: white; font-size: 0.9rem"
+                    class="alert-title"
                     data-en="Monitoring Completed - Coastal Area"
                   >
                     Monitoreo completado - Area Costera
                   </div>
                   <div
-                    style="font-size: 0.8rem; color: rgba(255, 255, 255, 0.6)"
+                    class="alert-desc"
                     data-en="1 day ago - No anomalies detected"
                   >
                     Hace 1 dia - Sin anomalias detectadas
                   </div>
                 </div>
-                <span
-                  style="
-                    background: var(--secondary);
-                    color: white;
-                    padding: 0.2rem 0.5rem;
-                    border-radius: 4px;
-                    font-size: 0.7rem;
-                  "
-                  data-en="OK"
-                  >OK</span
-                >
+                <span class="alert-badge" data-en="OK">OK</span>
               </div>
             </div>
           </div>
