@@ -446,6 +446,18 @@
       .card-light i { color: var(--secondary); }
       .card-light h3 { color: var(--primary); }
       .card-light p { color: var(--text-light); }
+      .dashboard-demo-card {
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 16px;
+          padding: 2rem;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .dashboard-demo-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 1rem;
+          margin-bottom: 1.5rem;
+      }
       .demo-section {
           background: linear-gradient(180deg, var(--background) 0%, #e2e8f0 100%);
           padding: 6rem 2rem;
@@ -989,17 +1001,27 @@
               display: block;
           }
             #stats-widget {
-              position: static !important;
-              top: auto !important;
-              left: auto !important;
-              margin: 0 auto 1rem !important;
-              padding: 0.65rem 1rem !important;
-              gap: 1rem !important;
-              max-width: 100% !important;
+              position: absolute !important;
+              top: -35px !important;
+              left: 50% !important;
+              transform: translateX(-50%) !important;
+              margin: 0 !important;
+              padding: 0.5rem 1rem !important;
+              gap: 1.5rem !important;
+              width: max-content !important;
+              max-width: 90% !important;
+              z-index: 100 !important;
             }
             #stats-widget #stat-visits,
             #stats-widget #stat-analyses {
               font-size: 1.1rem !important;
+            }
+            .dashboard-demo-card {
+                padding: 1rem !important;
+            }
+            .dashboard-demo-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 0.75rem !important;
             }
 
           .nav-links { display: none; }
