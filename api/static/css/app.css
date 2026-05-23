@@ -458,6 +458,11 @@
           gap: 1rem;
           margin-bottom: 1.5rem;
       }
+      .dashboard-stat-box {
+          padding: 1.25rem;
+          border-radius: 12px;
+          text-align: center;
+      }
       .demo-section {
           background: linear-gradient(180deg, var(--background) 0%, #e2e8f0 100%);
           padding: 6rem 2rem;
@@ -1022,6 +1027,9 @@
             .dashboard-demo-grid {
                 grid-template-columns: repeat(2, 1fr) !important;
                 gap: 0.75rem !important;
+            }
+            .dashboard-stat-box {
+                padding: 0.75rem 0.5rem !important;
             }
 
           .nav-links { display: none; }
