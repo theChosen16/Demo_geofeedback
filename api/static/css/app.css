@@ -446,6 +446,29 @@
       .card-light i { color: var(--secondary); }
       .card-light h3 { color: var(--primary); }
       .card-light p { color: var(--text-light); }
+
+      /* High Contrast Nuestra Solucion (Section, Categories & Cards) */
+      .solucion-category-title {
+          color: var(--primary);
+          margin-top: 2rem;
+          margin-bottom: 1rem;
+          font-size: 1.25rem;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          transition: color 0.3s ease;
+      }
+      .section-light .section-header p {
+          color: var(--primary);
+          font-weight: 500;
+          opacity: 0.85;
+      }
+      .card-light p {
+          color: var(--text);
+          opacity: 0.85;
+          font-weight: 500;
+      }
       .dashboard-demo-card {
           background: rgba(255, 255, 255, 0.05);
           border-radius: 16px;
@@ -1944,6 +1967,28 @@
       [data-theme="dark"] .ai-section-title {
           color: var(--text-light) !important;
           border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+      }
+      [data-theme="dark"] .solucion-category-title {
+          color: var(--text) !important; /* Extremely high contrast light mint */
+      }
+      [data-theme="dark"] .section-light .section-header p {
+          color: var(--text) !important; /* Extremely high contrast light mint */
+          opacity: 0.9 !important;
+      }
+      [data-theme="dark"] .card-light {
+          background: var(--background) !important; /* #081C15 (dark abisal) */
+          border: 1px solid rgba(255, 255, 255, 0.08) !important;
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
+      }
+      [data-theme="dark"] .card-light h3 {
+          color: var(--text) !important; /* #D8F3DC (high contrast light mint) */
+      }
+      [data-theme="dark"] .card-light p {
+          color: var(--text-light) !important; /* #74C69D (brighter mint) */
+          opacity: 0.95 !important;
+      }
+      [data-theme="dark"] .card-light i {
+          color: var(--secondary) !important; /* #2A9D8F (brighter teal) */
       }
       [data-theme="dark"] .chat-input-wrapper {
           background: var(--white) !important;
