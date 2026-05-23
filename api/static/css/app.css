@@ -1703,4 +1703,10 @@
           background: var(--white);
           color: var(--text);
       }
+      [data-theme="dark"] .team-name {
+          color: var(--text);
+      }
+      [data-theme="dark"] .team-avatar {
+          background: var(--primary-light);
+      }
 
