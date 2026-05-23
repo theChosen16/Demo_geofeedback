@@ -75,6 +75,28 @@
         <a href="#" class="logo"
           ><i class="fas fa-globe-americas"></i>GeoFeedback</a
         >
+        <!-- Mobile Actions (visible only on mobile) -->
+        <div class="navbar-mobile-actions">
+          <button
+            class="btn btn-secondary"
+            id="lang-toggle-mobile"
+            onclick="toggleLanguage()"
+            style="padding: 0.4rem 0.6rem; min-width: auto; font-size: 0.8rem; border-radius: 6px;"
+            title="Switch Language"
+          >
+            <span class="lang-icon">🇺🇸</span> <span class="lang-text" style="font-size: 0.75rem">EN</span>
+          </button>
+          <button
+            class="btn btn-secondary theme-switch-btn"
+            id="theme-toggle-mobile-nav"
+            onclick="toggleTheme()"
+            style="padding: 0.4rem; min-width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;"
+            title="Toggle Theme"
+            data-en-title="Toggle Theme"
+          >
+            <i class="fas fa-moon theme-icon"></i>
+          </button>
+        </div>
         <div class="nav-links">
           <a href="#problema" data-en="Problem">Problema</a>
           <a href="#solucion" data-en="Solution">Solucion</a>
@@ -90,7 +112,7 @@
             style="padding: 0.5rem 0.75rem; min-width: auto;"
             title="Switch Language"
           >
-            <span id="lang-icon">🇺🇸</span> <span id="lang-text" style="font-size: 0.8rem">EN</span>
+            <span class="lang-icon">🇺🇸</span> <span class="lang-text" style="font-size: 0.8rem">EN</span>
           </button>
           <button
             class="btn btn-secondary theme-switch-btn"

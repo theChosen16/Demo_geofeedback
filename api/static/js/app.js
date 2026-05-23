@@ -1932,10 +1932,10 @@
         const isEn = currentLang === 'en';
         
         // Update Button
-        const langIcon = document.getElementById('lang-icon');
-        const langText = document.getElementById('lang-text');
-        if(langIcon) langIcon.textContent = isEn ? '🇨🇱' : '🇺🇸';
-        if(langText) langText.textContent = isEn ? 'ES' : 'EN';
+        const langIcons = document.querySelectorAll('.lang-icon');
+        const langTexts = document.querySelectorAll('.lang-text');
+        langIcons.forEach(icon => icon.textContent = isEn ? '🇨🇱' : '🇺🇸');
+        langTexts.forEach(text => text.textContent = isEn ? 'ES' : 'EN');
         
         // Translate Elements with data-en
         const elements = document.querySelectorAll('[data-en]');
