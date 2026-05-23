@@ -1709,4 +1709,23 @@
       [data-theme="dark"] .team-avatar {
           background: var(--primary-light);
       }
+      [data-theme="dark"] .chat-sidebar {
+          background: var(--white);
+          box-shadow: -5px 0 30px rgba(0,0,0,0.5);
+      }
+      [data-theme="dark"] .chat-messages {
+          background: var(--background);
+      }
+      [data-theme="dark"] .chat-message.assistant .message-bubble {
+          background: var(--white);
+          border: 1px solid var(--border);
+          color: var(--text);
+      }
+      [data-theme="dark"] .chat-message.user .message-bubble {
+          background: var(--primary-light);
+          color: white;
+      }
+      [data-theme="dark"] .message-time {
+          color: var(--text-light);
+      }
 
