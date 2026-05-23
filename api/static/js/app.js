@@ -1,4 +1,4 @@
-      var MAPS_API_KEY = "GOOGLE_MAPS_KEY_PLACEHOLDER";
+      var MAPS_API_KEY = window.MAPS_API_KEY;
       var map = null;
       var marker = null;
       var autocomplete = null;
