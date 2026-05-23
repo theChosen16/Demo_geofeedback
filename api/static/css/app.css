@@ -1,18 +1,18 @@
       :root {
-          /* Elegant Natural Color Palette */
-          --primary: #2D5A4A;
-          --primary-light: #3D7A5F;
-          --secondary: #A68B5B;
-          --secondary-light: #C4A46D;
-          --accent: #E8B86D;
+          /* Elegant Natural Earth & Nature Color Palette */
+          --primary: #1B4332;       /* Verde bosque profundo (bosques y follaje nativo) */
+          --primary-light: #2D6A4F; /* Verde esmeralda (vegetación activa y clorofila) */
+          --secondary: #2A9D8F;     /* Azul/verde oceánico (glaciares, lagos y el mar) */
+          --secondary-light: #4EA8DE; /* Azul cielo claro (atmósfera) */
+          --accent: #E9C46A;        /* Dorado solar (el sol que da vida al planeta) */
           --danger: #C45B5B;
-          --text: #2C3E2D;
-          --text-light: #5A6B5C;
-          --background: #FAFAF8;
+          --text: #1A2F25;          /* Verde selva ultra-oscuro para lectura */
+          --text-light: #5A8F76;    /* Verde menta suave */
+          --background: #F4F9F6;    /* Blanco menta/aire fresco (orgánico muy sutil) */
           --white: #ffffff;
-          --border: #D4CFC4;
-          --shadow: 0 4px 6px -1px rgba(45, 90, 74, 0.1);
-          --shadow-lg: 0 10px 15px -3px rgba(45, 90, 74, 0.15);
+          --border: #D2DFD8;        /* Gris menta suave para separadores */
+          --shadow: 0 4px 6px -1px rgba(27, 67, 50, 0.08);
+          --shadow-lg: 0 10px 15px -3px rgba(27, 67, 50, 0.12);
           --demo-map-height: 550px;
           /* Modern Typography */
           --font-accent: 'Outfit', sans-serif;
@@ -20,13 +20,13 @@
       }
 
       :root[data-theme="dark"], body[data-theme="dark"] {
-          --background: #121A16; /* Pizarra verdoso profundo */
-          --white: #1A2420;      /* Tarjetas oscuras */
-          --text: #E4EBE6;       /* Texto claro y suave */
-          --text-light: #94A69B;
-          --border: #2D3A33;
-          --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
-          --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+          --background: #081C15;    /* Verde selva abisal oscuro */
+          --white: #122D22;         /* Verde bosque oscuro para tarjetas */
+          --text: #D8F3DC;          /* Verde menta ultra-claro para texto */
+          --text-light: #74C69D;    /* Verde menta brillante para subtítulos */
+          --border: #1B4332;        /* Verde bosque de separación */
+          --shadow: 0 4px 20px rgba(8, 28, 21, 0.6);
+          --shadow-lg: 0 10px 30px rgba(8, 28, 21, 0.8);
       }
       * { margin: 0; padding: 0; box-sizing: border-box; }
       html { scroll-behavior: smooth; }
@@ -236,8 +236,28 @@
           top: 50%; left: 50%;
           width: 550px; height: 550px; /* Increased Orbit diameter (Halo) */
           transform-style: preserve-3d;
-          transform: translate(-50%, -50%) rotateX(15deg); /* Halo Orbit: Less tilt to circle perimeter */
+          transform: translate(-50%, -50%) rotateX(65deg) rotateY(15deg); /* Halo Orbit: Accentuated 3D perspective */
           animation: orbitRotate 20s linear infinite;
+      }
+
+      /* Dynamic Scanning Laser Beam */
+      .scanning-beam {
+          position: absolute;
+          top: 15px;
+          left: 15px;
+          width: 4px;
+          height: 220px; /* Longitude of scanning ray to touch the earth */
+          background: linear-gradient(to bottom, rgba(42, 157, 143, 0.8) 0%, rgba(78, 168, 222, 0) 100%);
+          transform-origin: top center;
+          transform: rotateX(90deg);
+          box-shadow: 0 0 15px rgba(42, 157, 143, 0.6);
+          animation: laserScan 2s ease-in-out infinite alternate;
+          pointer-events: none;
+          z-index: -1;
+      }
+      @keyframes laserScan {
+          0% { opacity: 0.3; transform: rotateX(90deg) rotateY(-8deg) scaleX(1); }
+          100% { opacity: 0.85; transform: rotateX(90deg) rotateY(8deg) scaleX(2.5); }
       }
 
       .satellite-body-group {
@@ -283,21 +303,26 @@
           position: absolute;
           width: 100%; height: 100%;
           background: 
-              linear-gradient(90deg, transparent 49%, #000 50%, transparent 51%),
-              linear-gradient(rgba(255,255,255,0.1), rgba(0,0,0,0.1)),
-              linear-gradient(135deg, #051937, #004d7a);
+          linear-gradient(90deg, transparent 49%, #000 50%, transparent 51%),
+          linear-gradient(rgba(255,255,255,0.1), rgba(0,0,0,0.1)),
+          linear-gradient(135deg, #051937, #004d7a);
           background-size: 10px 100%, 100% 100%, 100% 100%;
           border: 1px solid #888;
       }
       .panel-front { transform: translateZ(1px); }
       .panel-back  { transform: translateZ(-1px) rotateY(180deg); background: #333; } /* Grey back */
 
-      /* Orbit Animation - Constant Z-Index for Halo */
+      /* Orbit Animation with layer oclusion (z-index switching dynamically) */
       @keyframes orbitRotate {
-          0% { transform: translate(-50%, -50%) rotateX(15deg) rotateZ(0deg); z-index: 20; }
-          100% { transform: translate(-50%, -50%) rotateX(15deg) rotateZ(360deg); z-index: 20; }
+          0% { transform: translate(-50%, -50%) rotateX(65deg) rotateY(15deg) rotateZ(0deg); z-index: 5; }   /* Behind Earth */
+          25% { z-index: 5; }                                                                                /* Still behind */
+          48% { z-index: 25; }                                                                               /* Switches to front */
+          50% { transform: translate(-50%, -50%) rotateX(65deg) rotateY(15deg) rotateZ(180deg); z-index: 25; } /* In front of Earth */
+          75% { z-index: 25; }                                                                               /* Still in front */
+          98% { z-index: 5; }                                                                                /* Switches to behind */
+          100% { transform: translate(-50%, -50%) rotateX(65deg) rotateY(15deg) rotateZ(360deg); z-index: 5; }
       }
-      
+
       /* Counter rotation to keep satellite upright */
       @keyframes counterRotate {
           0% { transform: translateX(-50%) rotateX(-90deg) rotateY(45deg) rotateZ(0deg); }
