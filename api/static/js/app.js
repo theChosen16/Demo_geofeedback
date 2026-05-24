@@ -2174,3 +2174,202 @@
           }
       }
 
+      // ─────────────────────────────────────────────────────────────────────────
+      // HERO SPACE ANIMATION  ·  twinkling stars + crossing satellites (Canvas)
+      // ─────────────────────────────────────────────────────────────────────────
+      (function initHeroSpaceCanvas() {
+        const canvas = document.getElementById('hero-space-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (reducedMotion) return;
+
+        // Resize handler
+        function resize() {
+          canvas.width  = canvas.offsetWidth;
+          canvas.height = canvas.offsetHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize, { passive: true });
+
+        // Helper
+        function rnd(a, b) { return a + Math.random() * (b - a); }
+
+        // ── Stars ────────────────────────────────────────────────────────────────
+        const STAR_COUNT = 130;
+        const stars = Array.from({ length: STAR_COUNT }, () => {
+          const tier = Math.random();
+          return {
+            x:      Math.random(),
+            y:      Math.random(),
+            radius: tier < 0.55 ? rnd(0.4, 0.9) : tier < 0.85 ? rnd(0.9, 1.5) : rnd(1.5, 2.5),
+            alpha:  rnd(0.35, 1),
+            phase:  Math.random() * Math.PI * 2,
+            speed:  rnd(0.6, 2.5),
+            color:  Math.random() < 0.15 ? '#a8d8ff' : Math.random() < 0.10 ? '#ffe9a0' : '#ffffff',
+          };
+        });
+
+        // ── Satellite definitions ────────────────────────────────────────────────
+        const SAT_DEFS = [
+          { yRel: 0.17, speed: 55,  w: 14, h:  8, panelW: 22, panelH:  5, delay:    0, flip: false },
+          { yRel: 0.54, speed: 38,  w: 10, h:  6, panelW: 16, panelH:  4, delay: 4500, flip: true  },
+          { yRel: 0.80, speed: 70,  w:  8, h:  5, panelW: 12, panelH:  3, delay: 2200, flip: false },
+          { yRel: 0.35, speed: 46,  w: 18, h: 10, panelW: 28, panelH:  6, delay: 7000, flip: true  },
+        ];
+        const satellites = SAT_DEFS.map(d => ({ ...d, x: 0, ready: false, startTime: 0 }));
+
+        // Draw a single satellite at (cx, cy)
+        function drawSat(cx, cy, w, h, panelW, panelH, flip) {
+          ctx.save();
+          ctx.translate(cx, cy);
+          if (flip) ctx.scale(-1, 1);
+
+          const gx = w * 0.1;
+
+          // Body gradient
+          const bg = ctx.createLinearGradient(-w/2, -h/2, -w/2, h/2);
+          bg.addColorStop(0, 'rgba(180,210,200,0.92)');
+          bg.addColorStop(0.4, 'rgba(120,170,155,0.88)');
+          bg.addColorStop(1,   'rgba(60,110,95,0.82)');
+          ctx.fillStyle = bg;
+          ctx.beginPath();
+          if (ctx.roundRect) ctx.roundRect(-w/2, -h/2, w, h, 2);
+          else ctx.rect(-w/2, -h/2, w, h);
+          ctx.fill();
+
+          // Highlight stripe
+          ctx.fillStyle = 'rgba(255,255,255,0.18)';
+          ctx.fillRect(-w/2 + 2, -h/2 + 1, w - 4, 2);
+
+          // Antenna rod + dish
+          ctx.strokeStyle = 'rgba(200,230,220,0.70)';
+          ctx.lineWidth = 0.8;
+          ctx.beginPath(); ctx.moveTo(0, -h/2); ctx.lineTo(0, -h/2 - 5); ctx.stroke();
+          ctx.beginPath(); ctx.arc(0, -h/2 - 6, 1.2, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(42,157,143,0.9)'; ctx.fill();
+
+          // Panel gradient (reused for both sides)
+          const pg = ctx.createLinearGradient(0, -panelH/2, panelW, panelH/2);
+          pg.addColorStop(0,   'rgba(30,90,140,0.85)');
+          pg.addColorStop(0.5, 'rgba(42,157,200,0.90)');
+          pg.addColorStop(1,   'rgba(20,70,110,0.80)');
+
+          function drawPanel(ox) {
+            ctx.fillStyle = pg;
+            ctx.beginPath();
+            if (ctx.roundRect) ctx.roundRect(ox, -panelH/2, panelW, panelH, 1);
+            else ctx.rect(ox, -panelH/2, panelW, panelH);
+            ctx.fill();
+            // Grid
+            ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+            ctx.lineWidth = 0.5;
+            for (let g = 1; g < 4; g++) {
+              const gxp = ox + (panelW / 4) * g;
+              ctx.beginPath(); ctx.moveTo(gxp, -panelH/2); ctx.lineTo(gxp, panelH/2); ctx.stroke();
+            }
+            ctx.beginPath(); ctx.moveTo(ox, 0); ctx.lineTo(ox + panelW, 0); ctx.stroke();
+          }
+
+          // Left panel + arm
+          const lx = -w/2 - gx - panelW;
+          drawPanel(lx);
+          ctx.strokeStyle = 'rgba(160,200,185,0.70)'; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(-w/2, 0); ctx.lineTo(lx + panelW, 0); ctx.stroke();
+
+          // Right panel + arm
+          const rx = w/2 + gx;
+          drawPanel(rx);
+          ctx.beginPath(); ctx.moveTo(w/2, 0); ctx.lineTo(rx, 0); ctx.stroke();
+
+          // Status LED
+          ctx.beginPath(); ctx.arc(w/2 - 1, -h/2 + 1, 1, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(42,157,143,0.95)'; ctx.fill();
+
+          ctx.restore();
+        }
+
+        // ── Main render loop ─────────────────────────────────────────────────────
+        let raf = null;
+        let lastT = 0;
+
+        function draw(ts) {
+          lastT = lastT || ts;
+          const W = canvas.width;
+          const H = canvas.height;
+          ctx.clearRect(0, 0, W, H);
+
+          // Stars
+          for (const s of stars) {
+            const twinkle = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(ts * 0.001 * s.speed + s.phase));
+            ctx.globalAlpha = s.alpha * twinkle;
+            ctx.fillStyle = s.color;
+            ctx.beginPath();
+            ctx.arc(s.x * W, s.y * H, s.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            if (s.radius > 1.6) {
+              ctx.globalAlpha = s.alpha * twinkle * 0.30;
+              ctx.strokeStyle = s.color;
+              ctx.lineWidth = 0.5;
+              const len = s.radius * 3.5;
+              ctx.beginPath();
+              ctx.moveTo(s.x * W - len, s.y * H);
+              ctx.lineTo(s.x * W + len, s.y * H);
+              ctx.moveTo(s.x * W, s.y * H - len);
+              ctx.lineTo(s.x * W, s.y * H + len);
+              ctx.stroke();
+            }
+          }
+          ctx.globalAlpha = 1;
+
+          // Satellites
+          for (const sat of satellites) {
+            if (!sat.ready) {
+              if (ts >= sat.delay) { sat.ready = true; sat.startTime = ts; }
+              else continue;
+            }
+            const totalDist = W + 120;
+            const cycleTime = totalDist / sat.speed * 1000; // ms
+            const progress  = ((ts - sat.startTime) % cycleTime) / cycleTime;
+            const sx = sat.flip ? W + 60 - progress * totalDist : -60 + progress * totalDist;
+            const sy = sat.yRel * H;
+
+            // Glow halo
+            const glow = ctx.createRadialGradient(sx, sy, 0, sx, sy, 28);
+            glow.addColorStop(0, 'rgba(42,157,143,0.10)');
+            glow.addColorStop(1, 'rgba(42,157,143,0.00)');
+            ctx.fillStyle = glow;
+            ctx.fillRect(sx - 28, sy - 28, 56, 56);
+
+            // Trail
+            const td = sat.flip ? 1 : -1;
+            const trail = ctx.createLinearGradient(sx, sy, sx + td * 45, sy);
+            trail.addColorStop(0, 'rgba(42,157,143,0.22)');
+            trail.addColorStop(0.6,'rgba(42,157,143,0.06)');
+            trail.addColorStop(1, 'rgba(42,157,143,0.00)');
+            ctx.fillStyle = trail;
+            ctx.beginPath();
+            ctx.ellipse(sx + td * 22, sy, 44, 1.6, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            drawSat(sx, sy, sat.w, sat.h, sat.panelW, sat.panelH, sat.flip);
+          }
+
+          raf = requestAnimationFrame(draw);
+        }
+
+        // Pause when hero is scrolled out of view
+        const heroSection = canvas.closest('section') || canvas.parentElement;
+        const observer = new IntersectionObserver(entries => {
+          for (const e of entries) {
+            if (e.isIntersecting) {
+              if (!raf) { lastT = 0; raf = requestAnimationFrame(draw); }
+            } else {
+              if (raf) { cancelAnimationFrame(raf); raf = null; }
+            }
+          }
+        }, { threshold: 0.01 });
+        observer.observe(heroSection);
+      })();
