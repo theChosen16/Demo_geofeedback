@@ -2,6 +2,7 @@ import logging
 import threading
 
 import psycopg2
+from psycopg2 import sql as psql
 
 from config import DB_CONFIG
 
@@ -64,18 +65,15 @@ def _ensure_analytics_tables(conn):
                 )
                 role_exists = cur.fetchone()[0]
                 if role_exists:
-                    cur.execute(
-                        f"GRANT SELECT, INSERT ON metadata.page_visits TO {ANALYTICS_ROLE}"
-                    )
-                    cur.execute(
-                        f"GRANT SELECT, INSERT ON metadata.api_usage_logs TO {ANALYTICS_ROLE}"
-                    )
-                    cur.execute(
-                        f"GRANT USAGE, SELECT ON SEQUENCE metadata.page_visits_id_seq TO {ANALYTICS_ROLE}"
-                    )
-                    cur.execute(
-                        f"GRANT USAGE, SELECT ON SEQUENCE metadata.api_usage_logs_id_seq TO {ANALYTICS_ROLE}"
-                    )
+                    role_id = psql.Identifier(ANALYTICS_ROLE)
+                    cur.execute(psql.SQL("GRANT SELECT, INSERT ON metadata.page_visits TO {}").format(role_id))
+                    cur.execute(psql.SQL("GRANT SELECT, INSERT ON metadata.api_usage_logs TO {}").format(role_id))
+                    cur.execute(psql.SQL(
+                        "GRANT USAGE, SELECT ON SEQUENCE metadata.page_visits_id_seq TO {}"
+                    ).format(role_id))
+                    cur.execute(psql.SQL(
+                        "GRANT USAGE, SELECT ON SEQUENCE metadata.api_usage_logs_id_seq TO {}"
+                    ).format(role_id))
                 else:
                     logger.warning("Analytics grants skipped because role '%s' does not exist.", ANALYTICS_ROLE)
             conn.commit()

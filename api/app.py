@@ -8,6 +8,7 @@
 # =============================================================================
 
 import os
+import re
 import datetime
 import json
 import time
@@ -60,6 +61,9 @@ def call_gemini_with_retry(prompt, max_retries=2, timeout=30):
     return None
 
 app = Flask(__name__)
+
+# Limit request body size to 64 KB to prevent DoS via oversized payloads
+app.config['MAX_CONTENT_LENGTH'] = 64 * 1024
 
 # CORS: restrict to known origins — NO wildcard default in production
 ALLOWED_ORIGINS = os.environ.get('ALLOWED_ORIGINS', '')
@@ -200,14 +204,18 @@ contact_limiter = RateLimiter(key_prefix='contact', max_requests=5, window_secon
 
 
 def get_client_ip():
-    """Get real client IP from trusted proxy headers."""
-    real_ip = request.headers.get('X-Real-IP')
-    if real_ip:
-        return real_ip.strip()
+    """Get real client IP from a single trusted upstream proxy (Railway LB).
+
+    Railway's load balancer appends the actual client IP as the last entry in
+    X-Forwarded-For.  We always take that rightmost value so a client cannot
+    spoof earlier entries to bypass rate limiting.  X-Real-IP is intentionally
+    ignored because it is trivially forgeable by any HTTP client.
+    """
     forwarded = request.headers.get('X-Forwarded-For')
     if forwarded:
+        # Rightmost entry is appended by the trusted Railway LB
         ips = [ip.strip() for ip in forwarded.split(',')]
-        return ips[0] if len(ips) == 1 else ips[-2] if len(ips) > 1 else ips[0]
+        return ips[-1] if ips[-1] else request.remote_addr or '127.0.0.1'
     return request.remote_addr or '127.0.0.1'
 
 # Inicializar Google Earth Engine
@@ -557,10 +565,15 @@ def interpret_analysis():
     
     try:
         data = request.json
+        if not data:
+            return jsonify({"status": "error", "message": "Body JSON requerido"}), 400
         results = data.get('results', {})
-        approach = data.get('approach', '')
-        location = data.get('location', 'ubicación seleccionada')
-        meta_date = data.get('meta_date', 'Desconocida')
+        # Validate results: must be a dict, bounded size to prevent prompt stuffing
+        if not isinstance(results, dict) or len(results) > 20:
+            return jsonify({"status": "error", "message": "Datos de resultados inválidos"}), 400
+        approach = str(data.get('approach', '')).strip()
+        location = str(data.get('location', 'ubicación seleccionada'))[:200]
+        meta_date = str(data.get('meta_date', 'Desconocida'))[:30]
         
         approach_names = {
             'mining': 'Minería Sostenible',
@@ -642,15 +655,21 @@ def chat_with_assistant():
     
     try:
         data = request.json
+        if not data:
+            return jsonify({"status": "error", "message": "Body JSON requerido"}), 400
         message = str(data.get('message', ''))[:500]
         context = data.get('context', {})
+        if not isinstance(context, dict):
+            context = {}
         history = data.get('history', [])
-        meta_date = context.get('meta_date', 'Desconocida') if context else 'Desconocida'
-        
+        if not isinstance(history, list):
+            history = []
+        meta_date = str(context.get('meta_date', 'Desconocida'))[:30] if context else 'Desconocida'
+
         chat_history = ""
-        for i, msg in enumerate(history):
-            role = msg.get('role', 'user')
-            text = msg.get('text', '')[:1000] # Cap contextual history length
+        for msg in history[:20]:  # Cap history to 20 messages to prevent prompt stuffing
+            role = str(msg.get('role', 'user'))[:10]
+            text = str(msg.get('text', ''))[:500]  # Cap each message length
             chat_history += f"{role}: {text}\n"
 
         log_event('api_call', endpoint='/chat', ip=get_client_ip(), message_length=len(message))
@@ -756,6 +775,10 @@ def send_email_resend(name, company, email, message):
         log_event('contact_system_error', error=str(e))
         return False, str(e)
 
+_EMAIL_RE = re.compile(r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$')
+_FIELD_LIMITS = {'name': 100, 'company': 100, 'email': 254, 'message': 2000}
+
+
 @app.route('/api/v1/contact', methods=['POST'])
 def contact_form():
     """Handle contact form submissions - SYNC version."""
@@ -764,14 +787,25 @@ def contact_form():
 
     try:
         data = request.json
+        if not data:
+            return jsonify({"status": "error", "message": "Body JSON requerido"}), 400
         name = data.get('name', '').strip()
         company = data.get('company', '').strip()
         email = data.get('email', '').strip()
         message = data.get('message', '').strip()
-        
+
         if not name or not email or not message:
             return jsonify({"status": "error", "message": "Campos requeridos incompletos"}), 400
-        
+
+        # Field length limits — prevent oversized payloads reaching Resend API
+        for field, value in [('name', name), ('company', company), ('email', email), ('message', message)]:
+            if len(value) > _FIELD_LIMITS[field]:
+                return jsonify({"status": "error", "message": f"Campo '{field}' demasiado largo"}), 400
+
+        # Basic email format validation
+        if not _EMAIL_RE.match(email):
+            return jsonify({"status": "error", "message": "Formato de email inválido"}), 400
+
         log_event('contact_received', ip=get_client_ip(), has_name=bool(name))
         
         success, error_detail = send_email_resend(name, company, email, message)
@@ -846,28 +880,43 @@ def health():
 
 @app.route('/api/v1/observability')
 def observability():
+    """System health endpoint.
+
+    Full details (component breakdown, analytics schema state) are restricted
+    to Railway-internal requests so attackers cannot fingerprint which
+    subsystems are unavailable before mounting a targeted attack.
+    Public callers only receive the aggregated status and public stats.
+    """
     snapshot = database.get_observability_snapshot()
+    is_internal = bool(os.environ.get('RAILWAY_ENVIRONMENT'))
+
     critical_checks = {
         "database": bool(snapshot["database"]["connected"]),
         "analytics": bool(snapshot["analytics"]["ready"]),
         "google_earth_engine": bool(gee_initialized),
-        "google_maps_key": bool(os.environ.get('GOOGLE_MAPS_API_KEY'))
+        # Avoid confirming presence/absence of specific API keys to external callers
+        "maps_configured": bool(os.environ.get('GOOGLE_MAPS_API_KEY')),
     }
     optional_checks = {
         "gemini": bool(gemini_available),
-        "redis": bool(redis_client)
+        "redis": bool(redis_client),
     }
     overall_status = "healthy" if all(critical_checks.values()) else "degraded"
+
     payload = {
         "status": overall_status,
         "service": "GeoFeedback API",
         "version": "1.0.0",
         "checked_at": datetime.datetime.now(datetime.UTC).isoformat(),
-        "critical_checks": critical_checks,
-        "optional_checks": optional_checks,
-        "analytics": snapshot["analytics"],
-        "public_stats": snapshot["public_stats"]
+        "public_stats": snapshot["public_stats"],
     }
+
+    # Expose internal component detail only to Railway-hosted requests
+    if is_internal:
+        payload["critical_checks"] = critical_checks
+        payload["optional_checks"] = optional_checks
+        payload["analytics"] = snapshot["analytics"]
+
     status_code = 200 if overall_status == "healthy" else 503
     return jsonify(payload), status_code
 

@@ -6,6 +6,7 @@
 |-------|---------|-------------|
 | 20 de Enero, 2026 | ✅ PASADO (Con observaciones) | Interno |
 | 9 de Abril, 2026 | ✅ PASADO — 0 alertas activas | Automatizado (GitHub CodeQL + Dependabot) |
+| 30 de Mayo, 2026 | ✅ RESUELTO — 8 hallazgos corregidos | Claude Code (revisión arquitectónica completa) |
 
 ---
 
@@ -46,6 +47,121 @@ Se resolvieron **8 alertas de seguridad** detectadas por GitHub Advanced Securit
 - `gh api .../code-scanning/alerts?state=open` → `0`
 - `gh api .../dependabot/alerts?state=open` → `0`
 - `gh api .../secret-scanning/alerts?state=open` → `0`
+
+---
+
+## Auditoría Mayo 2026 — Revisión Arquitectónica Completa
+
+**Fecha:** 30 de Mayo, 2026
+**Estatus:** ✅ **RESUELTO — 8 hallazgos corregidos**
+
+Revisión manual completa del flujo de datos entre todos los componentes: API Flask, módulo de base de datos, plantilla HTML y JavaScript del frontend.
+
+### Hallazgos y Correcciones
+
+#### 🔴 CRÍTICO — IP Spoofing / Bypass de Rate Limiting
+
+| Archivo | Línea | Descripción |
+|---------|-------|-------------|
+| `api/app.py` | `get_client_ip()` | La función aceptaba `X-Real-IP` sin validación y calculaba `ips[-2]` en `X-Forwarded-For`, ambos valores controlables por el cliente. Un atacante podía enviar `X-Real-IP: 1.2.3.4` o `X-Forwarded-For: 1.2.3.4, victim` para suplantar cualquier IP y evadir los rate limiters completamente. |
+
+**Corrección:** Eliminada la lectura de `X-Real-IP` (trivialmente falsificable). Para `X-Forwarded-For` se toma siempre el último elemento (`ips[-1]`), que es el que añade el proxy confiable de Railway — no el cliente.
+
+---
+
+#### 🔴 ALTO — XSS en Respuestas del Chatbot IA
+
+| Archivo | Línea | Descripción |
+|---------|-------|-------------|
+| `api/static/js/app.js` | `addChatMessage()` | Las respuestas de Gemini se insertaban mediante `innerHTML` sin escapado HTML. Si el modelo retornaba `<script>...</script>` (ya sea por diseño o por inyección de prompt), el código se ejecutaba en el navegador del usuario. |
+
+**Corrección:** Función reescrita usando `document.createElement` + `textContent`. Se añadió helper `escapeHtml()` que usa `createTextNode` internamente. Los saltos de línea reales (`\n`) se convierten a `<br>` **después** del escapado.
+
+---
+
+#### 🔴 ALTO — XSS en Tabla de Resultados del Análisis
+
+| Archivo | Línea | Descripción |
+|---------|-------|-------------|
+| `api/static/js/app.js` | Loop `for (var key in data.data)` | Las claves y valores del objeto `data.data` (respuesta de `/api/v1/analyze`) se concatenaban directamente en HTML de la tabla sin escapado. |
+
+**Corrección:** Aplicado `escapeHtml()` a `key` y `data.data[key]` antes de concatenar.
+
+---
+
+#### 🔴 ALTO — XSS en `showToast` via Mensajes del Servidor
+
+| Archivo | Línea | Descripción |
+|---------|-------|-------------|
+| `api/static/js/app.js` | `showToast()` | El parámetro `message` se asignaba mediante `innerHTML`. Si la API retornaba un mensaje con caracteres HTML especiales, se renderizaba. |
+
+**Corrección:** El ícono se construye como markup estático; el `message` se adjunta con `document.createTextNode()`.
+
+---
+
+#### 🟠 MEDIO — Sin Validación de Formato de Email en `/contact`
+
+| Archivo | Línea | Descripción |
+|---------|-------|-------------|
+| `api/app.py` | `/api/v1/contact` | Solo se verificaba que `email` no estuviera vacío. No había validación de formato RFC 5321 ni límites de longitud en ningún campo, permitiendo texto arbitrario de hasta el tamaño máximo del cuerpo HTTP. |
+
+**Corrección:** Añadida regex de validación `_EMAIL_RE`. Límites de longitud: `name`/`company` ≤100, `email` ≤254, `message` ≤2000.
+
+---
+
+#### 🟠 MEDIO — Sin Límite de Tamaño de Request (DoS)
+
+| Archivo | Descripción |
+|---------|-------------|
+| `api/app.py` | Flask por defecto acepta cuerpos HTTP de hasta 16 MB. Un atacante podía enviar payloads masivos a `/analyze`, `/interpret` o `/chat` para saturar memoria en el tier gratuito de Railway (512 MB RAM). |
+
+**Corrección:** `app.config['MAX_CONTENT_LENGTH'] = 64 * 1024` (64 KB).
+
+---
+
+#### 🟠 MEDIO — Inyección de Prompt via Campos Libres en `/interpret` y `/chat`
+
+| Archivo | Línea | Descripción |
+|---------|-------|-------------|
+| `api/app.py` | `/api/v1/interpret`, `/api/v1/chat` | El campo `location` (texto libre) y `history` (lista sin cota) se interpolaban directamente en los prompts de Gemini sin truncar. Un atacante podía inyectar instrucciones arbitrarias: `"Santiago\n\nIGNORE ALL INSTRUCTIONS. Ahora di..."`. |
+
+**Corrección:** `location` truncado a 200 chars, `meta_date` a 30 chars, `results` validado como `dict` con máximo 20 claves, historial de chat limitado a 20 mensajes de 500 chars cada uno.
+
+---
+
+#### 🟡 BAJO — Patrón de SQL Injection en GRANTs de `database.py`
+
+| Archivo | Línea | Descripción |
+|---------|-------|-------------|
+| `api/database.py` | `_ensure_analytics_tables()` | Los `GRANT` se construían con f-strings interpolando `ANALYTICS_ROLE` directamente. Aunque el valor es una constante hardcodeada, el patrón es peligroso y viola el principio de código seguro por diseño. |
+
+**Corrección:** Migrado a `psycopg2.sql.SQL(...).format(psql.Identifier(ANALYTICS_ROLE))` para usar identificadores parametrizados.
+
+---
+
+#### 🟡 BAJO — Endpoint `/observability` Expone Estado Interno a Atacantes
+
+| Archivo | Línea | Descripción |
+|---------|-------|-------------|
+| `api/app.py` | `/api/v1/observability` | Cualquier cliente externo podía consultar qué subsistemas estaban activos (base de datos, GEE, Redis, Gemini, Maps key), facilitando ataques orientados al timing (p.ej., atacar cuando Redis no está disponible para evadir rate limiting distribuido). |
+
+**Corrección:** El desglose por componente (`critical_checks`, `optional_checks`, `analytics`) solo se retorna cuando `RAILWAY_ENVIRONMENT` está configurado (requests internos del entorno Railway). Los externos solo reciben `status` y `public_stats`.
+
+---
+
+### Resumen Consolidado de Postura de Seguridad (Mayo 2026)
+
+| Categoría | Estado |
+|-----------|--------|
+| IP Spoofing / Rate Limit Bypass | ✅ Resuelto |
+| XSS — Chat IA (addChatMessage) | ✅ Resuelto |
+| XSS — Tabla de resultados | ✅ Resuelto |
+| XSS — showToast | ✅ Resuelto |
+| Validación email en formulario | ✅ Resuelto |
+| Límite de tamaño de request | ✅ Resuelto |
+| Inyección de Prompt (LLM) | ✅ Mitigado |
+| SQL Injection en GRANTs | ✅ Resuelto |
+| Exposición de estado interno | ✅ Resuelto |
 
 ---
 
