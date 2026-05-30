@@ -895,7 +895,7 @@ def observability():
         "analytics": bool(snapshot["analytics"]["ready"]),
         "google_earth_engine": bool(gee_initialized),
         # Avoid confirming presence/absence of specific API keys to external callers
-        "maps_configured": bool(os.environ.get('GOOGLE_MAPS_API_KEY')),
+        "google_maps_key": bool(os.environ.get('GOOGLE_MAPS_API_KEY')),
     }
     optional_checks = {
         "gemini": bool(gemini_available),
