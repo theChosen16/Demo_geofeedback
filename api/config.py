@@ -61,9 +61,22 @@ class Config:
     # =========================================================================
     SECRET_KEY = os.environ.get('SECRET_KEY')
     if not SECRET_KEY:
+        # In a real deployment (Railway) the SECRET_KEY MUST be provided
+        # explicitly — fail hard rather than run with an unknown/ephemeral key.
+        if os.environ.get('RAILWAY_ENVIRONMENT'):
+            raise RuntimeError(
+                "SECRET_KEY no configurada en producción. "
+                "Define la variable de entorno SECRET_KEY."
+            )
+        # Local development only: use a cryptographically-random ephemeral key
+        # instead of the previous predictable id()-based value.
         import warnings
-        warnings.warn("SECRET_KEY no configurada. Usando key temporal para desarrollo local SOLAMENTE.")
-        SECRET_KEY = 'dev-key-DO-NOT-USE-IN-PRODUCTION-' + str(id(object()))
+        import secrets
+        warnings.warn(
+            "SECRET_KEY no configurada. Generando una key aleatoria efímera "
+            "para desarrollo local SOLAMENTE."
+        )
+        SECRET_KEY = secrets.token_hex(32)
     DEBUG = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
     ENV = os.getenv('FLASK_ENV', 'production')
 

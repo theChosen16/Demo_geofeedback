@@ -38,7 +38,7 @@ class ObservabilityRouteTests(unittest.TestCase):
     def setUp(self):
         self.client = app_module.app.test_client()
 
-    @patch.dict(os.environ, {"GOOGLE_MAPS_API_KEY": "test-maps-key", "RAILWAY_ENVIRONMENT": "test"}, clear=False)
+    @patch.dict(os.environ, {"GOOGLE_MAPS_API_KEY": "test-maps-key", "OBSERVABILITY_TOKEN": "secret-token"}, clear=False)
     @patch.object(app_module, "gee_initialized", True)
     @patch.object(app_module, "gemini_available", True)
     @patch.object(app_module, "redis_client", object())
@@ -57,7 +57,10 @@ class ObservabilityRouteTests(unittest.TestCase):
         },
     )
     def test_observability_returns_healthy_contract(self, _mock_snapshot):
-        response = self.client.get("/api/v1/observability")
+        response = self.client.get(
+            "/api/v1/observability",
+            headers={"X-Observability-Token": "secret-token"},
+        )
         self.assertEqual(response.status_code, 200)
 
         payload = response.get_json()
@@ -71,7 +74,7 @@ class ObservabilityRouteTests(unittest.TestCase):
         self.assertTrue(payload["optional_checks"]["redis"])
         self.assertIn("checked_at", payload)
 
-    @patch.dict(os.environ, {"GOOGLE_MAPS_API_KEY": "", "RAILWAY_ENVIRONMENT": "test"}, clear=False)
+    @patch.dict(os.environ, {"GOOGLE_MAPS_API_KEY": "", "OBSERVABILITY_TOKEN": "secret-token"}, clear=False)
     @patch.object(app_module, "gee_initialized", True)
     @patch.object(app_module, "gemini_available", False)
     @patch.object(app_module, "redis_client", None)
@@ -90,7 +93,10 @@ class ObservabilityRouteTests(unittest.TestCase):
         },
     )
     def test_observability_returns_503_when_critical_check_is_degraded(self, _mock_snapshot):
-        response = self.client.get("/api/v1/observability")
+        response = self.client.get(
+            "/api/v1/observability",
+            headers={"X-Observability-Token": "secret-token"},
+        )
         self.assertEqual(response.status_code, 503)
 
         payload = response.get_json()
@@ -114,16 +120,42 @@ class ObservabilityRouteTests(unittest.TestCase):
         },
     )
     def test_observability_external_hides_component_details(self, _mock_snapshot):
-        """External callers (no RAILWAY_ENVIRONMENT) must not receive component details."""
-        # Ensure RAILWAY_ENVIRONMENT is absent so the external path is exercised
-        env_without_railway = {k: v for k, v in os.environ.items() if k != "RAILWAY_ENVIRONMENT"}
-        with patch.dict(os.environ, env_without_railway, clear=True):
+        """External callers (no observability token) must not receive component details."""
+        # No X-Observability-Token header -> external path, even if a token is configured.
+        env_without_token = {k: v for k, v in os.environ.items() if k != "OBSERVABILITY_TOKEN"}
+        with patch.dict(os.environ, env_without_token, clear=True):
             response = self.client.get("/api/v1/observability")
         self.assertIn(response.status_code, (200, 503))
 
         payload = response.get_json()
         self.assertIn("status", payload)
         self.assertIn("public_stats", payload)
+        self.assertNotIn("critical_checks", payload)
+        self.assertNotIn("optional_checks", payload)
+        self.assertNotIn("analytics", payload)
+
+    @patch.dict(os.environ, {"GOOGLE_MAPS_API_KEY": "test-key", "OBSERVABILITY_TOKEN": "secret-token"}, clear=False)
+    @patch.object(app_module, "gee_initialized", True)
+    @patch.object(app_module, "gemini_available", True)
+    @patch.object(app_module, "redis_client", object())
+    @patch.object(
+        app_module.database,
+        "get_observability_snapshot",
+        return_value={
+            "database": {"connected": True},
+            "analytics": {"page_visits_table": True, "api_usage_logs_table": True, "role_configured": True, "ready": True},
+            "public_stats": {"visits": 5, "analyses": 2},
+        },
+    )
+    def test_observability_wrong_token_hides_component_details(self, _mock_snapshot):
+        """A caller presenting an incorrect token is treated as external."""
+        response = self.client.get(
+            "/api/v1/observability",
+            headers={"X-Observability-Token": "wrong-token"},
+        )
+        self.assertIn(response.status_code, (200, 503))
+
+        payload = response.get_json()
         self.assertNotIn("critical_checks", payload)
         self.assertNotIn("optional_checks", payload)
         self.assertNotIn("analytics", payload)

@@ -45,5 +45,9 @@ jobs:
 
       - name: Run production observability smoke check
         if: github.event_name == 'push' && (github.ref_name == 'master' || github.ref_name == 'main')
+        env:
+          # Optional: when set, the monitor receives the full component breakdown.
+          # When unset, the smoke check still passes using the public health status.
+          OBSERVABILITY_TOKEN: ${{ secrets.OBSERVABILITY_TOKEN }}
         run: |
           python scripts/monitor_deploy.py --url "https://geofeedback.cl" --once --retries 6 --retry-delay 10
