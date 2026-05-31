@@ -38,7 +38,7 @@ class ObservabilityRouteTests(unittest.TestCase):
     def setUp(self):
         self.client = app_module.app.test_client()
 
-    @patch.dict(os.environ, {"GOOGLE_MAPS_API_KEY": "test-maps-key"}, clear=False)
+    @patch.dict(os.environ, {"GOOGLE_MAPS_API_KEY": "test-maps-key", "RAILWAY_ENVIRONMENT": "test"}, clear=False)
     @patch.object(app_module, "gee_initialized", True)
     @patch.object(app_module, "gemini_available", True)
     @patch.object(app_module, "redis_client", object())
@@ -71,7 +71,7 @@ class ObservabilityRouteTests(unittest.TestCase):
         self.assertTrue(payload["optional_checks"]["redis"])
         self.assertIn("checked_at", payload)
 
-    @patch.dict(os.environ, {"GOOGLE_MAPS_API_KEY": ""}, clear=False)
+    @patch.dict(os.environ, {"GOOGLE_MAPS_API_KEY": "", "RAILWAY_ENVIRONMENT": "test"}, clear=False)
     @patch.object(app_module, "gee_initialized", True)
     @patch.object(app_module, "gemini_available", False)
     @patch.object(app_module, "redis_client", None)
@@ -99,6 +99,34 @@ class ObservabilityRouteTests(unittest.TestCase):
         self.assertFalse(payload["critical_checks"]["google_maps_key"])
         self.assertFalse(payload["optional_checks"]["gemini"])
         self.assertFalse(payload["optional_checks"]["redis"])
+
+    @patch.dict(os.environ, {"GOOGLE_MAPS_API_KEY": "test-key"}, clear=False)
+    @patch.object(app_module, "gee_initialized", True)
+    @patch.object(app_module, "gemini_available", True)
+    @patch.object(app_module, "redis_client", object())
+    @patch.object(
+        app_module.database,
+        "get_observability_snapshot",
+        return_value={
+            "database": {"connected": True},
+            "analytics": {"page_visits_table": True, "api_usage_logs_table": True, "role_configured": True, "ready": True},
+            "public_stats": {"visits": 5, "analyses": 2},
+        },
+    )
+    def test_observability_external_hides_component_details(self, _mock_snapshot):
+        """External callers (no RAILWAY_ENVIRONMENT) must not receive component details."""
+        # Ensure RAILWAY_ENVIRONMENT is absent so the external path is exercised
+        env_without_railway = {k: v for k, v in os.environ.items() if k != "RAILWAY_ENVIRONMENT"}
+        with patch.dict(os.environ, env_without_railway, clear=True):
+            response = self.client.get("/api/v1/observability")
+        self.assertIn(response.status_code, (200, 503))
+
+        payload = response.get_json()
+        self.assertIn("status", payload)
+        self.assertIn("public_stats", payload)
+        self.assertNotIn("critical_checks", payload)
+        self.assertNotIn("optional_checks", payload)
+        self.assertNotIn("analytics", payload)
 
 
 class AnalyticsBootstrapMiddlewareTests(unittest.TestCase):

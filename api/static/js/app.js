@@ -10,11 +10,22 @@
       var analysisContext = {};
       var mapHintDismissed = false;
 
+      // Escape HTML special characters to prevent XSS when inserting
+      // untrusted strings (server responses, AI output, user input) into innerHTML.
+      function escapeHtml(str) {
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(String(str)));
+        return div.innerHTML;
+      }
+
       function showToast(message, type) {
         type = type || 'toast-success';
         var toast = document.getElementById('toast-notification');
+        var iconName = type === 'toast-success' ? 'check-circle' : type === 'toast-error' ? 'exclamation-circle' : 'exclamation-triangle';
         toast.className = 'toast-notification ' + type;
-        toast.innerHTML = '<i class="fas fa-' + (type === 'toast-success' ? 'check-circle' : type === 'toast-error' ? 'exclamation-circle' : 'exclamation-triangle') + '"></i> ' + message;
+        // Use static icon markup; message is set via textContent to prevent XSS
+        toast.innerHTML = '<i class="fas fa-' + iconName + '"></i> ';
+        toast.appendChild(document.createTextNode(message));
         toast.classList.add('show');
         setTimeout(function() { toast.classList.remove('show'); }, 4000);
       }
@@ -1073,9 +1084,9 @@
               for (var key in data.data) {
                 tableHtml +=
                   '<tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">' +
-                  key +
+                  escapeHtml(key) +
                   '</td><td style="padding:8px; text-align:right; font-weight:600;">' +
-                  data.data[key] +
+                  escapeHtml(data.data[key]) +
                   "</td></tr>";
               }
               tableHtml += "</tbody></table>";
@@ -1483,17 +1494,23 @@
           hour: "2-digit",
           minute: "2-digit",
         });
-        var html =
-          '<div class="chat-message ' +
-          role +
-          '">' +
-          '<div class="message-bubble">' +
-          text.replace(/\\n/g, "<br>") +
-          "</div>" +
-          '<div class="message-time">' +
-          time +
-          "</div></div>";
-        messagesContainer.insertAdjacentHTML("beforeend", html);
+        // Build DOM nodes instead of concatenating raw HTML to prevent XSS from
+        // AI-generated responses or server messages containing HTML characters.
+        var wrapper = document.createElement('div');
+        wrapper.className = 'chat-message ' + escapeHtml(role);
+
+        var bubble = document.createElement('div');
+        bubble.className = 'message-bubble';
+        // Convert real newlines to <br> safely: escape first, then swap \n
+        bubble.innerHTML = escapeHtml(text).replace(/\n/g, '<br>');
+
+        var timeEl = document.createElement('div');
+        timeEl.className = 'message-time';
+        timeEl.textContent = time;
+
+        wrapper.appendChild(bubble);
+        wrapper.appendChild(timeEl);
+        messagesContainer.appendChild(wrapper);
         scrollChatToBottom();
       }
 
