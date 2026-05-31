@@ -13,6 +13,7 @@ import datetime
 import json
 import time
 import hashlib
+import hmac
 import threading
 import logging
 import sys
@@ -91,7 +92,11 @@ def set_security_headers(response):
     # CSP: permite Google Maps, fonts, Earth Engine
     response.headers['Content-Security-Policy'] = (
         "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://maps.googleapis.com https://*.gstatic.com https://cdnjs.cloudflare.com; "
+        # 'unsafe-eval' intentionally omitted: Chart.js v4 and the Google Maps
+        # JS loader do not require it. 'unsafe-inline' is still needed because
+        # the template relies on inline <script> blocks and inline event
+        # handlers (onclick/onkeypress); removing it requires a template refactor.
+        "script-src 'self' 'unsafe-inline' blob: https://maps.googleapis.com https://*.gstatic.com https://cdnjs.cloudflare.com; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; "
         "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com; "
         "img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com https://earthengine.googleapis.com https://*.google.com; "
@@ -849,6 +854,12 @@ LANDING_ERROR_HTML = '''<!DOCTYPE html>
 
 @app.route('/')
 def landing():
+    # SECURITY: GOOGLE_MAPS_API_KEY is necessarily exposed to the browser (it is
+    # used by the Maps/Air Quality/Solar JS APIs). It is NOT a secret, but it
+    # MUST be locked down in the Google Cloud Console with an HTTP-referrer
+    # restriction (e.g. *.geofeedback.cl) and limited to the specific APIs in
+    # use, otherwise a third party can scrape it from the page and run up the
+    # billing account. There is no server-side fix for this — it is a GCP config.
     google_maps_key = os.environ.get('GOOGLE_MAPS_API_KEY', '')
     if not google_maps_key:
         print("WARNING: GOOGLE_MAPS_API_KEY not found in environment variables.")
@@ -882,13 +893,25 @@ def health():
 def observability():
     """System health endpoint.
 
-    Full details (component breakdown, analytics schema state) are restricted
-    to Railway-internal requests so attackers cannot fingerprint which
-    subsystems are unavailable before mounting a targeted attack.
-    Public callers only receive the aggregated status and public stats.
+    Full details (component breakdown, analytics schema state) are gated behind
+    a shared secret presented in the ``X-Observability-Token`` header and
+    compared in constant time.  This prevents external callers from
+    fingerprinting which subsystems are unavailable before mounting a targeted
+    attack.
+
+    NOTE: gating on ``RAILWAY_ENVIRONMENT`` (the previous approach) was
+    ineffective — Railway sets that variable process-wide in production, so the
+    breakdown was exposed to *every* caller.  When ``OBSERVABILITY_TOKEN`` is
+    unset the endpoint fails safe and returns only the aggregated status and
+    public stats to everyone.
     """
     snapshot = database.get_observability_snapshot()
-    is_internal = bool(os.environ.get('RAILWAY_ENVIRONMENT'))
+
+    # Read the expected token per-request (not at import time) so deployments
+    # can rotate it and tests can patch the environment.
+    expected_token = os.environ.get('OBSERVABILITY_TOKEN')
+    provided_token = request.headers.get('X-Observability-Token', '')
+    is_internal = bool(expected_token) and hmac.compare_digest(provided_token, expected_token)
 
     critical_checks = {
         "database": bool(snapshot["database"]["connected"]),
@@ -911,7 +934,7 @@ def observability():
         "public_stats": snapshot["public_stats"],
     }
 
-    # Expose internal component detail only to Railway-hosted requests
+    # Expose internal component detail only to callers with a valid token
     if is_internal:
         payload["critical_checks"] = critical_checks
         payload["optional_checks"] = optional_checks

@@ -546,7 +546,7 @@
           document.getElementById("status-location").classList.add("ready");
           document.getElementById("result-location").innerHTML =
             '<i class="fas fa-check-circle result-icon" style="color:var(--secondary)"></i><div class="result-content"><h4>' +
-            placeName +
+            escapeHtml(placeName) +
             "</h4><p>" + (currentLang === 'en' ? 'Selected on map' : 'Seleccionado en mapa') + "</p></div>";
 
           checkReadyState();
@@ -723,7 +723,7 @@
           document.getElementById("status-location").classList.add("ready");
           document.getElementById("result-location").innerHTML =
             '<i class="fas fa-check-circle result-icon" style="color:var(--secondary)"></i><div class="result-content"><h4>' +
-            name +
+            escapeHtml(name) +
             "</h4><p>Ubicacion confirmada</p></div>";
 
           // Enable analysis button
@@ -836,9 +836,9 @@
                 '<span style="color:' +
                 color +
                 '">' +
-                aqi.aqi +
+                escapeHtml(aqi.aqi) +
                 " (" +
-                aqi.category +
+                escapeHtml(aqi.category) +
                 ")</span>";
             } else {
               document.getElementById("data-aqi").textContent = "N/D";
@@ -1560,8 +1560,12 @@
             if (typing) typing.remove();
 
             if (data.status === "success") {
-              // Format and display interpretation
-              var formattedResponse = data.interpretation
+              // Format and display interpretation.
+              // SECURITY: escape the AI-generated text BEFORE applying the
+              // formatting transforms, so any HTML in the model output is
+              // neutralised (same approach as addChatMessage). Otherwise a
+              // prompt-injected response could inject markup via insertAdjacentHTML.
+              var formattedResponse = escapeHtml(data.interpretation)
                 .replace(/\\n/g, "<br>")
                 .replace(/\\*\\*(.*?)\\*\\*/g, "<strong>$1</strong>")
                 .replace(/\\*(.*?)\\*/g, "<em>$1</em>");
@@ -1653,8 +1657,12 @@
             if (loading) loading.remove();
 
             if (data.status === "success") {
-              // Format AI text with styled sections
-              var formattedText = data.interpretation
+              // Format AI text with styled sections.
+              // SECURITY: escape the AI-generated text first so the section /
+              // markdown formatting below cannot be abused to inject HTML via
+              // insertAdjacentHTML. The static markers (RESUMEN, **, newlines)
+              // are untouched by escaping, so formatting still works.
+              var formattedText = escapeHtml(data.interpretation)
                 // Section headers with icons
                 .replace(
                   /RESUMEN/g,

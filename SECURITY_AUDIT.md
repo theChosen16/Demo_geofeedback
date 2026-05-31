@@ -7,6 +7,61 @@
 | 20 de Enero, 2026 | ✅ PASADO (Con observaciones) | Interno |
 | 9 de Abril, 2026 | ✅ PASADO — 0 alertas activas | Automatizado (GitHub CodeQL + Dependabot) |
 | 30 de Mayo, 2026 | ✅ RESUELTO — 8 hallazgos corregidos | Claude Code (revisión arquitectónica completa) |
+| 31 de Mayo, 2026 | ✅ RESUELTO — 6 hallazgos de seguimiento corregidos | Claude Code (auditoría completa post-merge PR #11) |
+
+---
+
+## Auditoría Mayo 2026 (Seguimiento) — Revisión Completa Post-Merge PR #11
+
+**Fecha:** 31 de Mayo, 2026
+**Estatus:** ✅ **RESUELTO — 6 hallazgos corregidos**
+
+Auditoría integral del repositorio tras mergear el [PR #11](https://github.com/theChosen16/Demo_geofeedback/pull/11). Cubrió backend Flask, capa de BD, frontend JS, template, Docker, CI/CD, config/secretos, dependencias y scripts. Se confirmó que el PR #11 resolvió correctamente sus 8 hallazgos, pero la remediación de XSS quedó **incompleta** y se detectaron defectos de configuración.
+
+### Hallazgos y Correcciones
+
+#### 🟠 MEDIO — XSS: remediación de salida de IA incompleta (`api/static/js/app.js`)
+
+| Función | Línea | Descripción |
+|---------|-------|-------------|
+| `requestAIInterpretation()` / `fetchAIInterpretation()` | ~1564 / ~1657 | El PR #11 corrigió `addChatMessage` (respuestas de `/chat`) pero dejó **dos renderizadores de `/interpret`** insertando `data.interpretation` (salida de Gemini) vía `insertAdjacentHTML` **sin escapar**. Mismo patrón que el PR clasificó como ALTO. |
+
+**Corrección:** `escapeHtml(data.interpretation)` **antes** de aplicar el formato (secciones, negrita, saltos de línea), igual que en `addChatMessage`.
+
+#### 🟡 BAJO — Gating de `/observability` inefectivo en producción (`api/app.py`)
+
+El fix del PR #11 gateaba con `RAILWAY_ENVIRONMENT`, variable que Railway setea **a nivel de proceso** → el desglose quedaba expuesto a todos los clientes externos en producción.
+
+**Corrección:** Gating por secreto compartido en el header `X-Observability-Token` (comparación en tiempo constante con `hmac.compare_digest`, leído por request). Sin `OBSERVABILITY_TOKEN` configurado, el endpoint **falla seguro** y solo expone `status` + `public_stats`. El monitor (`scripts/monitor_deploy.py`) envía el header y tolera el payload reducido.
+
+#### 🟡 BAJO — CSP con `'unsafe-eval'` (`api/app.py`)
+
+`script-src` incluía `'unsafe-eval'`, innecesario (Chart.js v4 y el loader de Google Maps no lo requieren) y debilitante frente a XSS.
+
+**Corrección:** Eliminado `'unsafe-eval'`. (`'unsafe-inline'` se mantiene: requiere refactor del template por los handlers `onclick`/`onkeypress` inline; documentado en el código.)
+
+#### 🟡 BAJO — Clave de Google Maps expuesta sin restricción documentada (`api/app.py`)
+
+La key se inyecta en el cliente (inevitable para Maps JS). Riesgo de abuso de facturación si no está restringida en GCP.
+
+**Corrección:** No tiene fix de código (es config de GCP). Documentado en el punto de inyección: **debe restringirse por HTTP-referrer (`*.geofeedback.cl`) y por APIs** en Google Cloud Console.
+
+#### 🔵 INFO — XSS defensa en profundidad: datos de APIs de Google (`api/static/js/app.js`)
+
+`result-location` (`placeName`/`name` de Geocoding/Places) y `data-aqi` (`aqi.category` de Air Quality) se insertaban vía `innerHTML` sin escapar. Fuente semi-confiable (Google), riesgo bajo.
+
+**Corrección:** Aplicado `escapeHtml()` en los tres sinks.
+
+#### 🔵 INFO — Fallback débil de `SECRET_KEY` (`api/config.py`)
+
+El fallback usaba `id(object())` (no criptográfico).
+
+**Corrección:** Fallback con `secrets.token_hex(32)` (CSPRNG) y **fallo duro** (`RuntimeError`) si falta `SECRET_KEY` en producción (`RAILWAY_ENVIRONMENT` presente).
+
+### Acción manual pendiente (fuera del código)
+
+- [ ] Restringir `GOOGLE_MAPS_API_KEY` por HTTP-referrer y APIs en Google Cloud Console.
+- [ ] (Opcional) Definir `OBSERVABILITY_TOKEN` en Railway y como secret de GitHub para el desglose detallado en el monitor.
 
 ---
 
