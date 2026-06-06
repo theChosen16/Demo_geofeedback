@@ -15,6 +15,7 @@ import time
 import hashlib
 import hmac
 import threading
+import concurrent.futures
 import logging
 import sys
 from collections import defaultdict
@@ -43,22 +44,31 @@ except ImportError:
 
 
 def call_gemini_with_retry(prompt, max_retries=2, timeout=30):
-    """Llama a Gemini con reintentos y timeout usando el nuevo SDK google-genai."""
+    """Llama a Gemini con reintentos y timeout real usando concurrent.futures.
+
+    El parámetro `timeout` se aplica como wall-clock limit sobre cada intento.
+    Sin esto un worker de Gunicorn puede bloquearse indefinidamente ante una
+    respuesta lenta de la API.
+    """
     if not gemini_available or not gemini_client:
         return None
-    
+
     for attempt in range(max_retries):
         try:
-            # Using the new SDK structure
-            response = gemini_client.models.generate_content(
-                model=gemini_model_name,
-                contents=prompt
-            )
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(
+                    gemini_client.models.generate_content,
+                    model=gemini_model_name,
+                    contents=prompt,
+                )
+                response = future.result(timeout=timeout)
             return response.text
+        except concurrent.futures.TimeoutError:
+            print(f"Gemini intento {attempt + 1}/{max_retries}: timeout ({timeout}s)")
         except Exception as e:
             print(f"Gemini intento {attempt + 1}/{max_retries}: {e}")
-            if attempt < max_retries - 1:
-                time.sleep(1)
+        if attempt < max_retries - 1:
+            time.sleep(1)
     return None
 
 app = Flask(__name__)
@@ -326,6 +336,7 @@ def analyze_territory():
         return jsonify({"status": "error", "message": "lat, lng y radius deben ser numéricos"}), 400
 
     approach = str(data.get('approach', '')).strip()
+    location_name = str(data.get('location', 'Unknown'))[:200]
 
     if not (-90 <= lat <= 90) or not (-180 <= lng <= 180):
         return jsonify({"status": "error", "message": "Coordenadas fuera de rango válido"}), 400
@@ -524,7 +535,7 @@ def analyze_territory():
         try:
             database.log_analysis(
                 endpoint='/api/v1/analyze',
-                location_name=location_name if 'location_name' in locals() else 'Unknown',
+                location_name=location_name,
                 lat=lat,
                 lng=lng,
                 approach=approach,
@@ -870,7 +881,7 @@ def landing():
         # Log visit
         try:
             user_agent = request.headers.get('User-Agent')
-            ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+            ip = get_client_ip()
             ip_hash = hashlib.sha256(ip.encode()).hexdigest() if ip else None
             database.log_visit(page='/', user_agent=user_agent, ip_hash=ip_hash)
         except Exception as e:
