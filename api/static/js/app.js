@@ -45,7 +45,7 @@
         placeholder.style.display = 'block';
         placeholder.innerHTML =
           '<i class="fas fa-' + (isError ? 'triangle-exclamation' : 'map-marked-alt') + '"></i>' +
-          '<p>' + message + '</p>';
+          '<p>' + escapeHtml(message) + '</p>';
       }
 
       function syncDemoMapLayout() {
@@ -149,9 +149,9 @@
         analysisHistory.forEach(function(item, i) {
           var ago = getTimeAgo(item.time, isEn);
           var icon = 'fas fa-map-marker-alt';
-          html += '<div class="history-item" onclick="replayHistory(' + i + ')" title="' + item.name + '">' +
+          html += '<div class="history-item" onclick="replayHistory(' + i + ')" title="' + escapeHtml(item.name) + '">' +
             '<i class="' + icon + '"></i>' +
-            '<span class="history-name">' + (approachNames[item.approach] || item.approach) + ' - ' + item.name.split(',')[0] + '</span>' +
+            '<span class="history-name">' + escapeHtml(approachNames[item.approach] || item.approach) + ' - ' + escapeHtml(item.name.split(',')[0]) + '</span>' +
             '<span class="history-time">' + ago + '</span></div>';
         });
         container.innerHTML = html;
@@ -1107,7 +1107,7 @@
                 "</div>";
 
               // Add GEE satellite image date & free license info
-              var imageDateStr = data.meta && data.meta.date ? data.meta.date : (currentLang === 'en' ? 'Unknown' : 'Desconocida');
+              var imageDateStr = data.meta && data.meta.date ? escapeHtml(data.meta.date) : (currentLang === 'en' ? 'Unknown' : 'Desconocida');
               var satelliteLabel = currentLang === 'en' ? 'Satellite Image Date' : 'Fecha Imagen Satelital';
               var warningLabel = currentLang === 'en' ? 'Archive imagery (non-contemporary) due to free GEE limits' : 'Imágenes de archivo (no contemporáneas) por límites de licencia gratuita GEE';
               var satelliteInfo =
@@ -1365,7 +1365,7 @@
         }
 
         // Add satellite info
-        var imageDateStr = window.lastAnalysisMeta && window.lastAnalysisMeta.date ? window.lastAnalysisMeta.date : (isEn ? 'Unknown' : 'Desconocida');
+        var imageDateStr = window.lastAnalysisMeta && window.lastAnalysisMeta.date ? escapeHtml(window.lastAnalysisMeta.date) : (isEn ? 'Unknown' : 'Desconocida');
         html +=
           '<div class="satellite-info-box">' +
           '<i class="fas fa-satellite" style="color:var(--secondary)"></i> <strong>' + (isEn ? 'Source' : 'Fuente') + ':</strong> Sentinel-2 MSI + SRTM | ' +
