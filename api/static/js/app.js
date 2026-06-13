@@ -1056,6 +1056,7 @@
           lng: selectedPlace.lng,
           approach: selectedApproach,
           radius: selectedRadius,
+          location: selectedPlace.name,
         };
 
         fetch("/api/v1/analyze", {
