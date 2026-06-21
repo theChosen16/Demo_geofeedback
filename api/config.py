@@ -80,18 +80,13 @@ class Config:
     DEBUG = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
     ENV = os.getenv('FLASK_ENV', 'production')
 
-    # =========================================================================
-    # CORS
-    # =========================================================================
-    @staticmethod
-    def get_cors_origins():
-        """Parsea CORS_ORIGINS como lista."""
-        origins = os.getenv('CORS_ORIGINS', '*')
-        if origins == '*':
-            return '*'
-        return [o.strip() for o in origins.split(',') if o.strip()]
-
-    CORS_ORIGINS = get_cors_origins.__func__()
+    # NOTE: CORS is configured exclusively via the ALLOWED_ORIGINS env var,
+    # read directly in app.py. This module previously also parsed a
+    # CORS_ORIGINS variable that nothing ever imported, while .env.example
+    # documented it as if it were the real CORS switch — an operator who set
+    # CORS_ORIGINS following the docs would unknowingly leave the app fully
+    # open to cross-origin requests in production. Removed to avoid confusion;
+    # see ALLOWED_ORIGINS in api/.env.example.
 
     # =========================================================================
     # API
@@ -189,4 +184,3 @@ config = Config()
 # Para compatibilidad con código existente que usa: from config import config
 # y accede a config.DB_CONFIG directamente
 DB_CONFIG = Config.DB_CONFIG
-CORS_ORIGINS = Config.CORS_ORIGINS

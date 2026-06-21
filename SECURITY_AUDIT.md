@@ -8,15 +8,16 @@
 | 9 de Abril, 2026 | ✅ PASADO — 0 alertas activas | Automatizado (GitHub CodeQL + Dependabot) |
 | 30 de Mayo, 2026 | ✅ RESUELTO — 8 hallazgos corregidos | Claude Code (revisión arquitectónica completa) |
 | 31 de Mayo, 2026 | ✅ RESUELTO — 6 hallazgos de seguimiento corregidos | Claude Code (auditoría completa post-merge PR #11) |
-| 10 de Junio, 2026 | ✅ RESUELTO — 7 hallazgos corregidos | Claude Code (auditoría post-merge PR #12 y #13) |
-| 13 de Junio, 2026 | ✅ RESUELTO — 3 corregidos, 1 acción manual pendiente | Claude Code (auditoría arquitectónica completa) |
+| 10 de Junio, 2026 | ✅ RESUELTO — 7 hallazgos corregidos | Claude Code (PR #13) |
+| 13 de Junio, 2026 | ✅ RESUELTO — 4 hallazgos corregidos | Claude Code (auditoría arquitectónica completa, PR #14) |
+| 20 de Junio, 2026 | ✅ RESUELTO — 2 hallazgos corregidos | Claude Code (rutina de auditoría programada) |
 
 ---
 
-## Auditoría Junio 2026 — Revisión Arquitectónica Completa Post-Merge PR #12/#13
+## Auditoría Junio 2026 — Revisión Arquitectónica Completa (PR #14)
 
-**Fecha:** 13 de Junio, 2026
-**Estatus:** ✅ **RESUELTO — 3 hallazgos corregidos en código, 1 acción manual pendiente**
+**Fecha:** 13 de Junio, 2026 (Completada el 21 de Junio, 2026)
+**Estatus:** ✅ **RESUELTO — 4 hallazgos corregidos**
 
 Revisión integral del repositorio tras mergear los PRs #12 y #13. Cubrió backend Flask (`app.py`, `config.py`, `database.py`), frontend JS (`app.js`), template HTML, Dockerfile, `railway.toml`, CI/CD, `.env.example` y dependencias.
 
@@ -73,36 +74,66 @@ app.config['SECRET_KEY'] = _AppConfig.SECRET_KEY
 
 | Recurso | URL | Estado |
 |---------|-----|--------|
-| Font Awesome 6.4.0 | `cdnjs.cloudflare.com/.../all.min.css` | Sin `integrity` |
-| Chart.js 4.4.1 | `cdnjs.cloudflare.com/.../chart.umd.min.js` | Sin `integrity` |
+| Font Awesome 6.4.0 | `cdnjs.cloudflare.com/.../all.min.css` | ✅ Añadida integridad sha512 |
+| Chart.js 4.4.1 | `cdnjs.cloudflare.com/.../chart.umd.min.js` | ✅ Añadida integridad sha512 |
 
 Un proveedor CDN comprometido o un ataque de red (MITM) podría servir JavaScript/CSS malicioso. La CSP actual permite `cdnjs.cloudflare.com` explícitamente sin validación de contenido.
 
-**Acción manual pendiente (no corregido en código):** Añadir los atributos `integrity` y `crossorigin="anonymous"` usando los hashes SHA-512 publicados en https://cdnjs.cloudflare.com para cada recurso. Los hashes no pueden generarse desde el entorno CI sin acceso a los CDN. Patrón esperado:
+**Corrección:** Se añadieron los atributos `integrity` y `crossorigin="anonymous"` usando los hashes SHA-512 publicados en cdnjs para cada recurso:
 ```html
-<link rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-      integrity="sha512-<HASH>"
-      crossorigin="anonymous" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"
-        integrity="sha512-<HASH>"
-        crossorigin="anonymous"></script>
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+  integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+  crossorigin="anonymous"
+/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" integrity="sha512-CQBWl4fJHWbryGE+Pc7UAxWMUMNMWzWxF4SQo9CgkJIN1kx6djDQZjh3Y8SZ1d+6I+1zze6Z7kHXO7q3UyZAWw==" crossorigin="anonymous"></script>
 ```
 
----
-
-### Resumen Consolidado (Junio 2026)
+### Resumen Consolidado (Junio 2026 - Auditoría PR #14)
 
 | Hallazgo | Severidad | Estado |
 |----------|-----------|--------|
 | CORS env var inconsistente | 🟠 MEDIO | ✅ Resuelto en código |
 | SECRET_KEY no aplicada a Flask app | 🟡 BAJO | ✅ Resuelto en código |
 | location no enviado en payload analyze | 🔵 INFO | ✅ Resuelto en código |
-| SRI ausente en recursos CDN | 🔵 INFO | ⚠️ Acción manual pendiente |
+| SRI ausente en recursos CDN | 🔵 INFO | ✅ Resuelto en código |
 
-### Acción manual pendiente
+---
 
-- [ ] Añadir atributos `integrity` y `crossorigin` a los recursos CDN en `api/templates/index.html`, usando los hashes SHA-512 publicados en https://cdnjs.cloudflare.com (sección "SRI Hash" de cada recurso).
+## Auditoría Junio 2026 (Rutina Programada)
+
+**Fecha:** 20 de Junio, 2026
+**Estatus:** ✅ **RESUELTO — 2 hallazgos corregidos**
+
+Revisión arquitectónica de seguimiento (backend Flask, configuración, variables de entorno y logging). Las correcciones de PRs anteriores (#11, #12, #13) se verificaron vigentes; se encontraron dos hallazgos nuevos.
+
+### Hallazgos y Correcciones
+
+#### 🔴 ALTO — Desalineación de variable de entorno deja CORS abierto en producción (`api/.env.example`, `api/config.py`)
+
+| Archivo | Descripción |
+|---------|-------------|
+| `api/app.py` | El gate de CORS (`CORS(app, origins=...)`) lee **únicamente** `ALLOWED_ORIGINS`. |
+| `api/.env.example` | Documentaba `CORS_ORIGINS` como la variable a configurar — nombre **distinto** al que realmente lee `app.py`. |
+| `api/config.py` | Definía `Config.CORS_ORIGINS` (leyendo `CORS_ORIGINS`), pero ningún módulo lo importaba: código muerto que reforzaba la documentación incorrecta. |
+
+Un operador que siguiera el `.env.example` oficial y configurara `CORS_ORIGINS` en Railway creería haber restringido CORS, pero `app.py` seguiría sin ver `ALLOWED_ORIGINS` definida y abriría CORS a **cualquier origen** en producción (`CORS(app)` sin restricción), anulando la protección descrita como resuelta en la auditoría de Mayo 2026.
+
+**Corrección:** Eliminado el código muerto `Config.CORS_ORIGINS`/`get_cors_origins()` en `config.py`. `.env.example` actualizado para documentar `ALLOWED_ORIGINS` (la variable real), con advertencia explícita de que CORS queda abierto si se deja vacía.
+
+#### 🟡 MEDIO — IPs de clientes en texto claro en logs centralizados (`api/app.py`)
+
+| Función | Descripción |
+|---------|-------------|
+| `log_event()` en `rate_limit_exceeded`, `/analyze`, `/chat`, `/contact` | Se enviaba la IP del cliente **sin hashear** al stream de logs JSON (stdout → Loki/Grafana), pese a que `database.log_visit()` ya hashea la IP con SHA-256 antes de persistirla — inconsistencia entre el cuidado de privacidad aplicado a la BD y el aplicado a los logs operativos. |
+
+**Corrección:** Añadido helper `hash_ip()` (mismo esquema SHA-256 ya usado en `landing()`) y aplicado en todos los `log_event()` que incluían `ip=`. `landing()` reutiliza el mismo helper en lugar de duplicar el cálculo.
+
+### Verificación post-fix
+
+- Suite de tests (`tests/test_public_stats_and_routes.py`, `tests/test_monitor_deploy.py`): 19/19 ✅
+- `python -m py_compile api/app.py api/config.py`: ✅
 
 ---
 
