@@ -73,11 +73,21 @@ def call_gemini_with_retry(prompt, max_retries=2, timeout=30):
 
 app = Flask(__name__)
 
+# Apply SECRET_KEY from Config so Flask sessions are properly signed.
+# Config raises RuntimeError if SECRET_KEY is absent in production.
+from config import Config as _AppConfig
+app.config['SECRET_KEY'] = _AppConfig.SECRET_KEY
+
 # Limit request body size to 64 KB to prevent DoS via oversized payloads
 app.config['MAX_CONTENT_LENGTH'] = 64 * 1024
 
-# CORS: restrict to known origins — NO wildcard default in production
-ALLOWED_ORIGINS = os.environ.get('ALLOWED_ORIGINS', '')
+# CORS: restrict to known origins — NO wildcard default in production.
+# Reads ALLOWED_ORIGINS first; falls back to legacy CORS_ORIGINS for
+# deployments that documented the old variable name.
+ALLOWED_ORIGINS = (
+    os.environ.get('ALLOWED_ORIGINS', '') or
+    os.environ.get('CORS_ORIGINS', '')
+)
 if not ALLOWED_ORIGINS or ALLOWED_ORIGINS == '*':
     import warnings
     warnings.warn("ALLOWED_ORIGINS no configurado. CORS abierto — solo aceptable en desarrollo local.")

@@ -9,7 +9,95 @@
 | 30 de Mayo, 2026 | ✅ RESUELTO — 8 hallazgos corregidos | Claude Code (revisión arquitectónica completa) |
 | 31 de Mayo, 2026 | ✅ RESUELTO — 6 hallazgos de seguimiento corregidos | Claude Code (auditoría completa post-merge PR #11) |
 | 10 de Junio, 2026 | ✅ RESUELTO — 7 hallazgos corregidos | Claude Code (PR #13) |
+| 13 de Junio, 2026 | ✅ RESUELTO — 4 hallazgos corregidos | Claude Code (auditoría arquitectónica completa, PR #14) |
 | 20 de Junio, 2026 | ✅ RESUELTO — 2 hallazgos corregidos | Claude Code (rutina de auditoría programada) |
+
+---
+
+## Auditoría Junio 2026 — Revisión Arquitectónica Completa (PR #14)
+
+**Fecha:** 13 de Junio, 2026 (Completada el 21 de Junio, 2026)
+**Estatus:** ✅ **RESUELTO — 4 hallazgos corregidos**
+
+Revisión integral del repositorio tras mergear los PRs #12 y #13. Cubrió backend Flask (`app.py`, `config.py`, `database.py`), frontend JS (`app.js`), template HTML, Dockerfile, `railway.toml`, CI/CD, `.env.example` y dependencias.
+
+### Hallazgos y Correcciones
+
+#### 🟠 MEDIO — Inconsistencia de variable CORS: `CORS_ORIGINS` vs `ALLOWED_ORIGINS` (`api/app.py`, `api/.env.example`)
+
+| Archivo | Descripción |
+|---------|-------------|
+| `api/app.py` | Lee `ALLOWED_ORIGINS` para configurar Flask-CORS. |
+| `api/.env.example` | Documentaba `CORS_ORIGINS=*` como variable a configurar. |
+
+Las dos variables son distintas. Si un operador seguía la documentación del `.env.example` y configuraba solo `CORS_ORIGINS` en Railway, `app.py` no la leía → CORS permanecía abierto (wildcard) en producción sin advertencia.
+
+**Corrección:** `app.py` ahora lee `ALLOWED_ORIGINS` con fallback a `CORS_ORIGINS` para compatibilidad con deployments existentes:
+```python
+ALLOWED_ORIGINS = (
+    os.environ.get('ALLOWED_ORIGINS', '') or
+    os.environ.get('CORS_ORIGINS', '')
+)
+```
+`.env.example` actualizado para mostrar `ALLOWED_ORIGINS` como variable primaria con el valor de producción de ejemplo.
+
+---
+
+#### 🟡 BAJO — `SECRET_KEY` de Flask calculada pero nunca aplicada al app (`api/app.py`)
+
+| Archivo | Línea | Descripción |
+|---------|-------|-------------|
+| `api/config.py` | `Config.SECRET_KEY` | Calcula la clave y en producción lanza `RuntimeError` si no está configurada (correcto). |
+| `api/app.py` | Post-creación de `app` | Nunca hacía `app.config['SECRET_KEY'] = Config.SECRET_KEY` → Flask usaba `None` como llave secreta. |
+
+Con `SECRET_KEY = None`, cualquier intento de usar sesiones Flask firmaría cookies con una llave nula (inseguro). Aunque las sesiones no se usan actualmente, el patrón establece una base incorrecta y la validación de producción en `config.py` sería inútil si nunca se aplica el valor.
+
+**Corrección:** `app.py` importa `Config` y aplica la llave inmediatamente después de crear la instancia Flask:
+```python
+from config import Config as _AppConfig
+app.config['SECRET_KEY'] = _AppConfig.SECRET_KEY
+```
+
+---
+
+#### 🔵 INFO — `location` del lugar no enviado desde el frontend a `/api/v1/analyze` (`api/static/js/app.js`)
+
+| Archivo | Línea | Descripción |
+|---------|-------|-------------|
+| `api/static/js/app.js` | `analyzeTerritory()` payload | El PR #13 corrigió el backend para extraer `location` del body JSON, pero el frontend nunca lo incluía en el payload → la BD registraba `"Unknown"` como `location_name` en cada análisis. |
+
+**Corrección:** `analyzeTerritory()` ahora incluye `location: selectedPlace.name` en el payload enviado a `/api/v1/analyze`, completando el circuito de analytics.
+
+---
+
+#### 🔵 INFO — Sin Subresource Integrity (SRI) en recursos CDN (`api/templates/index.html`)
+
+| Recurso | URL | Estado |
+|---------|-----|--------|
+| Font Awesome 6.4.0 | `cdnjs.cloudflare.com/.../all.min.css` | ✅ Añadida integridad sha512 |
+| Chart.js 4.4.1 | `cdnjs.cloudflare.com/.../chart.umd.min.js` | ✅ Añadida integridad sha512 |
+
+Un proveedor CDN comprometido o un ataque de red (MITM) podría servir JavaScript/CSS malicioso. La CSP actual permite `cdnjs.cloudflare.com` explícitamente sin validación de contenido.
+
+**Corrección:** Se añadieron los atributos `integrity` y `crossorigin="anonymous"` usando los hashes SHA-512 publicados en cdnjs para cada recurso:
+```html
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+  integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+  crossorigin="anonymous"
+/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" integrity="sha512-CQBWl4fJHWbryGE+Pc7UAxWMUMNMWzWxF4SQo9CgkJIN1kx6djDQZjh3Y8SZ1d+6I+1zze6Z7kHXO7q3UyZAWw==" crossorigin="anonymous"></script>
+```
+
+### Resumen Consolidado (Junio 2026 - Auditoría PR #14)
+
+| Hallazgo | Severidad | Estado |
+|----------|-----------|--------|
+| CORS env var inconsistente | 🟠 MEDIO | ✅ Resuelto en código |
+| SECRET_KEY no aplicada a Flask app | 🟡 BAJO | ✅ Resuelto en código |
+| location no enviado en payload analyze | 🔵 INFO | ✅ Resuelto en código |
+| SRI ausente en recursos CDN | 🔵 INFO | ✅ Resuelto en código |
 
 ---
 
