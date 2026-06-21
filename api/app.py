@@ -195,7 +195,7 @@ class RateLimiter:
                 request_count = results[0]
                 
                 if request_count > self.max_requests:
-                    log_event('rate_limit_exceeded', ip=client_ip, prefix=self.prefix, backend='redis')
+                    log_event('rate_limit_exceeded', ip=hash_ip(client_ip), prefix=self.prefix, backend='redis')
                     return False
                 return True
             except Exception as e:
@@ -208,7 +208,7 @@ class RateLimiter:
             self._cleanup_old_entries(now)
             self._requests[client_ip] = [t for t in self._requests[client_ip] if now - t < self.window]
             if len(self._requests[client_ip]) >= self.max_requests:
-                log_event('rate_limit_exceeded', ip=client_ip, prefix=self.prefix, backend='memory')
+                log_event('rate_limit_exceeded', ip=hash_ip(client_ip), prefix=self.prefix, backend='memory')
                 return False
             self._requests[client_ip].append(now)
             return True
@@ -232,6 +232,17 @@ def get_client_ip():
         ips = [ip.strip() for ip in forwarded.split(',')]
         return ips[-1] if ips[-1] else request.remote_addr or '127.0.0.1'
     return request.remote_addr or '127.0.0.1'
+
+
+def hash_ip(ip):
+    """Hash a client IP before it leaves the process (logs, metrics).
+
+    Mirrors the anonymization already applied to page_visits in database.py —
+    log_event() ships to the centralized JSON log stream (stdout -> Loki), so
+    raw IPs must never be written there even though they are used unhashed for
+    in-process rate limiting.
+    """
+    return hashlib.sha256(ip.encode()).hexdigest() if ip else None
 
 # Inicializar Google Earth Engine
 gee_initialized = init_gee()
@@ -348,7 +359,7 @@ def analyze_territory():
         radius = 100
 
     client_ip = get_client_ip()
-    log_event('api_call', endpoint='/analyze', ip=client_ip, approach=approach, radius=radius,
+    log_event('api_call', endpoint='/analyze', ip=hash_ip(client_ip), approach=approach, radius=radius,
               coords={'lat': lat, 'lng': lng})
 
     try:
@@ -688,7 +699,7 @@ def chat_with_assistant():
             text = str(msg.get('text', ''))[:500]  # Cap each message length
             chat_history += f"{role}: {text}\n"
 
-        log_event('api_call', endpoint='/chat', ip=get_client_ip(), message_length=len(message))
+        log_event('api_call', endpoint='/chat', ip=hash_ip(get_client_ip()), message_length=len(message))
         
         # GeoBot system personality
         system_prompt = f"""Eres GeoBot, el asistente experto de GeoFeedback Chile. 
@@ -822,7 +833,7 @@ def contact_form():
         if not _EMAIL_RE.match(email):
             return jsonify({"status": "error", "message": "Formato de email inválido"}), 400
 
-        log_event('contact_received', ip=get_client_ip(), has_name=bool(name))
+        log_event('contact_received', ip=hash_ip(get_client_ip()), has_name=bool(name))
         
         success, error_detail = send_email_resend(name, company, email, message)
         
@@ -881,8 +892,7 @@ def landing():
         # Log visit
         try:
             user_agent = request.headers.get('User-Agent')
-            ip = get_client_ip()
-            ip_hash = hashlib.sha256(ip.encode()).hexdigest() if ip else None
+            ip_hash = hash_ip(get_client_ip())
             database.log_visit(page='/', user_agent=user_agent, ip_hash=ip_hash)
         except Exception as e:
             print(f"Error logging visit: {e}")

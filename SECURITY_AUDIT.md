@@ -8,6 +8,44 @@
 | 9 de Abril, 2026 | ✅ PASADO — 0 alertas activas | Automatizado (GitHub CodeQL + Dependabot) |
 | 30 de Mayo, 2026 | ✅ RESUELTO — 8 hallazgos corregidos | Claude Code (revisión arquitectónica completa) |
 | 31 de Mayo, 2026 | ✅ RESUELTO — 6 hallazgos de seguimiento corregidos | Claude Code (auditoría completa post-merge PR #11) |
+| 10 de Junio, 2026 | ✅ RESUELTO — 7 hallazgos corregidos | Claude Code (PR #13) |
+| 20 de Junio, 2026 | ✅ RESUELTO — 2 hallazgos corregidos | Claude Code (rutina de auditoría programada) |
+
+---
+
+## Auditoría Junio 2026 (Rutina Programada)
+
+**Fecha:** 20 de Junio, 2026
+**Estatus:** ✅ **RESUELTO — 2 hallazgos corregidos**
+
+Revisión arquitectónica de seguimiento (backend Flask, configuración, variables de entorno y logging). Las correcciones de PRs anteriores (#11, #12, #13) se verificaron vigentes; se encontraron dos hallazgos nuevos.
+
+### Hallazgos y Correcciones
+
+#### 🔴 ALTO — Desalineación de variable de entorno deja CORS abierto en producción (`api/.env.example`, `api/config.py`)
+
+| Archivo | Descripción |
+|---------|-------------|
+| `api/app.py` | El gate de CORS (`CORS(app, origins=...)`) lee **únicamente** `ALLOWED_ORIGINS`. |
+| `api/.env.example` | Documentaba `CORS_ORIGINS` como la variable a configurar — nombre **distinto** al que realmente lee `app.py`. |
+| `api/config.py` | Definía `Config.CORS_ORIGINS` (leyendo `CORS_ORIGINS`), pero ningún módulo lo importaba: código muerto que reforzaba la documentación incorrecta. |
+
+Un operador que siguiera el `.env.example` oficial y configurara `CORS_ORIGINS` en Railway creería haber restringido CORS, pero `app.py` seguiría sin ver `ALLOWED_ORIGINS` definida y abriría CORS a **cualquier origen** en producción (`CORS(app)` sin restricción), anulando la protección descrita como resuelta en la auditoría de Mayo 2026.
+
+**Corrección:** Eliminado el código muerto `Config.CORS_ORIGINS`/`get_cors_origins()` en `config.py`. `.env.example` actualizado para documentar `ALLOWED_ORIGINS` (la variable real), con advertencia explícita de que CORS queda abierto si se deja vacía.
+
+#### 🟡 MEDIO — IPs de clientes en texto claro en logs centralizados (`api/app.py`)
+
+| Función | Descripción |
+|---------|-------------|
+| `log_event()` en `rate_limit_exceeded`, `/analyze`, `/chat`, `/contact` | Se enviaba la IP del cliente **sin hashear** al stream de logs JSON (stdout → Loki/Grafana), pese a que `database.log_visit()` ya hashea la IP con SHA-256 antes de persistirla — inconsistencia entre el cuidado de privacidad aplicado a la BD y el aplicado a los logs operativos. |
+
+**Corrección:** Añadido helper `hash_ip()` (mismo esquema SHA-256 ya usado en `landing()`) y aplicado en todos los `log_event()` que incluían `ip=`. `landing()` reutiliza el mismo helper en lugar de duplicar el cálculo.
+
+### Verificación post-fix
+
+- Suite de tests (`tests/test_public_stats_and_routes.py`, `tests/test_monitor_deploy.py`): 19/19 ✅
+- `python -m py_compile api/app.py api/config.py`: ✅
 
 ---
 
