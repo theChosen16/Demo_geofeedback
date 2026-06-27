@@ -90,10 +90,23 @@ ALLOWED_ORIGINS = (
 )
 if not ALLOWED_ORIGINS or ALLOWED_ORIGINS == '*':
     import warnings
-    warnings.warn("ALLOWED_ORIGINS no configurado. CORS abierto — solo aceptable en desarrollo local.")
-    CORS(app)
+    if os.environ.get('RAILWAY_ENVIRONMENT'):
+        # FAIL CLOSED in production: a wildcard CORS policy lets any website
+        # read responses from authenticated/billed endpoints on the user's
+        # behalf. If ALLOWED_ORIGINS is misconfigured we do NOT enable CORS at
+        # all — the app is served same-origin, so the frontend keeps working
+        # while cross-origin reads are blocked by the browser. Mirrors the
+        # hard-fail philosophy already applied to SECRET_KEY in config.py.
+        warnings.warn(
+            "ALLOWED_ORIGINS no configurado en producción. CORS cross-origin "
+            "DESHABILITADO (fail-closed). Define ALLOWED_ORIGINS para habilitarlo."
+        )
+    else:
+        # Local development only: wildcard CORS is acceptable.
+        warnings.warn("ALLOWED_ORIGINS no configurado. CORS abierto — solo aceptable en desarrollo local.")
+        CORS(app)
 else:
-    CORS(app, origins=[o.strip() for o in ALLOWED_ORIGINS.split(',')])
+    CORS(app, origins=[o.strip() for o in ALLOWED_ORIGINS.split(',') if o.strip()])
 
 
 # ============================================================================
@@ -244,6 +257,16 @@ def get_client_ip():
     return request.remote_addr or '127.0.0.1'
 
 
+# Keyed salt for IP anonymization. A plain SHA-256 of an IP is NOT anonymous:
+# the IPv4 space is only ~4.3 billion values, so any hash is trivially reversed
+# with a precomputed table. We use a keyed HMAC so the digest cannot be brute
+# forced without the secret. Prefer a dedicated IP_HASH_SALT; fall back to the
+# Flask SECRET_KEY (already required in production by config.py).
+_IP_HASH_KEY = (
+    os.environ.get('IP_HASH_SALT') or _AppConfig.SECRET_KEY or ''
+).encode()
+
+
 def hash_ip(ip):
     """Hash a client IP before it leaves the process (logs, metrics).
 
@@ -251,8 +274,11 @@ def hash_ip(ip):
     log_event() ships to the centralized JSON log stream (stdout -> Loki), so
     raw IPs must never be written there even though they are used unhashed for
     in-process rate limiting.
+
+    Uses a keyed HMAC-SHA256 (not a bare SHA-256) so the small IPv4 keyspace
+    cannot be reversed from the digest without the secret salt.
     """
-    return hashlib.sha256(ip.encode()).hexdigest() if ip else None
+    return hmac.new(_IP_HASH_KEY, ip.encode(), hashlib.sha256).hexdigest() if ip else None
 
 # Inicializar Google Earth Engine
 gee_initialized = init_gee()
@@ -608,7 +634,10 @@ def interpret_analysis():
         # Validate results: must be a dict, bounded size to prevent prompt stuffing
         if not isinstance(results, dict) or len(results) > 20:
             return jsonify({"status": "error", "message": "Datos de resultados inválidos"}), 400
-        approach = str(data.get('approach', '')).strip()
+        # Cap approach length: it is interpolated into the Gemini prompt and
+        # would otherwise be an unbounded prompt-injection / token-cost surface
+        # (all other free-text fields here are already truncated).
+        approach = str(data.get('approach', '')).strip()[:50]
         location = str(data.get('location', 'ubicación seleccionada'))[:200]
         meta_date = str(data.get('meta_date', 'Desconocida'))[:30]
         

@@ -36,7 +36,7 @@ os.chdir(PROJECT_DIR)
 DB_PARAMS = {
     'dbname': os.getenv('DB_NAME', 'geofeedback_papudo'),
     'user': os.getenv('DB_USER', 'geofeedback'),
-    'password': os.getenv('DB_PASSWORD', 'Papudo2025'),
+    'password': os.getenv('DB_PASSWORD'),  # Sin default: proveer por entorno
     'host': os.getenv('DB_HOST', 'localhost'),
     'port': os.getenv('DB_PORT', '5432')
 }

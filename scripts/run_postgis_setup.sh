@@ -21,13 +21,34 @@ PROJECT_DIR=~/geofeedback-papudo
 cd "$PROJECT_DIR"
 
 # Credenciales
-export PGPASSWORD="Papudo2025"
+# SEGURIDAD: la contraseña NO se hardcodea. Debe proveerse por entorno.
+export PGPASSWORD="${PGPASSWORD:?Define la variable de entorno PGPASSWORD antes de ejecutar este script}"
 
 echo ""
 echo -e "${BLUE}${BOLD}============================================================================${NC}"
 echo -e "${BLUE}${BOLD}   CONFIGURACIÓN COMPLETA DE POSTGIS - GEOFEEDBACK PAPUDO${NC}"
 echo -e "${BLUE}${BOLD}============================================================================${NC}"
 echo ""
+
+# ============================================================================
+# PASO 0: CREAR ROL DE SOLO LECTURA DE LA API (contraseña desde entorno)
+# ============================================================================
+# El rol geofeedback_api se crea aquí con la contraseña provista por la
+# variable de entorno GEOFEEDBACK_API_DB_PASSWORD (nunca hardcodeada). Los
+# GRANTs se asignan luego dentro de 01_setup_postgis_schema.sql.
+if [ -n "${GEOFEEDBACK_API_DB_PASSWORD:-}" ]; then
+    echo -e "${YELLOW}[PASO 0/6] Creando/actualizando rol geofeedback_api...${NC}"
+    psql -U geofeedback -d geofeedback_papudo -h localhost \
+        -v ON_ERROR_STOP=1 \
+        -v api_pw="$GEOFEEDBACK_API_DB_PASSWORD" <<'SQL'
+SELECT format('CREATE ROLE geofeedback_api LOGIN PASSWORD %L', :'api_pw')
+WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'geofeedback_api')
+\gexec
+SQL
+    echo -e "${GREEN}✓ Rol geofeedback_api listo${NC}"
+else
+    echo -e "${YELLOW}⚠ GEOFEEDBACK_API_DB_PASSWORD no definido; se omite la creación del rol geofeedback_api.${NC}"
+fi
 
 # ============================================================================
 # PASO 1: SETUP SCHEMAS

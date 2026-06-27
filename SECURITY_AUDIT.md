@@ -11,6 +11,86 @@
 | 10 de Junio, 2026 | ✅ RESUELTO — 7 hallazgos corregidos | Claude Code (PR #13) |
 | 13 de Junio, 2026 | ✅ RESUELTO — 4 hallazgos corregidos | Claude Code (auditoría arquitectónica completa, PR #14) |
 | 20 de Junio, 2026 | ✅ RESUELTO — 2 hallazgos corregidos | Claude Code (rutina de auditoría programada) |
+| 27 de Junio, 2026 | ✅ RESUELTO — 5 hallazgos corregidos | Claude Code (auditoría arquitectónica de scripts, infra y backend) |
+
+---
+
+## Auditoría Junio 2026 — Scripts de Datos, Infraestructura y Backend (27 de Junio)
+
+**Fecha:** 27 de Junio, 2026
+**Estatus:** ✅ **RESUELTO — 5 hallazgos corregidos**
+
+Revisión arquitectónica completa con foco en la capa de **scripts de inicialización/datos** (no cubierta en profundidad por auditorías previas centradas en `app.py`), además de una pasada de seguimiento sobre el backend Flask. Se confirmó que el frontend (`app.js`, `index.html`) sigue sin sinks XSS explotables: el patrón "escapar primero, formatear con regex después" es seguro porque `insertAdjacentHTML` no des-escapa entidades, y el `color` del AQI proviene de una whitelist ternaria, no de la API. Se hallaron **secretos versionados** y dos debilidades de defensa en profundidad.
+
+### Hallazgos y Correcciones
+
+#### 🔴 ALTO — Contraseña de rol de BD hardcodeada en SQL versionada (`scripts/sql/01_setup_postgis_schema.sql`)
+
+| Archivo | Línea | Descripción |
+|---------|-------|-------------|
+| `scripts/sql/01_setup_postgis_schema.sql` | `CREATE ROLE geofeedback_api ... PASSWORD 'api_readonly_2025'` | El rol de base de datos de la API se creaba con una contraseña en texto plano **commiteada al repositorio**. `scripts/init_railway_db.py` ejecuta esta SQL contra la **base de datos de producción de Railway**, por lo que cualquiera con acceso de lectura al repo obtiene una credencial de BD potencialmente válida. Si el puerto de Postgres es alcanzable (Railway expone proxies TCP públicos para bases de datos), permite conexión y lectura de datos. |
+
+**Corrección:** Eliminada la contraseña literal. El rol ahora lo crean los *runners* (`init_railway_db.py` vía parámetro enlazado de psycopg2; `run_postgis_setup.sh` vía `psql -v ... \gexec`) leyendo la contraseña desde la variable de entorno `GEOFEEDBACK_API_DB_PASSWORD`. Los `GRANT` al rol en `01/04/05/06_*.sql` se hicieron **condicionales** (`IF EXISTS (SELECT FROM pg_roles ...)`) para que los scripts no fallen cuando el rol aún no se ha provisto. Documentada la nueva variable en `api/.env.example`.
+
+#### 🟠 MEDIO — Contraseña de BD `Papudo2025` hardcodeada en múltiples scripts (`scripts/*.sh`, `scripts/*.py`, `api/README.md`)
+
+| Archivo | Descripción |
+|---------|-------------|
+| `scripts/02_load_raster_data.sh`, `scripts/run_postgis_setup.sh` | `export PGPASSWORD="Papudo2025"`. Estos scripts además se copian a la imagen Docker de producción (`COPY scripts/ ./scripts/`), enviando el secreto dentro del contenedor. |
+| `scripts/08_analyze_infrastructure_risk.py`, `scripts/06_test_postgis.py` | `'password': 'Papudo2025'` en el dict de conexión. |
+| `scripts/03_vectorize_amenaza.py` | `os.getenv('DB_PASSWORD', 'Papudo2025')` — default inseguro. |
+| `api/README.md` | Documentaba la contraseña real en el bloque `.env`. |
+
+**Corrección:** Eliminadas todas las contraseñas literales. Los `.sh` exigen `PGPASSWORD` por entorno (`${PGPASSWORD:?...}`, falla si no está). Los `.py` leen `os.getenv('DB_PASSWORD')` sin default. `README.md` usa `your-password-here`.
+
+#### 🟠 MEDIO — CORS abierto (wildcard) en producción si `ALLOWED_ORIGINS` no está configurado (`api/app.py`)
+
+| Función | Descripción |
+|---------|-------------|
+| Configuración CORS a nivel de módulo | Cuando `ALLOWED_ORIGINS` estaba vacío/`*`, el código caía a `CORS(app)` (cualquier origen) emitiendo solo un `warnings.warn` — incluso con `RAILWAY_ENVIRONMENT` presente. Una mala configuración dejaba las respuestas legibles por cualquier sitio web cross-origin. |
+
+**Corrección:** *Fail-closed* en producción, coherente con el hard-fail de `SECRET_KEY` en `config.py`: si `RAILWAY_ENVIRONMENT` está presente y `ALLOWED_ORIGINS` no, **no se habilita CORS** (la app se sirve same-origin, así que el frontend sigue operando y los lectores cross-origin quedan bloqueados por el navegador). En local se mantiene el wildcard. Verificado: en producción sin orígenes, no se emite `Access-Control-Allow-Origin`.
+
+#### 🟡 BAJO — Anonimización de IP reversible: SHA-256 sin sal (`api/app.py`)
+
+| Función | Descripción |
+|---------|-------------|
+| `hash_ip()` | Usaba `hashlib.sha256(ip)` sin clave. El espacio IPv4 (~4.3 mil millones) es suficientemente pequeño para revertir cualquier hash sin sal con una tabla precomputada, anulando el propósito de privacidad de los logs/analytics. |
+
+**Corrección:** Migrado a `hmac.new(_IP_HASH_KEY, ip, sha256)` con clave secreta (`IP_HASH_SALT`, con fallback a `SECRET_KEY`). El digest ya no es reversible sin el secreto. Documentada `IP_HASH_SALT` en `api/.env.example`.
+
+#### 🔵 INFO — Campo `approach` sin cota antes de interpolar en el prompt de Gemini (`api/app.py`)
+
+| Endpoint | Descripción |
+|----------|-------------|
+| `/api/v1/interpret` | `approach` se interpolaba en el prompt sin truncar, a diferencia de `location` (200) y `meta_date` (30) — superficie inconsistente de inyección de prompt / costo de tokens (acotada solo por `MAX_CONTENT_LENGTH`). |
+
+**Corrección:** `approach` truncado a 50 caracteres.
+
+### Verificación post-fix
+
+- Suite de tests (`tests/`): **19/19 ✅**
+- `python -m compileall api scripts tests`: ✅
+- `python scripts/monitor_deploy.py --help`: ✅
+- CORS producción sin `ALLOWED_ORIGINS` → sin header `Access-Control-Allow-Origin` (fail-closed) ✅
+- `hash_ip()` produce digest HMAC distinto al SHA-256 simple ✅
+
+### Resumen Consolidado (Junio 2026 — 27 de Junio)
+
+| Hallazgo | Severidad | Estado |
+|----------|-----------|--------|
+| Contraseña de rol de BD hardcodeada en SQL | 🔴 ALTO | ✅ Resuelto |
+| Contraseña `Papudo2025` en scripts/README | 🟠 MEDIO | ✅ Resuelto |
+| CORS wildcard en producción (fail-open) | 🟠 MEDIO | ✅ Resuelto |
+| Anonimización de IP reversible (SHA-256 sin sal) | 🟡 BAJO | ✅ Resuelto |
+| `approach` sin cota en prompt de Gemini | 🔵 INFO | ✅ Resuelto |
+
+### Acción manual pendiente (fuera del código)
+
+- [ ] **Rotar** la credencial del rol `geofeedback_api`: la contraseña `api_readonly_2025` quedó en el historial de git; debe considerarse comprometida. Definir `GEOFEEDBACK_API_DB_PASSWORD` en Railway/entorno y re-ejecutar `init_railway_db.py` para aplicar la nueva contraseña (`ALTER ROLE`).
+- [ ] **Rotar** cualquier base de datos local/compartida que aún use `Papudo2025`.
+- [ ] (Recomendado) Considerar `git-filter-repo` para purgar las contraseñas del historial, o asumirlas comprometidas y rotarlas (suficiente si las bases ya no son alcanzables).
+- [ ] (Opcional) Definir `IP_HASH_SALT` dedicado en producción en lugar de reutilizar `SECRET_KEY`.
 
 ---
 

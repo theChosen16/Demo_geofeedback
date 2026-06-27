@@ -27,10 +27,10 @@ import time
 
 # Configuración
 DB_PARAMS = {
-    'dbname': 'geofeedback_papudo',
-    'user': 'geofeedback',
-    'password': 'Papudo2025',
-    'host': 'localhost'
+    'dbname': os.getenv('DB_NAME', 'geofeedback_papudo'),
+    'user': os.getenv('DB_USER', 'geofeedback'),
+    'password': os.getenv('DB_PASSWORD'),  # Sin default: proveer por entorno
+    'host': os.getenv('DB_HOST', 'localhost')
 }
 
 class bcolors:

@@ -15,6 +15,7 @@ Autor: GeoFeedback Chile
 Fecha: Noviembre 2025
 """
 
+import os
 import json
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -37,10 +38,10 @@ OUTPUT_DIR = PROJECT_DIR / "data" / "processed"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 DB_PARAMS = {
-    'dbname': 'geofeedback_papudo',
-    'user': 'geofeedback',
-    'password': 'Papudo2025',
-    'host': 'localhost'
+    'dbname': os.getenv('DB_NAME', 'geofeedback_papudo'),
+    'user': os.getenv('DB_USER', 'geofeedback'),
+    'password': os.getenv('DB_PASSWORD'),  # Sin default: proveer por entorno
+    'host': os.getenv('DB_HOST', 'localhost')
 }
 
 print(f"\n{BLUE}{BOLD}{'='*80}{END}")

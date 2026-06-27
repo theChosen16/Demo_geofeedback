@@ -24,12 +24,15 @@ COMMENT ON TABLE metadata.api_usage_logs IS 'Log de uso de APIs de análisis';
 -- Index for performance
 CREATE INDEX IF NOT EXISTS idx_page_visits_date ON metadata.page_visits(visit_date);
 CREATE INDEX IF NOT EXISTS idx_api_usage_date ON metadata.api_usage_logs(timestamp);
--- Grant permissions to api user
-GRANT SELECT,
-    INSERT ON metadata.page_visits TO geofeedback_api;
-GRANT SELECT,
-    INSERT ON metadata.api_usage_logs TO geofeedback_api;
-GRANT USAGE,
-    SELECT ON SEQUENCE metadata.page_visits_id_seq TO geofeedback_api;
-GRANT USAGE,
-    SELECT ON SEQUENCE metadata.api_usage_logs_id_seq TO geofeedback_api;
+-- Grant permissions to api user (condicional: el rol lo crea el runner desde
+-- GEOFEEDBACK_API_DB_PASSWORD; no fallar si aún no existe).
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'geofeedback_api') THEN
+        GRANT SELECT, INSERT ON metadata.page_visits TO geofeedback_api;
+        GRANT SELECT, INSERT ON metadata.api_usage_logs TO geofeedback_api;
+        GRANT USAGE, SELECT ON SEQUENCE metadata.page_visits_id_seq TO geofeedback_api;
+        GRANT USAGE, SELECT ON SEQUENCE metadata.api_usage_logs_id_seq TO geofeedback_api;
+    END IF;
+END
+$$;

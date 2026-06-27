@@ -27,7 +27,9 @@ DATA_DIR="$PROJECT_DIR/data/processed"
 DB_NAME="geofeedback_papudo"
 DB_USER="geofeedback"
 DB_HOST="localhost"
-export PGPASSWORD="Papudo2025"
+# SEGURIDAD: la contraseña NO se hardcodea. Debe proveerse por entorno.
+#   export PGPASSWORD="..."   (o configurarla en tu gestor de secretos)
+export PGPASSWORD="${PGPASSWORD:?Define la variable de entorno PGPASSWORD antes de ejecutar este script}"
 
 # Opciones de raster2pgsql
 # -s SRID: Sistema de coordenadas

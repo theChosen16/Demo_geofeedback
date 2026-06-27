@@ -34,8 +34,28 @@ try:
 
     conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
     cur = conn.cursor()
-    
+
     print("Conexión exitosa.")
+
+    # 0. Crear/actualizar el rol de solo-lectura de la API con una contraseña
+    #    provista por entorno (NUNCA hardcodeada en el repositorio).
+    api_role_password = os.getenv('GEOFEEDBACK_API_DB_PASSWORD')
+    if api_role_password:
+        cur.execute("SELECT 1 FROM pg_roles WHERE rolname = 'geofeedback_api'")
+        role_exists = cur.fetchone() is not None
+        # Nombre de rol constante (no es entrada de usuario); la contraseña se
+        # pasa como parámetro enlazado para que psycopg2 la cite de forma segura.
+        if role_exists:
+            cur.execute("ALTER ROLE geofeedback_api WITH LOGIN PASSWORD %s", (api_role_password,))
+            print("Rol geofeedback_api actualizado (contraseña desde entorno).")
+        else:
+            cur.execute("CREATE ROLE geofeedback_api WITH LOGIN PASSWORD %s", (api_role_password,))
+            print("Rol geofeedback_api creado (contraseña desde entorno).")
+    else:
+        print(
+            "WARNING: GEOFEEDBACK_API_DB_PASSWORD no definido; se omite la "
+            "creación del rol geofeedback_api y sus GRANTs."
+        )
 
     # 1. Leer y ejecutar Schema (01_setup_postgis_schema.sql)
     print("Ejecutando 01_setup_postgis_schema.sql...")

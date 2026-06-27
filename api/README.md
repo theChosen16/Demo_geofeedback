@@ -48,7 +48,7 @@ Crear archivo `.env` con configuración personalizada:
 ```bash
 DB_NAME=geofeedback_papudo
 DB_USER=geofeedback
-DB_PASSWORD=Papudo2025
+DB_PASSWORD=your-password-here
 DB_HOST=localhost
 DB_PORT=5432
 ```
