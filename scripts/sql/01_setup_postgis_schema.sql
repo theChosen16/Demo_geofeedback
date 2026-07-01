@@ -180,21 +180,30 @@ $$ LANGUAGE plpgsql;
 -- ============================================================================
 
 -- Usuario para API (solo lectura)
+--
+-- SEGURIDAD: El rol geofeedback_api NO se crea aquí con una contraseña en
+-- texto plano. Una contraseña hardcodeada en este archivo versionado es una
+-- credencial de base de datos efectiva para cualquiera que lea el repositorio.
+-- El rol lo crean los runners (scripts/init_railway_db.py y
+-- scripts/run_postgis_setup.sh) leyendo la contraseña desde la variable de
+-- entorno GEOFEEDBACK_API_DB_PASSWORD.
+--
+-- Aquí solo se asignan privilegios, de forma idempotente y condicional a que
+-- el rol ya exista, para que este script sea seguro de ejecutar aunque la
+-- contraseña aún no se haya provisto.
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'geofeedback_api') THEN
-        CREATE ROLE geofeedback_api WITH LOGIN PASSWORD 'api_readonly_2025';
+    IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'geofeedback_api') THEN
+        GRANT CONNECT ON DATABASE railway TO geofeedback_api;
+        GRANT USAGE ON SCHEMA raw, processed, infrastructure, api TO geofeedback_api;
+        GRANT SELECT ON ALL TABLES IN SCHEMA raw, processed, infrastructure, api TO geofeedback_api;
+        ALTER DEFAULT PRIVILEGES IN SCHEMA raw, processed, infrastructure, api
+            GRANT SELECT ON TABLES TO geofeedback_api;
+    ELSE
+        RAISE NOTICE 'Rol geofeedback_api no existe; se omiten los GRANTs. Créalo con el runner usando GEOFEEDBACK_API_DB_PASSWORD.';
     END IF;
 END
 $$;
-
--- Permisos de lectura
--- GRANT CONNECT ON DATABASE geofeedback_papudo TO geofeedback_api;
-GRANT CONNECT ON DATABASE railway TO geofeedback_api;
-GRANT USAGE ON SCHEMA raw, processed, infrastructure, api TO geofeedback_api;
-GRANT SELECT ON ALL TABLES IN SCHEMA raw, processed, infrastructure, api TO geofeedback_api;
-ALTER DEFAULT PRIVILEGES IN SCHEMA raw, processed, infrastructure, api
-    GRANT SELECT ON TABLES TO geofeedback_api;
 
 -- ============================================================================
 -- PASO 8: VERIFICACIÓN Y RESUMEN

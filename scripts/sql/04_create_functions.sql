@@ -344,8 +344,17 @@ COMMENT ON FUNCTION api.health_check IS 'Retorna estado de salud de la base de d
 -- PERMISOS PARA USUARIO API
 -- ============================================================================
 
-GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA api TO geofeedback_api;
-ALTER DEFAULT PRIVILEGES IN SCHEMA api GRANT EXECUTE ON FUNCTIONS TO geofeedback_api;
+-- GRANTs condicionales: el rol geofeedback_api lo crea el runner desde
+-- GEOFEEDBACK_API_DB_PASSWORD (ver 01_setup_postgis_schema.sql). No fallar si
+-- aún no existe.
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'geofeedback_api') THEN
+        GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA api TO geofeedback_api;
+        ALTER DEFAULT PRIVILEGES IN SCHEMA api GRANT EXECUTE ON FUNCTIONS TO geofeedback_api;
+    END IF;
+END
+$$;
 
 -- ============================================================================
 -- TESTING DE FUNCIONES

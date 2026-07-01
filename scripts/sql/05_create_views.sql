@@ -235,7 +235,14 @@ CREATE TRIGGER trg_amenaza_poligonos_change
 -- PERMISOS
 -- ============================================================================
 
-GRANT SELECT ON ALL MATERIALIZED VIEWS IN SCHEMA api TO geofeedback_api;
+-- GRANT condicional al rol de API (creado por el runner desde entorno).
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM pg_roles WHERE rolname = 'geofeedback_api') THEN
+        GRANT SELECT ON ALL MATERIALIZED VIEWS IN SCHEMA api TO geofeedback_api;
+    END IF;
+END
+$$;
 GRANT EXECUTE ON FUNCTION api.refresh_all_views() TO geofeedback;
 
 -- ============================================================================
