@@ -187,6 +187,57 @@ class AnalyticsBootstrapMiddlewareTests(unittest.TestCase):
             app_module._ANALYTICS_BOOTSTRAP_ENABLED = previous_enabled
 
 
+class VisitLoggingRateLimitTests(unittest.TestCase):
+    """GET / must cap analytics writes so a flood cannot fill the DB / inflate stats."""
+
+    def setUp(self):
+        self.client = app_module.app.test_client()
+
+    @patch.object(app_module.database, "log_visit")
+    def test_visit_logging_is_rate_limited_but_page_still_serves(self, mock_log_visit):
+        # Fresh limiter so this test is independent of module-level state:
+        # allow at most 3 visit writes per window.
+        fresh_limiter = app_module.RateLimiter(
+            key_prefix="visit-test", max_requests=3, window_seconds=60
+        )
+        with patch.object(app_module, "visit_limiter", fresh_limiter):
+            statuses = [self.client.get("/").status_code for _ in range(6)]
+
+        # The landing page is always served, even once logging is throttled.
+        self.assertTrue(all(code == 200 for code in statuses))
+        # ...but the DB write is capped at the limiter's max_requests.
+        self.assertEqual(mock_log_visit.call_count, 3)
+
+
+class GeminiTimeoutTests(unittest.TestCase):
+    """A slow Gemini call must not block the request thread past the timeout."""
+
+    def test_call_returns_promptly_on_timeout(self):
+        import time as _time
+
+        class _SlowModels:
+            def generate_content(self, *args, **kwargs):
+                _time.sleep(5)  # simulate a hung upstream response
+                return type("R", (), {"text": "late"})()
+
+        class _SlowClient:
+            models = _SlowModels()
+
+        with patch.object(app_module, "gemini_available", True), \
+                patch.object(app_module, "gemini_model_name", "test-model", create=True), \
+                patch.object(app_module, "gemini_client", _SlowClient(), create=True):
+            started = _time.time()
+            result = app_module.call_gemini_with_retry(
+                "prompt", max_retries=1, timeout=0.2
+            )
+            elapsed = _time.time() - started
+
+        self.assertIsNone(result)
+        # Old `with ThreadPoolExecutor()` code blocked ~5s on shutdown(wait=True);
+        # the shared executor returns as soon as the 0.2s timeout elapses.
+        self.assertLess(elapsed, 2.0)
+
+
 class RedirectRoutesTests(unittest.TestCase):
     def setUp(self):
         self.client = app_module.app.test_client()
