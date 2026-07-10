@@ -43,6 +43,23 @@ except ImportError:
     print("WARNING: google-genai no instalado.")
 
 
+# Persistent executor used to enforce a real wall-clock timeout on Gemini calls.
+#
+# SECURITY / AVAILABILITY: a *per-call* ``with ThreadPoolExecutor() as executor``
+# block does NOT enforce the timeout. Leaving the ``with`` runs
+# ``executor.shutdown(wait=True)``, which blocks the request thread until the
+# slow Gemini HTTP call actually finishes — defeating ``future.result(timeout)``
+# and pinning a Gunicorn worker (only 2 exist on the Railway free tier). A few
+# slow/hung upstream responses could therefore exhaust all workers (DoS).
+#
+# A single shared executor that is never shut down per request lets
+# ``future.result(timeout)`` return promptly on timeout; the orphaned worker
+# thread finishes in the background without holding the request thread.
+_GEMINI_EXECUTOR = concurrent.futures.ThreadPoolExecutor(
+    max_workers=4, thread_name_prefix='gemini'
+)
+
+
 def call_gemini_with_retry(prompt, max_retries=2, timeout=30):
     """Llama a Gemini con reintentos y timeout real usando concurrent.futures.
 
@@ -54,16 +71,19 @@ def call_gemini_with_retry(prompt, max_retries=2, timeout=30):
         return None
 
     for attempt in range(max_retries):
+        future = _GEMINI_EXECUTOR.submit(
+            gemini_client.models.generate_content,
+            model=gemini_model_name,
+            contents=prompt,
+        )
         try:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-                future = executor.submit(
-                    gemini_client.models.generate_content,
-                    model=gemini_model_name,
-                    contents=prompt,
-                )
-                response = future.result(timeout=timeout)
+            response = future.result(timeout=timeout)
             return response.text
         except concurrent.futures.TimeoutError:
+            # Do NOT wait for the hung call — free the request thread now. The
+            # background worker thread is left to finish on its own; blocking
+            # here (the old `with`-block behaviour) is exactly the bug we fix.
+            future.cancel()
             print(f"Gemini intento {attempt + 1}/{max_retries}: timeout ({timeout}s)")
         except Exception as e:
             print(f"Gemini intento {attempt + 1}/{max_retries}: {e}")
@@ -239,6 +259,12 @@ class RateLimiter:
 # 10 analyses per minute, 5 contact submissions per minute
 analysis_limiter = RateLimiter(key_prefix='analyze', max_requests=10, window_seconds=60)
 contact_limiter = RateLimiter(key_prefix='contact', max_requests=5, window_seconds=60)
+# Visit logging is a write to metadata.page_visits on every landing-page hit.
+# Without a cap, an unauthenticated flood of GET / can (a) grow the free-tier
+# Postgres unbounded (storage/cost DoS) and (b) inflate the public "visits"
+# counter arbitrarily. Gate only the DB write — the page itself always renders.
+# 30/min/IP is generous for a human reloading while blocking abusive floods.
+visit_limiter = RateLimiter(key_prefix='visit', max_requests=30, window_seconds=60)
 
 
 def get_client_ip():
@@ -928,11 +954,15 @@ def landing():
         print(f"INFO: GOOGLE_MAPS_API_KEY found (length: {len(google_maps_key)})")
     
     try:
-        # Log visit
+        # Log visit — rate-limited per IP so a flood of GET / cannot fill the
+        # analytics table or inflate the public visit counter (see visit_limiter).
+        # The landing page is always served regardless of the logging outcome.
         try:
-            user_agent = request.headers.get('User-Agent')
-            ip_hash = hash_ip(get_client_ip())
-            database.log_visit(page='/', user_agent=user_agent, ip_hash=ip_hash)
+            client_ip = get_client_ip()
+            if visit_limiter.is_allowed(client_ip):
+                user_agent = request.headers.get('User-Agent')
+                ip_hash = hash_ip(client_ip)
+                database.log_visit(page='/', user_agent=user_agent, ip_hash=ip_hash)
         except Exception as e:
             print(f"Error logging visit: {e}")
 

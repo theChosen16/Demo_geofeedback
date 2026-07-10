@@ -12,6 +12,39 @@
 | 13 de Junio, 2026 | ✅ RESUELTO — 4 hallazgos corregidos | Claude Code (auditoría arquitectónica completa, PR #14) |
 | 20 de Junio, 2026 | ✅ RESUELTO — 2 hallazgos corregidos | Claude Code (rutina de auditoría programada) |
 | 27 de Junio, 2026 | ✅ RESUELTO — 5 hallazgos corregidos | Claude Code (auditoría arquitectónica de scripts, infra y backend) |
+| 4 de Julio, 2026 | ✅ RESUELTO — 2 hallazgos corregidos | Claude Code (auditoría de disponibilidad/DoS en runtime Flask) |
+
+---
+
+## Auditoría Julio 2026 — Disponibilidad y DoS en el Runtime Flask (4 de Julio)
+
+**Fecha:** 4 de Julio, 2026
+**Estatus:** ✅ **RESUELTO — 2 hallazgos corregidos**
+
+Revisión arquitectónica del *runtime* de peticiones (`api/app.py`) con foco en superficies de **denegación de servicio y agotamiento de recursos** que las auditorías previas —centradas en secretos, CORS, XSS y anonimización— no habían cubierto. Se reconfirmó que el frontend sigue sin sinks XSS explotables (patrón "escapar primero, formatear después") y que las entradas de `/analyze`, `/interpret`, `/chat` y `/contact` están validadas y acotadas. Se hallaron **dos vectores de disponibilidad**.
+
+### Hallazgos y Correcciones
+
+#### 🟠 MEDIO — Escritura no acotada en analytics + envenenamiento de métricas vía `GET /` (`api/app.py`)
+
+| Función | Descripción |
+|---------|-------------|
+| `landing()` | Cada visita a la landing ejecutaba `database.log_visit()` → un `INSERT` en `metadata.page_visits` **sin rate limiting** (a diferencia de `/analyze` y `/contact`, que sí lo tenían). Un atacante no autenticado podía inundar `GET /` para: (a) hacer crecer sin límite la Postgres del *free tier* de Railway (agotamiento de almacenamiento / costo → DoS), y (b) inflar arbitrariamente el contador público de "visitas" que muestra el sitio (integridad de datos). |
+
+**Corrección:** Se añadió un `RateLimiter` dedicado (`visit_limiter`, 30 req/min/IP, respaldado por Redis igual que los demás). Solo se **gatea la escritura** de analytics; la página se sirve siempre, incluso cuando el logging queda throttleado, por lo que la UX de usuarios legítimos no cambia mientras los floods quedan acotados. Cubierto por `VisitLoggingRateLimitTests`.
+
+#### 🟠 MEDIO — Timeout de Gemini no se aplica realmente; un worker de Gunicorn puede bloquearse (`api/app.py`)
+
+| Función | Descripción |
+|---------|-------------|
+| `call_gemini_with_retry()` | Usaba `with concurrent.futures.ThreadPoolExecutor() as executor:` por llamada. Aunque `future.result(timeout=...)` lanza `TimeoutError`, **salir del bloque `with` ejecuta `executor.shutdown(wait=True)`, que bloquea el hilo de la petición hasta que la llamada HTTP lenta termina** — anulando el *wall-clock limit* que el propio docstring prometía. Con solo 2 workers en el *free tier*, unas pocas respuestas lentas/colgadas de la API de Gemini podían fijar todos los workers (DoS de disponibilidad). |
+
+**Corrección:** Se reemplazó el executor por-llamada por un **executor persistente a nivel de módulo** (`_GEMINI_EXECUTOR`) que nunca se apaga por petición. Ahora `future.result(timeout)` retorna de inmediato al vencer el timeout y el hilo de la petición (y el worker de Gunicorn) queda libre; el hilo colgado termina en segundo plano sin retener la petición. Verificado por `GeminiTimeoutTests` (la llamada retorna en <2 s ante un upstream de 5 s; el código anterior bloqueaba ~5 s).
+
+### Verificación
+
+- `python -m unittest discover -s tests -p "test_*.py"` → **21/21 OK** (2 tests nuevos de regresión).
+- `python -m compileall api scripts tests` → OK.
 
 ---
 
