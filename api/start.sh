@@ -1,23 +1,32 @@
 #!/bin/sh
 set -e
 
-# Log startup info
-echo "Starting application..."
-echo "Current user: $(whoami)"
-echo "Environment variables:"
-env | grep -viE "SECRET|KEY|PASSWORD|TOKEN|CREDENTIALS" | sort
+# =============================================================================
+# Production entrypoint for the GeoFeedback API.
+#
+# Mirrors the Dockerfile CMD: launches the WSGI app under Gunicorn.
+#
+# SECURITY NOTES (why this script no longer does what it used to):
+#   * It NO LONGER runs `python -u simple_app.py`. That file does not exist and
+#     the invocation started Flask's *development* server, which must never be
+#     exposed to production traffic (debugger, single-threaded, no hardening).
+#   * It NO LONGER dumps the process environment to stdout. The previous
+#     `env | grep -viE "SECRET|KEY|PASSWORD|TOKEN|CREDENTIALS"` filter did NOT
+#     mask DATABASE_URL, REDIS_URL or IP_HASH_SALT — all of which embed
+#     credentials/secrets — so it leaked them into the centralized log stream.
+# =============================================================================
 
-# Ensure PORT is set
-PORT="${PORT:-8080}"
-echo "Using PORT: $PORT"
+cd "$(dirname "$0")"
 
-# Start Gunicorn
-# --bind 0.0.0.0:$PORT : Bind to all interfaces on the specified port
-# --workers 1 : Keep memory usage low
-# --timeout 120 : Allow long requests
-# --access-logfile - : Log to stdout
-# --error-logfile - : Log errors to stdout
-# --log-level debug : Verbose logging
-# Bypass Gunicorn for debugging
-echo "Starting with Flask development server..."
-python -u simple_app.py
+PORT="${PORT:-5000}"
+echo "Starting GeoFeedback API on port ${PORT} (gunicorn)..."
+
+exec gunicorn \
+    --bind "0.0.0.0:${PORT}" \
+    --workers "${WORKERS:-2}" \
+    --threads "${THREADS:-2}" \
+    --timeout "${TIMEOUT:-120}" \
+    --access-logfile - \
+    --error-logfile - \
+    --log-level info \
+    app:app

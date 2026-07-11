@@ -34,6 +34,35 @@ class StatsEndpointTests(unittest.TestCase):
         self.assertEqual(response.get_json(), {"visits": 0, "analyses": 0})
 
 
+class StatsRateLimitTests(unittest.TestCase):
+    """GET /api/v1/stats must cap DB COUNT reads so a flood cannot load Postgres."""
+
+    def setUp(self):
+        self.client = app_module.app.test_client()
+
+    @patch.object(app_module.database, "get_public_stats", return_value={"visits": 1, "analyses": 1})
+    def test_stats_reads_are_rate_limited(self, mock_stats):
+        # Fresh limiter so this test is independent of module-level state:
+        # allow at most 3 stats reads per window.
+        fresh_limiter = app_module.RateLimiter(
+            key_prefix="stats-test", max_requests=3, window_seconds=60
+        )
+        with patch.object(app_module, "stats_limiter", fresh_limiter):
+            statuses = [self.client.get("/api/v1/stats").status_code for _ in range(6)]
+
+        # First 3 hit the DB and return 200; the rest are throttled with 429.
+        self.assertEqual(statuses[:3], [200, 200, 200])
+        self.assertTrue(all(code == 429 for code in statuses[3:]))
+        # The DB is only queried for the allowed requests, not the throttled ones.
+        self.assertEqual(mock_stats.call_count, 3)
+
+        # Throttled responses keep the safe zero-payload shape the frontend tolerates.
+        with patch.object(app_module, "stats_limiter", fresh_limiter):
+            throttled = self.client.get("/api/v1/stats")
+        self.assertEqual(throttled.status_code, 429)
+        self.assertEqual(throttled.get_json(), {"visits": 0, "analyses": 0})
+
+
 class ObservabilityRouteTests(unittest.TestCase):
     def setUp(self):
         self.client = app_module.app.test_client()
