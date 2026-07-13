@@ -13,6 +13,47 @@
 | 20 de Junio, 2026 | ✅ RESUELTO — 2 hallazgos corregidos | Claude Code (rutina de auditoría programada) |
 | 27 de Junio, 2026 | ✅ RESUELTO — 5 hallazgos corregidos | Claude Code (auditoría arquitectónica de scripts, infra y backend) |
 | 4 de Julio, 2026 | ✅ RESUELTO — 2 hallazgos corregidos | Claude Code (auditoría de disponibilidad/DoS en runtime Flask) |
+| 11 de Julio, 2026 | ✅ RESUELTO — 2 hallazgos corregidos | Claude Code (auditoría de entrypoint de despliegue y superficie de lectura no autenticada) |
+
+---
+
+## Auditoría Julio 2026 — Entrypoint de Despliegue y Lectura No Autenticada (11 de Julio)
+
+**Fecha:** 11 de Julio, 2026
+**Estatus:** ✅ **RESUELTO — 2 hallazgos corregidos**
+
+Revisión arquitectónica completa (backend `api/app.py`, `database.py`, `config.py`, `gee_config.py`; frontend `templates/index.html` + `static/js/app.js`; despliegue `Dockerfile`, `railway.toml`, scripts de arranque; CI). Se **reconfirmó** la postura ya endurecida por auditorías previas:
+
+- **Sin sinks XSS explotables:** el frontend aplica el patrón "escapar primero, formatear después" en todos los renders de datos no confiables (respuestas del servidor, salida de Gemini, entrada de usuario). Todos los `target="_blank"` llevan `rel="noopener noreferrer"`.
+- **Inyección SQL:** todas las queries en `database.py` son parametrizadas; los identificadores dinámicos usan `psycopg2.sql`.
+- **CORS fail-closed** en producción, **cabeceras de seguridad + CSP** aplicadas, **secretos fuera del repo** (`.gitignore` cubre `.env` y `service-account-key.json`), **anonimización de IP con HMAC**, **`/observability`** protegido por token en tiempo constante, y **rate limiting** en `/analyze`, `/interpret`, `/chat`, `/contact` y el logging de visitas.
+
+Se hallaron **dos vectores residuales**, ambos de agotamiento de recursos / exposición de secretos operativa.
+
+### Hallazgos y Correcciones
+
+#### 🟠 MEDIO — `api/start.sh` filtraba secretos a los logs y arrancaba el servidor de desarrollo
+
+| Aspecto | Detalle |
+|---------|---------|
+| **Archivo** | `api/start.sh` |
+| **Problema** | Script huérfano (no referenciado por `Dockerfile`/`railway.toml`, que despliegan vía Gunicorn `app:app`) pero peligroso si alguien lo invoca: (1) volcaba el entorno con `env \| grep -viE "SECRET\|KEY\|PASSWORD\|TOKEN\|CREDENTIALS"`, filtro que **NO** enmascara `DATABASE_URL`, `REDIS_URL` ni `IP_HASH_SALT` — todos con credenciales/secretos — hacia el stream centralizado de logs; (2) lanzaba `python -u simple_app.py`, un archivo inexistente, invocando el **servidor de desarrollo de Flask** (con debugger, sin hardening) en un contexto de producción. |
+| **Impacto** | Exposición de credenciales de base de datos/Redis y del salt de anonimización en logs; ejecución del servidor de desarrollo si el entrypoint se reactivara. |
+| **Corrección** | Reescrito como entrypoint de producción correcto que hace `exec gunicorn ... app:app` (espejo del `Dockerfile`), sin volcado de entorno y sin servidor de desarrollo. |
+
+#### 🟡 BAJO/MEDIO — `GET /api/v1/stats` sin límite: lectura no autenticada que castiga la BD
+
+| Aspecto | Detalle |
+|---------|---------|
+| **Archivo** | `api/app.py` (`stats()`) |
+| **Problema** | El endpoint público ejecutaba **dos `COUNT(*)`** contra el Postgres del free-tier en **cada** petición, sin autenticación ni rate limiting. Un flood de `GET /api/v1/stats` se traduce en carga de BD no acotada (DoS de disponibilidad/costo) — el análogo de lectura al flood de escritura de visitas que ya estaba mitigado en `GET /`. |
+| **Impacto** | Agotamiento de recursos de la base de datos gratuita mediante peticiones baratas y anónimas. |
+| **Corrección** | Nuevo `stats_limiter` (60/min/IP, reutilizando la clase `RateLimiter` Redis-first). Al superar el límite se devuelve `429` con el mismo payload seguro `{"visits":0,"analyses":0}` que el frontend ya tolera ante respuestas no-OK, protegiendo la BD sin degradar la experiencia legítima. Cubierto por `StatsRateLimitTests`. |
+
+### Recomendaciones residuales (no corregidas en este PR — mayor riesgo de regresión)
+
+- **Timeout wall-clock en el camino GEE de `/analyze`.** Las llamadas síncronas `.getInfo()` no tienen timeout a nivel de aplicación (solo el `--timeout 120` de Gunicorn, que mata el worker completo). Conviene aplicar el mismo patrón de `_GEMINI_EXECUTOR` (`future.result(timeout=...)`) ya usado para Gemini, para no fijar los 2 workers ante respuestas lentas de Earth Engine.
+- **CSP `script-src 'unsafe-inline'`.** Requiere refactor de plantilla (mover handlers inline y bloques `<script>`) para eliminarse; documentado ya en el código.
 
 ---
 

@@ -265,6 +265,13 @@ contact_limiter = RateLimiter(key_prefix='contact', max_requests=5, window_secon
 # counter arbitrarily. Gate only the DB write — the page itself always renders.
 # 30/min/IP is generous for a human reloading while blocking abusive floods.
 visit_limiter = RateLimiter(key_prefix='visit', max_requests=30, window_seconds=60)
+# /api/v1/stats runs two COUNT(*) queries against the free-tier Postgres on
+# every request and is unauthenticated. Without a cap, a flood of GETs turns
+# into unbounded DB load (availability/cost DoS) — the read-side analogue of
+# the visit-write flood already gated above. 60/min/IP is well above any real
+# frontend polling while still blunting abusive floods; on limit we return the
+# same safe zero-payload the frontend already tolerates on a non-OK response.
+stats_limiter = RateLimiter(key_prefix='stats', max_requests=60, window_seconds=60)
 
 
 def get_client_ip():
@@ -1035,6 +1042,11 @@ def observability():
 
 @app.route('/api/v1/stats')
 def stats():
+    if not stats_limiter.is_allowed(get_client_ip()):
+        # Fail safe with the same shape the frontend already handles gracefully
+        # on a non-OK response, so a rate-limited flood degrades to zeros rather
+        # than an error while the DB is shielded.
+        return jsonify({"visits": 0, "analyses": 0}), 429
     try:
         public_stats = database.get_public_stats()
         return jsonify(public_stats)
