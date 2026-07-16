@@ -51,6 +51,16 @@ def fetch_endpoint(base_url, endpoint, timeout=10):
             "reason": str(exc.reason),
             "payload": None,
         }
+    except Exception as exc:
+        elapsed_ms = (time.time() - started_at) * 1000
+        return {
+            "endpoint": endpoint,
+            "status_code": None,
+            "elapsed_ms": elapsed_ms,
+            "healthy": False,
+            "reason": f"Connection failed: {str(exc)}",
+            "payload": None,
+        }
 
     elapsed_ms = (time.time() - started_at) * 1000
     payload = None

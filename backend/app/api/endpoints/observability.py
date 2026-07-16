@@ -55,8 +55,10 @@ async def get_observability_snapshot(
     import ee
     gee_ok = False
     try:
-        ee.Initialize()
-        gee_ok = True
+        if hasattr(ee, "data") and getattr(ee.data, "_connection", None) is not None:
+            gee_ok = True
+        else:
+            gee_ok = init_gee()
     except Exception:
         gee_ok = False
 
