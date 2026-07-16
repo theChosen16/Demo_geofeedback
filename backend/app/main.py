@@ -162,7 +162,17 @@ from fastapi.responses import FileResponse
 
 # Determinar la ruta de frontend/dist dinámicamente
 base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-frontend_dist_dir = os.path.join(base_dir, "frontend", "dist")
+candidates = [
+    os.path.join(base_dir, "frontend", "dist"),
+    os.path.join("/app", "frontend", "dist"),
+    os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend", "dist"),
+]
+frontend_dist_dir = candidates[0]
+for candidate in candidates:
+    if os.path.exists(os.path.join(candidate, "assets")):
+        frontend_dist_dir = candidate
+        break
+
 frontend_assets_dir = os.path.join(frontend_dist_dir, "assets")
 
 # Montar los assets estáticos si existen
