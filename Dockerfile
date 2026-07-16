@@ -46,18 +46,26 @@ COPY --from=frontend-builder /build/dist ./frontend/dist
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
 USER appuser
 
-# Healthcheck apuntando a la API de FastAPI
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:${PORT:-5000}/api/v1/health || exit 1
+# Healthcheck adaptativo para FastAPI o Celery Worker
+HEALTHCHECK --interval=30s --timeout=15s --start-period=60s --retries=3 \
+    CMD if [ "$SERVICE_TYPE" = "worker" ]; then \
+        python -m celery -A app.tasks.celery_app inspect ping || exit 1; \
+    else \
+        curl -f http://localhost:${PORT:-5000}/api/v1/health || exit 1; \
+    fi
 
-# Comando por defecto para levantar FastAPI
-CMD ["sh", "-c", "gunicorn \
-    --bind 0.0.0.0:${PORT:-5000} \
-    --workers 2 \
-    --worker-class uvicorn.workers.UvicornWorker \
-    --timeout 120 \
-    --preload \
-    --access-logfile /dev/stdout \
-    --error-logfile /dev/stdout \
-    --log-level info \
-    app.main:app"]
+# Comando por defecto para levantar FastAPI o Celery Worker dinámicamente
+CMD ["sh", "-c", "if [ \"$SERVICE_TYPE\" = \"worker\" ]; then \
+    python -m celery -A app.tasks.celery_app worker --loglevel=info; \
+    else \
+    gunicorn \
+        --bind 0.0.0.0:${PORT:-5000} \
+        --workers 2 \
+        --worker-class uvicorn.workers.UvicornWorker \
+        --timeout 120 \
+        --preload \
+        --access-logfile /dev/stdout \
+        --error-logfile /dev/stdout \
+        --log-level info \
+        app.main:app; \
+    fi"]
