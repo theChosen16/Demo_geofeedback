@@ -54,12 +54,6 @@ export const Hero: React.FC = () => {
       })
     }
 
-    // Orbiting satellites
-    const orbitalDots: { x: number; y: number; r: number; angle: number; speed: number; color: string }[] = [
-      { x: width * 0.7, y: height * 0.5, r: 180, angle: 0, speed: 0.005, color: '#2dd4bf' },
-      { x: width * 0.7, y: height * 0.5, r: 240, angle: Math.PI, speed: -0.003, color: '#c084fc' },
-    ]
-
     const draw = () => {
       ctx.fillStyle = '#111318'
       ctx.fillRect(0, 0, width, height)
@@ -72,28 +66,6 @@ export const Hero: React.FC = () => {
         ctx.beginPath()
         ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2)
         ctx.fill()
-      }
-
-      // Orbital lines
-      ctx.lineWidth = 1
-      for (const dot of orbitalDots) {
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)'
-        ctx.beginPath()
-        ctx.arc(width * 0.75, height * 0.45, dot.r, 0, Math.PI * 2)
-        ctx.stroke()
-
-        // Satellite dots
-        dot.angle += dot.speed
-        const sX = width * 0.75 + Math.cos(dot.angle) * dot.r
-        const sY = height * 0.45 + Math.sin(dot.angle) * dot.r
-
-        ctx.fillStyle = dot.color
-        ctx.shadowColor = dot.color
-        ctx.shadowBlur = 8
-        ctx.beginPath()
-        ctx.arc(sX, sY, 3, 0, Math.PI * 2)
-        ctx.fill()
-        ctx.shadowBlur = 0 // reset
       }
 
       animationFrameId = requestAnimationFrame(draw)
@@ -120,7 +92,7 @@ export const Hero: React.FC = () => {
       <canvas ref={canvasRef} className="absolute inset-0 z-0 pointer-events-none" />
 
       {/* Styled Earth & Satellite 3D Visualizer wrapper */}
-      <div className="absolute right-0 lg:right-[-5%] top-1/2 -translate-y-1/2 w-full lg:w-[50%] h-[50vh] lg:h-[80vh] pointer-events-none z-10 hidden sm:block">
+      <div className="absolute right-0 lg:right-0 top-1/2 -translate-y-1/2 w-full lg:w-[50%] h-[50vh] lg:h-[80vh] pointer-events-none z-10 hidden sm:block">
         <EarthCanvas />
       </div>
 
