@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useStore } from '../store/useStore'
-import { ArrowRight, Satellite as SatIcon } from 'lucide-react'
+import { ArrowRight } from 'lucide-react'
+import { EarthCanvas } from './EarthCanvas'
 
 export const Hero: React.FC = () => {
   const { t } = useTranslation()
@@ -120,22 +121,7 @@ export const Hero: React.FC = () => {
 
       {/* Styled Earth & Satellite 3D Visualizer wrapper */}
       <div className="absolute right-0 lg:right-[-5%] top-1/2 -translate-y-1/2 w-full lg:w-[50%] h-[50vh] lg:h-[80vh] pointer-events-none z-10 hidden sm:block">
-        <div className="relative w-full h-full flex items-center justify-center">
-          {/* Earth glow ring */}
-          <div className="absolute w-[280px] lg:w-[450px] h-[280px] lg:h-[450px] rounded-full bg-teal-500/10 blur-[80px] animate-pulse" />
-          
-          {/* 3D Planet Earth */}
-          <div className="earth-sphere absolute w-[240px] lg:w-[380px] h-[240px] lg:h-[380px] rounded-full shadow-[inset_-25px_-25px_60px_rgba(0,0,0,0.9),_0_0_40px_rgba(45,212,191,0.2)] border border-teal-500/20" />
-          
-          {/* Detailed 3D Satellite and Orbit path */}
-          <div className="satellite-orbit absolute w-[360px] lg:w-[580px] h-[120px] lg:h-[180px] border border-white/5 rounded-[50%] rotate-[25deg]">
-            <div className="satellite absolute top-0 left-1/2 w-8 h-8 -ml-4 -mt-4 bg-[#23242e] border border-teal-400/50 rounded-lg flex items-center justify-center shadow-xl animate-satellite-float">
-              <SatIcon className="h-4 w-4 text-teal-400 animate-pulse" />
-              {/* Laser scanning beam */}
-              <div className="absolute bottom-[-150%] left-1/2 -translate-x-1/2 w-[2px] h-[60px] bg-gradient-to-b from-teal-400/80 to-transparent animate-laser-scan origin-top" />
-            </div>
-          </div>
-        </div>
+        <EarthCanvas />
       </div>
 
       <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-20 w-full">
@@ -186,66 +172,7 @@ export const Hero: React.FC = () => {
         </div>
       </div>
 
-      {/* Styled Earth Custom Keyframe CSS */}
-      <style>{`
-        .earth-sphere {
-          background-image: url('https://upload.wikimedia.org/wikipedia/commons/c/c4/Earthmap1000x500compac.jpg');
-          background-size: cover;
-          background-repeat: repeat-x;
-          animation: spin-earth 60s linear infinite;
-        }
 
-        .satellite-orbit {
-          transform-style: preserve-3d;
-        }
-
-        @keyframes spin-earth {
-          from { background-position: 0 0; }
-          to { background-position: 1000px 0; }
-        }
-
-        .animate-spin-slow {
-          animation: spin 20s linear infinite;
-        }
-
-        .animate-satellite-float {
-          animation: orbit-satellite 25s linear infinite;
-        }
-
-        @keyframes orbit-satellite {
-          from {
-            transform: rotate(0deg) translateX(180px) rotate(0deg);
-          }
-          to {
-            transform: rotate(360deg) translateX(180px) rotate(-360deg);
-          }
-        }
-
-        @media (min-width: 1024px) {
-          @keyframes orbit-satellite {
-            from {
-              transform: rotate(0deg) translateX(290px) rotate(0deg);
-            }
-            to {
-              transform: rotate(360deg) translateX(290px) rotate(-360deg);
-            }
-          }
-        }
-
-        @keyframes laser-scan {
-          0%, 100% {
-            transform: translate(-50%) rotate(-10deg);
-            opacity: 0.8;
-          }
-          50% {
-            transform: translate(-50%) rotate(10deg);
-            opacity: 0.3;
-          }
-        }
-        .animate-laser-scan {
-          animation: laser-scan 3s ease-in-out infinite;
-        }
-      `}</style>
     </section>
   )
 }
