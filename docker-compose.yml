@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  # 1. Database Service (PostGIS)
+  db:
+    image: postgis/postgis:15-3.3
+    container_name: geofeedback_db
+    restart: always
+    environment:
+      POSTGRES_DB: geofeedback
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password123
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d geofeedback"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 2. Cache & Message Broker (Redis)
+  redis:
+    image: redis:7-alpine
+    container_name: geofeedback_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 3. Backend REST API Server (FastAPI + served React Frontend SPA)
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: geofeedback_api
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - DATABASE_URL=postgresql://postgres:password123@db:5432/geofeedback
+      - REDIS_URL=redis://redis:6379/0
+      - GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - CONTACT_EMAIL_RECIPIENT=${CONTACT_EMAIL_RECIPIENT}
+      - IP_HASH_SALT=development_salt_value
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # 4. Celery Worker (Asynchronous Earth Engine & Analysis Tasks)
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: geofeedback_worker
+    restart: always
+    command: celery -A app.tasks.worker worker --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql://postgres:password123@db:5432/geofeedback
+      - REDIS_URL=redis://redis:6379/0
+      - GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  redisdata:
