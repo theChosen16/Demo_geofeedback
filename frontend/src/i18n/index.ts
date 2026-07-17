@@ -121,7 +121,7 @@ const resources = {
       team: {
         title: 'Nuestro Equipo',
         subtitle: 'Conoce a los fundadores de GeoFeedback Chile',
-        roleCoFounder: 'Co-Fundadora',
+        roleCoFounder: 'Co-Fundador',
         viewLinkedin: 'Ver LinkedIn',
       },
       contact: {
