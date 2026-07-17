@@ -51,14 +51,12 @@ async def get_observability_snapshot(
     except Exception:
         db_connected = False
 
-    # 2. Verificar Earth Engine (intentar inicializarlo si no lo está)
+    # 2. Verificar Earth Engine (no intentar inicializarlo en caliente para evitar bloqueos)
     import ee
     gee_ok = False
     try:
         if hasattr(ee, "data") and getattr(ee.data, "_connection", None) is not None:
             gee_ok = True
-        else:
-            gee_ok = init_gee()
     except Exception:
         gee_ok = False
 
