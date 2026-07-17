@@ -107,41 +107,7 @@ export const EarthCanvas: React.FC = () => {
       cloudsMaterial.needsUpdate = true
     })
 
-    // 9. Atmosphere Glow Mesh (using custom Fresnel shader)
-    const atmosphereGeometry = new THREE.SphereGeometry(2.1, 64, 64)
-    const atmosphereMaterial = new THREE.ShaderMaterial({
-      vertexShader: `
-        varying vec3 vNormal;
-        varying vec3 vViewPosition;
-        void main() {
-          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-          vNormal = normalize(normalMatrix * normal);
-          vViewPosition = -mvPosition.xyz;
-          gl_Position = projectionMatrix * mvPosition;
-        }
-      `,
-      fragmentShader: `
-        varying vec3 vNormal;
-        varying vec3 vViewPosition;
-        void main() {
-          vec3 normal = normalize(vNormal);
-          vec3 viewDir = normalize(vViewPosition);
-          
-          // Fresnel effect: corrected for BackSide to glow only at the edges
-          float intensity = pow(1.0 + dot(normal, viewDir), 6.0);
-          
-          // Beautiful glowing teal color matching the Geofeedback theme (#2dd4bf)
-          vec3 atmosphereColor = vec3(0.176, 0.831, 0.749);
-          gl_FragColor = vec4(atmosphereColor, 1.0) * intensity * 0.75;
-        }
-      `,
-      blending: THREE.AdditiveBlending,
-      side: THREE.BackSide,
-      transparent: true,
-    })
-    const atmosphereMesh = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial)
-    // Commented out because the atmosphere is superfluous (color azul/celeste around the Earth)
-    // scene.add(atmosphereMesh)
+    // 9. Atmosphere Glow Mesh removed (superfluous blue glow around the Earth)
 
     // 10. 3D Satellites and Laser Beams (Realistic PBR models)
     // Shared Geometries for Satellite Details
@@ -412,7 +378,6 @@ export const EarthCanvas: React.FC = () => {
       // Geometry disposals
       earthGeometry.dispose()
       cloudsGeometry.dispose()
-      atmosphereGeometry.dispose()
       bodyGeometry.dispose()
       instrumentGeometry.dispose()
       connectorGeometry.dispose()
@@ -427,7 +392,6 @@ export const EarthCanvas: React.FC = () => {
       // Material disposals
       earthMaterial.dispose()
       cloudsMaterial.dispose()
-      atmosphereMaterial.dispose()
       goldFoilMaterial.dispose()
       chromeMaterial.dispose()
       engineMaterial.dispose()
