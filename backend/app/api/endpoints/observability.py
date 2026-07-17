@@ -61,7 +61,7 @@ async def get_observability_snapshot(
         if isinstance(getattr(ee, "Initialize", None), Mock):
             ee.Initialize()
             gee_ok = True
-        elif hasattr(ee, "data") and getattr(ee.data, "_connection", None) is not None:
+        elif hasattr(ee, "data") and getattr(ee.data, "_credentials", None) is not None:
             gee_ok = True
     except Exception:
         gee_ok = False
