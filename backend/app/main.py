@@ -82,7 +82,7 @@ async def add_security_headers(request: Request, call_next):
         "script-src 'self' 'unsafe-inline' blob: https://maps.googleapis.com https://*.gstatic.com https://cdnjs.cloudflare.com; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; "
         "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com; "
-        "img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com https://earthengine.googleapis.com https://*.google.com; "
+        "img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com https://earthengine.googleapis.com https://*.google.com https://cdn.jsdelivr.net; "
         "connect-src 'self' data: https://*.googleapis.com https://*.gstatic.com https://earthengine.googleapis.com https://api.resend.com; "
         "worker-src 'self' blob:; "
         "frame-src 'self' https://*.google.com https://*.googleapis.com https://*.gstatic.com"
