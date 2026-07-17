@@ -97,7 +97,11 @@ const DemoSectionContent: React.FC = () => {
   } = useStore()
 
   const [searchQuery, setSearchQuery] = useState('')
+  const [suggestions, setSuggestions] = useState<any[]>([])
+  const [showSuggestions, setShowSuggestions] = useState(false)
   const [mapType, setMapType] = useState<'hybrid' | 'roadmap'>('hybrid')
+  const autocompleteServiceRef = useRef<any>(null)
+  const searchContainerRef = useRef<HTMLDivElement>(null)
   const [pollingStatus, setPollingStatus] = useState<string | null>(null)
   
   const markerRef = useRef<any>(null)
@@ -319,21 +323,69 @@ const DemoSectionContent: React.FC = () => {
     }
   }
 
-  // Geocode address search
+  // Initialize AutocompleteService lazily once Maps API is loaded
+  const getAutocompleteService = () => {
+    if (!autocompleteServiceRef.current && typeof google !== 'undefined' && google.maps?.places) {
+      autocompleteServiceRef.current = new google.maps.places.AutocompleteService()
+    }
+    return autocompleteServiceRef.current
+  }
+
+  // Handle search input changes and fetch suggestions
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value
+    setSearchQuery(val)
+    if (!val.trim() || val.length < 3) {
+      setSuggestions([])
+      setShowSuggestions(false)
+      return
+    }
+    const svc = getAutocompleteService()
+    if (!svc) return
+    svc.getPlacePredictions(
+      { input: val, componentRestrictions: { country: 'cl' }, types: ['geocode', 'establishment'] },
+      (predictions: any[], status: string) => {
+        if (status === 'OK' && predictions) {
+          setSuggestions(predictions)
+          setShowSuggestions(true)
+        } else {
+          setSuggestions([])
+          setShowSuggestions(false)
+        }
+      }
+    )
+  }
+
+  // Select a suggestion and resolve coordinates
+  const handleSelectSuggestion = (prediction: any) => {
+    setSearchQuery(prediction.description)
+    setSuggestions([])
+    setShowSuggestions(false)
+    const geocoder = new google.maps.Geocoder()
+    geocoder.geocode({ placeId: prediction.place_id }, (results: any[], status: string) => {
+      if (status === 'OK' && results && results[0]) {
+        const loc = results[0].geometry.location
+        const nextLoc = { lat: loc.lat(), lng: loc.lng(), name: prediction.description }
+        setSelectedLocation(nextLoc)
+        setLiveMetrics({ elevation: '...', aqi: '...', solar: '...', slope: '...' })
+        fetchLocalApiMetrics(nextLoc.lat, nextLoc.lng)
+      }
+    })
+  }
+
+  // Fallback: Geocode on form submit (for typed queries without selecting suggestion)
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!searchQuery.trim()) return
-
+    setSuggestions([])
+    setShowSuggestions(false)
     const geocoder = new google.maps.Geocoder()
     geocoder.geocode({ address: searchQuery }, (results: any[], status: string) => {
       if (status === 'OK' && results && results[0]) {
         const loc = results[0].geometry.location
         const placeName = results[0].formatted_address
         const nextLoc = { lat: loc.lat(), lng: loc.lng(), name: placeName }
-        
         setSelectedLocation(nextLoc)
-        
-        // Fetch Live Metrics Skeletons
         setLiveMetrics({ elevation: '...', aqi: '...', solar: '...', slope: '...' })
         fetchLocalApiMetrics(nextLoc.lat, nextLoc.lng)
       }
@@ -441,6 +493,7 @@ const DemoSectionContent: React.FC = () => {
               indices: result.data,
               chart_data: result.chart_data || [],
               map_layer: result.map_layer,
+              meta_date: result.meta?.date ?? 'Desconocida',
               status: 'success'
             }
 
@@ -470,7 +523,9 @@ const DemoSectionContent: React.FC = () => {
   // Fetch AI Gemini interpretation
   const fetchInterpretation = async (analysis: AnalysisResult) => {
     try {
-      const metaDate = analysis.map_layer?.url ? 'Imagen Sentinel-2 Reciente' : 'Desconocida'
+      const metaDate = analysis.meta_date && analysis.meta_date !== 'Desconocida'
+        ? analysis.meta_date
+        : (analysis.map_layer?.url ? 'Imagen Sentinel-2 Reciente' : 'Desconocida')
       const payload = {
         results: analysis.indices,
         approach: analysis.approach,
@@ -622,18 +677,37 @@ const DemoSectionContent: React.FC = () => {
                 <Search className="h-4 w-4 text-teal-400" />
                 {t('demo.searchLabel')}
               </h4>
-              <form onSubmit={handleSearchSubmit} className="flex gap-2">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={t('demo.searchPlaceholder')}
-                  className="input input-sm flex-1 bg-[#111318] border-white/10 focus:border-teal-500 rounded-lg text-xs text-white"
-                />
-                <button type="submit" className="btn btn-sm btn-ghost hover:bg-[#1e2028] border border-white/10 text-teal-400 rounded-lg">
-                  Buscar
-                </button>
-              </form>
+              <div ref={searchContainerRef} className="relative">
+                <form onSubmit={handleSearchSubmit} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={handleSearchChange}
+                    onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                    placeholder={t('demo.searchPlaceholder')}
+                    className="input input-sm flex-1 bg-[#111318] border-white/10 focus:border-teal-500 rounded-lg text-xs text-white"
+                    autoComplete="off"
+                  />
+                  <button type="submit" className="btn btn-sm btn-ghost hover:bg-[#1e2028] border border-white/10 text-teal-400 rounded-lg">
+                    <Search className="h-3.5 w-3.5" />
+                  </button>
+                </form>
+                {showSuggestions && suggestions.length > 0 && (
+                  <ul className="absolute z-50 top-full mt-1 w-full bg-[#16171d] border border-white/10 rounded-xl shadow-2xl overflow-hidden">
+                    {suggestions.map((s) => (
+                      <li
+                        key={s.place_id}
+                        onMouseDown={() => handleSelectSuggestion(s)}
+                        className="px-4 py-2.5 text-xs text-gray-200 hover:bg-teal-500/10 hover:text-teal-300 cursor-pointer flex items-start gap-2 border-b border-white/5 last:border-0 transition-colors"
+                      >
+                        <i className="fas fa-map-marker-alt text-teal-400 mt-0.5 flex-shrink-0" />
+                        <span className="leading-tight">{s.description}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
 
               {selectedLocation && (
                 <div className="bg-[#111318] border border-white/5 p-4 rounded-xl text-left flex flex-col gap-1">

@@ -25,7 +25,7 @@ export const Team: React.FC = () => {
               <User className="h-12 w-12" />
             </div>
             <h3 className="text-xl font-bold text-white mb-1 font-outfit">Consuelo Sebastian Silva</h3>
-            <p className="text-sm font-semibold text-teal-400 mb-6 uppercase tracking-wider">{t('team.roleCoFounder')}</p>
+            <p className="text-sm font-semibold text-teal-400 mb-6 uppercase tracking-wider">{t('team.roleCoFounderFem')}</p>
             <a
               href="https://www.linkedin.com/in/consuelo-sebastian-silva-b15407342/"
               target="_blank"

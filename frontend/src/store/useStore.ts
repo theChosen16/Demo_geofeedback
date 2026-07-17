@@ -28,6 +28,7 @@ export interface AnalysisResult {
   }[]
   interpreted_result?: string
   status?: string
+  meta_date?: string
   map_layer?: {
     url: string
   }
