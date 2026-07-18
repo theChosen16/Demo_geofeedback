@@ -53,13 +53,23 @@ app = FastAPI(
 # Configurar middleware de CORS (Fail-closed en producción si no hay orígenes)
 origins = settings.cors_origins
 if origins:
+    # Nunca combinar un origen comodín ("*") con credenciales: Starlette reflejaría
+    # cualquier Origin y emitiría Access-Control-Allow-Credentials: true, permitiendo
+    # peticiones autenticadas desde cualquier sitio. El comodín solo aplica en
+    # despliegues no productivos (dev / docker-compose sin ALLOWED_ORIGINS).
+    allow_credentials = origins != ["*"]
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
-        allow_credentials=True,
+        allow_credentials=allow_credentials,
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    if not allow_credentials:
+        logger.warning(
+            "CORS con origen comodín ('*'): credenciales cross-origin deshabilitadas. "
+            "Define ALLOWED_ORIGINS para habilitar peticiones autenticadas."
+        )
 else:
     logger.warning("CORS deshabilitado (Fail-closed en producción). Define ALLOWED_ORIGINS.")
 

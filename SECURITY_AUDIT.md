@@ -14,6 +14,72 @@
 | 27 de Junio, 2026 | ✅ RESUELTO — 5 hallazgos corregidos | Claude Code (auditoría arquitectónica de scripts, infra y backend) |
 | 4 de Julio, 2026 | ✅ RESUELTO — 2 hallazgos corregidos | Claude Code (auditoría de disponibilidad/DoS en runtime Flask) |
 | 11 de Julio, 2026 | ✅ RESUELTO — 2 hallazgos corregidos | Claude Code (auditoría de entrypoint de despliegue y superficie de lectura no autenticada) |
+| 18 de Julio, 2026 | ✅ RESUELTO — 3 hallazgos corregidos | Claude Code (auditoría arquitectónica del backend FastAPI actual) |
+
+---
+
+## Auditoría Julio 2026 — Backend FastAPI Actual (18 de Julio)
+
+**Fecha:** 18 de Julio, 2026
+**Estatus:** ✅ **RESUELTO — 3 hallazgos corregidos**
+
+Revisión arquitectónica del **runtime FastAPI en producción** (`backend/app/`: `main.py`,
+`core/security.py`, `core/config.py`, `api/endpoints/*`, `tasks/worker.py`, `db/*`) más el
+frontend React (`frontend/src/`), `Dockerfile`, `docker-compose.yml`, `railway.toml` y CI.
+
+Las auditorías previas de este documento describen la arquitectura **Flask** ya retirada
+(`api/app.py`, `api/start.sh`, `templates/index.html`, `static/js/app.js`). El backend
+vigente es **FastAPI + Celery**, por lo que esta auditoría revalida la postura sobre el
+código realmente desplegado. Se **reconfirmó** lo ya endurecido:
+
+- **Sin sinks XSS:** el frontend React no usa `dangerouslySetInnerHTML`; todo se renderiza
+  como texto vía JSX. El legacy `static/js/app.js` mantiene el patrón "escapar primero".
+- **Sin inyección SQL:** todas las lecturas usan el ORM de SQLModel/SQLAlchemy con
+  parámetros; las escrituras de coordenadas usan `WKTElement` con SRID fijo.
+- **Sin inyección de cabeceras de email:** el endpoint `/contact` valida el remitente con
+  `EmailStr` y solo lo coloca en el campo JSON `reply_to` de la API de Resend; `to` es fijo.
+- **CORS fail-closed en producción, cabeceras de seguridad + CSP, secretos fuera del repo,
+  anonimización de IP con HMAC-SHA256, `/observability` con token en tiempo constante**, y
+  **rate limiting** en `/analyze`, `/interpret`, `/chat`, `/contact`, `/stats` y `/visit`.
+- **Timeout wall-clock en GEE:** el residual de la auditoría del 11 de Julio ya está
+  resuelto en `tasks/worker.py` (`get_info_with_timeout` con `ThreadPoolExecutor`).
+
+Se hallaron **tres vectores residuales**, todos de agotamiento de recursos / configuración.
+
+### Hallazgos y Correcciones
+
+#### 🟠 MEDIO — `GET /api/v1/analyze/status/{task_id}` sin rate limiting
+
+| Aspecto | Detalle |
+|---------|---------|
+| **Archivo** | `backend/app/api/endpoints/analyze.py` |
+| **Problema** | Único endpoint público **sin** limitador. Un cliente anónimo podía sondear/enumerar el backend de resultados de Celery/Redis de forma ilimitada (el frontend lo consulta cada 2 s durante cada análisis). Misma clase de DoS de lectura no autenticada que ya se corrigió para `/stats` el 11 de Julio. |
+| **Impacto** | Agotamiento de recursos de Redis/Celery y enumeración de `task_id` mediante peticiones baratas y anónimas. |
+| **Corrección** | Nuevo `status_limiter` (90/min/IP, reutilizando la clase `RateLimiter` Redis-first con fallback en memoria). 90/min deja holgura para varios análisis concurrentes por IP (~30 req/min cada uno) sin degradar el sondeo legítimo. Cubierto por `AnalyzeStatusRateLimitTests`. |
+
+#### 🟠 MEDIO — CORS: origen comodín combinado con credenciales
+
+| Aspecto | Detalle |
+|---------|---------|
+| **Archivo** | `backend/app/main.py` |
+| **Problema** | El middleware CORS se registraba siempre con `allow_credentials=True`. En despliegues **no productivos** sin `ALLOWED_ORIGINS` (dev y el `docker-compose.yml` incluido), `cors_origins` devuelve `["*"]`; Starlette entonces **refleja cualquier `Origin`** y emite `Access-Control-Allow-Credentials: true`, habilitando peticiones autenticadas cross-origin desde cualquier sitio. En Railway la postura fail-closed ya lo impedía, pero el path de docker-compose es un despliegue soportado y alcanzable. |
+| **Impacto** | Lectura cross-origin con credenciales desde orígenes arbitrarios en despliegues self-hosted/dev. |
+| **Corrección** | `allow_credentials` se deriva de los orígenes: con comodín (`["*"]`) las credenciales quedan deshabilitadas (Starlette responde `Access-Control-Allow-Origin: *` sin reflejar el `Origin`). Con `ALLOWED_ORIGINS` explícito el comportamiento no cambia. Cubierto por `CorsCredentialedWildcardTests`. |
+
+#### 🟡 BAJO — `log_event` hasheaba innecesariamente cada registro estructurado a stdout
+
+| Aspecto | Detalle |
+|---------|---------|
+| **Archivo** | `backend/app/core/security.py` |
+| **Problema** | `log_event` ejecutaba `print(hashlib.sha256(str(log_data)...).hexdigest()[:0], ...)` — un "dummy flush" que calculaba un SHA-256 completo del registro (incluyendo IP ya anonimizada y metadatos) para luego truncarlo a cadena vacía en cada evento. Trabajo criptográfico muerto y confuso en un camino caliente. |
+| **Impacto** | Desperdicio de CPU por evento y ruido de mantenibilidad (código engañoso en el módulo de seguridad). |
+| **Corrección** | Reemplazado por `print(import_json_dumps(log_data), flush=True)`, que emite el registro como JSON de una sola línea (formato que Railway/Loki parsean directamente) preservando el flush explícito a stdout. |
+
+### Recomendaciones residuales (no corregidas — mayor riesgo de regresión o fuera de alcance de código)
+
+- **Confianza en `X-Forwarded-For`.** `get_client_ip` toma la última IP del encabezado, correcto tras un único proxy de confianza (el edge de Railway lo antepone). En un despliegue sin proxy (docker-compose expuesto directamente) el encabezado es controlable por el cliente y permitiría evadir el rate limiting rotándolo. Conviene hacer configurable el número de saltos de proxy de confianza si se soporta ese modo de despliegue.
+- **`docker-compose.yml` con `POSTGRES_PASSWORD: password123` e `IP_HASH_SALT` de desarrollo.** Aceptable para desarrollo local, pero debería documentarse que no se use en despliegues accesibles.
+- **CSP `script-src 'unsafe-inline'`.** Requiere nonces/refactor del bootstrap de Google Maps para eliminarse; ya documentado.
 
 ---
 

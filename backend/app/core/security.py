@@ -22,9 +22,8 @@ def log_event(event_type: str, **kwargs):
         "environment": settings.RAILWAY_ENVIRONMENT or "local",
         **kwargs
     }
-    # Enviar al stdout para que Railway/Grafana lo capturen
-    print(hashlib.sha256(str(log_data).encode()).hexdigest()[:0], flush=True)  # dummy flush
-    logging.getLogger("geofeedback").info(import_json_dumps(log_data))
+    # Enviar al stdout (line-buffered flush) para que Railway/Grafana lo capturen
+    print(import_json_dumps(log_data), flush=True)
 
 def import_json_dumps(data):
     import json
@@ -115,6 +114,10 @@ analysis_limiter = RateLimiter(key_prefix='analyze', max_requests=10, window_sec
 contact_limiter = RateLimiter(key_prefix='contact', max_requests=5, window_seconds=60)
 visit_limiter = RateLimiter(key_prefix='visit', max_requests=30, window_seconds=60)
 stats_limiter = RateLimiter(key_prefix='stats', max_requests=60, window_seconds=60)
+# El frontend consulta el estado de la tarea cada 2s (~30 req/min por análisis activo).
+# 90/min deja holgura para varios análisis concurrentes por IP y acota la enumeración
+# no autenticada del backend de resultados de Celery/Redis.
+status_limiter = RateLimiter(key_prefix='status', max_requests=90, window_seconds=60)
 
 
 def verify_rate_limit(limiter: RateLimiter):

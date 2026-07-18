@@ -2,7 +2,7 @@ from fastapi import APIRouter, Request, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from celery.result import AsyncResult
 
-from app.core.security import verify_rate_limit, analysis_limiter
+from app.core.security import verify_rate_limit, analysis_limiter, status_limiter
 from app.tasks.worker import process_gee_analysis
 from app.tasks.celery_app import celery_app
 
@@ -52,7 +52,7 @@ async def trigger_analysis(data: AnalyzeRequest):
     }
 
 
-@router.get("/analyze/status/{task_id}")
+@router.get("/analyze/status/{task_id}", dependencies=[Depends(verify_rate_limit(status_limiter))])
 async def get_analysis_status(task_id: str):
     """
     Consulta el estado de una tarea de análisis satelital encolada.
