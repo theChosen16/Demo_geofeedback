@@ -61,9 +61,9 @@ interface AppState {
   selectedRadius: number
   setSelectedRadius: (rad: number) => void
 
-  // Live sidebar metrics
+  // Live sidebar metrics (partial updates merge over the current values)
   liveMetrics: LiveMetrics | null
-  setLiveMetrics: (metrics: LiveMetrics | null) => void
+  setLiveMetrics: (metrics: Partial<LiveMetrics> | null) => void
 
   // Analysis state
   isAnalyzing: boolean
@@ -106,7 +106,17 @@ export const useStore = create<AppState>((set) => ({
   setSelectedRadius: (rad) => set({ selectedRadius: rad }),
 
   liveMetrics: null,
-  setLiveMetrics: (metrics) => set({ liveMetrics: metrics }),
+  setLiveMetrics: (metrics) =>
+    set((state) => ({
+      liveMetrics: metrics && {
+        elevation: 'N/D',
+        aqi: 'N/D',
+        solar: 'N/D',
+        slope: 'N/D',
+        ...state.liveMetrics,
+        ...metrics,
+      },
+    })),
 
   isAnalyzing: false,
   setIsAnalyzing: (status) => set({ isAnalyzing: status }),
