@@ -22,13 +22,14 @@ def init_gee() -> bool:
             logger.info("Iniciando GEE desde variable de entorno...")
             try:
                 creds_dict = json.loads(env_creds_json)
+                project_id = creds_dict.get('project_id')
                 credentials = service_account.Credentials.from_service_account_info(creds_dict)
                 scoped_credentials = credentials.with_scopes([
                     'https://www.googleapis.com/auth/cloud-platform',
                     'https://www.googleapis.com/auth/earthengine'
                 ])
-                ee.Initialize(credentials=scoped_credentials)
-                logger.info("GEE inicializado correctamente desde ENV VAR.")
+                ee.Initialize(credentials=scoped_credentials, project=project_id)
+                logger.info(f"GEE inicializado correctamente desde ENV VAR (Proyecto: {project_id}).")
                 return True
             except json.JSONDecodeError:
                 logger.error("Error: La variable GOOGLE_APPLICATION_CREDENTIALS_JSON no es un JSON válido.")
@@ -45,14 +46,20 @@ def init_gee() -> bool:
         for key_path in key_paths:
             if os.path.exists(key_path):
                 logger.info(f"Iniciando GEE con archivo de clave: {key_path}")
-                credentials = service_account.Credentials.from_service_account_file(key_path)
-                scoped_credentials = credentials.with_scopes([
-                    'https://www.googleapis.com/auth/cloud-platform',
-                    'https://www.googleapis.com/auth/earthengine'
-                ])
-                ee.Initialize(credentials=scoped_credentials)
-                logger.info("GEE inicializado correctamente con Service Account (Archivo).")
-                return True
+                try:
+                    with open(key_path, 'r', encoding='utf-8') as f:
+                        creds_dict = json.load(f)
+                    project_id = creds_dict.get('project_id')
+                    credentials = service_account.Credentials.from_service_account_info(creds_dict)
+                    scoped_credentials = credentials.with_scopes([
+                        'https://www.googleapis.com/auth/cloud-platform',
+                        'https://www.googleapis.com/auth/earthengine'
+                    ])
+                    ee.Initialize(credentials=scoped_credentials, project=project_id)
+                    logger.info(f"GEE inicializado correctamente con Service Account (Archivo: {key_path}, Proyecto: {project_id}).")
+                    return True
+                except Exception as e:
+                    logger.error(f"Error leyendo o usando archivo de clave {key_path}: {e}")
         
         # 3. Fallback a credenciales por defecto
         logger.info("No se encontraron credenciales explícitas, intentando default...")
