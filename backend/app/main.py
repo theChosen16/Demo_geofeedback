@@ -21,6 +21,19 @@ from app.api.endpoints.contact import router as contact_router
 
 logger = logging.getLogger(__name__)
 
+
+def resolve_cors_allow_credentials(origins: list[str]) -> bool:
+    """Decide si CORS puede habilitar credenciales para la lista de orígenes dada.
+
+    Debe usar pertenencia ("*" in origins), no igualdad de listas: Starlette decide
+    su propio allow_all_origins de la misma forma, así que una lista mixta como
+    ["https://geofeedback.cl", "*"] debe tratarse igual que ["*"] — de lo contrario
+    Starlette reflejaría cualquier Origin entrante junto con
+    Access-Control-Allow-Credentials: true.
+    """
+    return "*" not in origins
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Maneja el ciclo de vida de la aplicación: inicialización y apagado."""
@@ -53,11 +66,9 @@ app = FastAPI(
 # Configurar middleware de CORS (Fail-closed en producción si no hay orígenes)
 origins = settings.cors_origins
 if origins:
-    # Nunca combinar un origen comodín ("*") con credenciales: Starlette reflejaría
-    # cualquier Origin y emitiría Access-Control-Allow-Credentials: true, permitiendo
-    # peticiones autenticadas desde cualquier sitio. El comodín solo aplica en
-    # despliegues no productivos (dev / docker-compose sin ALLOWED_ORIGINS).
-    allow_credentials = origins != ["*"]
+    # Nunca combinar un origen comodín ("*") con credenciales: ver
+    # resolve_cors_allow_credentials() para el razonamiento completo.
+    allow_credentials = resolve_cors_allow_credentials(origins)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,

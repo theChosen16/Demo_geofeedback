@@ -53,9 +53,10 @@ Se hallaron **tres vectores residuales**, todos de agotamiento de recursos / con
 | Aspecto | Detalle |
 |---------|---------|
 | **Archivo** | `backend/app/api/endpoints/analyze.py` |
-| **Problema** | Único endpoint público **sin** limitador. Un cliente anónimo podía sondear/enumerar el backend de resultados de Celery/Redis de forma ilimitada (el frontend lo consulta cada 2 s durante cada análisis). Misma clase de DoS de lectura no autenticada que ya se corrigió para `/stats` el 11 de Julio. |
-| **Impacto** | Agotamiento de recursos de Redis/Celery y enumeración de `task_id` mediante peticiones baratas y anónimas. |
+| **Problema** | Único endpoint público **sin** limitador. Un cliente anónimo podía sondear el backend de resultados de Celery/Redis de forma ilimitada (el frontend lo consulta cada 2 s durante cada análisis). Misma clase de DoS de lectura no autenticada que ya se corrigió para `/stats` el 11 de Julio. |
+| **Impacto** | Agotamiento de recursos de Redis/Celery por peticiones baratas y anónimas. |
 | **Corrección** | Nuevo `status_limiter` (90/min/IP, reutilizando la clase `RateLimiter` Redis-first con fallback en memoria). 90/min deja holgura para varios análisis concurrentes por IP (~30 req/min cada uno) sin degradar el sondeo legítimo. Cubierto por `AnalyzeStatusRateLimitTests`. |
+| **Fuera de alcance (a propósito)** | Este límite mitiga **agotamiento de recursos**, no autorización: `task_id` es un uuid4 de Celery (~122 bits de entropía, no derivable de lat/lng/approach), así que la fuerza bruta ya era inviable con o sin límite. El endpoint sigue sin verificar quién originó la tarea — quien obtenga un `task_id` válido (filtrado por logs, `Referer`, o un futuro enlace "compartir resultados" en la URL) puede leer ese análisis completo. Es el modelo de acceso aceptado para una demo pública sin sesiones de usuario (el `task_id` funciona como bearer-token no autenticado); documentado explícitamente en `backend/app/core/security.py` junto a `status_limiter` para que quede claro que un cambio futuro que reduzca esa entropía o exponga el `task_id` en una ruta del SPA rompería esta invariante. |
 
 #### 🟠 MEDIO — CORS: origen comodín combinado con credenciales
 
@@ -64,7 +65,7 @@ Se hallaron **tres vectores residuales**, todos de agotamiento de recursos / con
 | **Archivo** | `backend/app/main.py` |
 | **Problema** | El middleware CORS se registraba siempre con `allow_credentials=True`. En despliegues **no productivos** sin `ALLOWED_ORIGINS` (dev y el `docker-compose.yml` incluido), `cors_origins` devuelve `["*"]`; Starlette entonces **refleja cualquier `Origin`** y emite `Access-Control-Allow-Credentials: true`, habilitando peticiones autenticadas cross-origin desde cualquier sitio. En Railway la postura fail-closed ya lo impedía, pero el path de docker-compose es un despliegue soportado y alcanzable. |
 | **Impacto** | Lectura cross-origin con credenciales desde orígenes arbitrarios en despliegues self-hosted/dev. |
-| **Corrección** | `allow_credentials` se deriva de los orígenes: con comodín (`["*"]`) las credenciales quedan deshabilitadas (Starlette responde `Access-Control-Allow-Origin: *` sin reflejar el `Origin`). Con `ALLOWED_ORIGINS` explícito el comportamiento no cambia. Cubierto por `CorsCredentialedWildcardTests`. |
+| **Corrección** | `allow_credentials` se deriva de los orígenes vía `resolve_cors_allow_credentials()`: con comodín las credenciales quedan deshabilitadas (Starlette responde `Access-Control-Allow-Origin: *` sin reflejar el `Origin`). Con `ALLOWED_ORIGINS` explícito el comportamiento no cambia. La comprobación usa **pertenencia** (`"*" in origins`), no igualdad de listas — una revisión adversarial detectó que la primera versión (`origins != ["*"]`) no cubría una lista mixta como `["https://geofeedback.cl", "*"]` (p.ej. `ALLOWED_ORIGINS` mal configurado), donde Starlette igual trata el comodín como wildcard total y habría colado `allow_credentials=True`. Cubierto por `CorsCredentialedWildcardTests` (integración) y `ResolveCorsAllowCredentialsTests` (las 3 ramas de la función pura, incluida la regresión de lista mixta). |
 
 #### 🟡 BAJO — `log_event` hasheaba innecesariamente cada registro estructurado a stdout
 

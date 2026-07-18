@@ -115,8 +115,17 @@ contact_limiter = RateLimiter(key_prefix='contact', max_requests=5, window_secon
 visit_limiter = RateLimiter(key_prefix='visit', max_requests=30, window_seconds=60)
 stats_limiter = RateLimiter(key_prefix='stats', max_requests=60, window_seconds=60)
 # El frontend consulta el estado de la tarea cada 2s (~30 req/min por análisis activo).
-# 90/min deja holgura para varios análisis concurrentes por IP y acota la enumeración
-# no autenticada del backend de resultados de Celery/Redis.
+# 90/min deja holgura para varios análisis concurrentes por IP y acota el agotamiento
+# de recursos (DoS) de un cliente sondeando el backend de resultados de Celery/Redis.
+#
+# Nota de alcance: esto NO añade una verificación de "ownership" del task_id, ni
+# pretende hacerlo. Con ~122 bits de entropía (uuid4 por defecto de Celery, ver
+# app/tasks/worker.py) la fuerza bruta ya era inviable sin este límite. El único
+# control de acceso real de GET /analyze/status/{task_id} sigue siendo la propia
+# impredecibilidad del task_id: quien lo obtenga (p.ej. filtrado por logs, Referer,
+# o un futuro enlace "compartir resultados" en la URL) puede leer ese análisis. Si
+# algún día se reduce esa entropía o el task_id se expone en una ruta/URL del SPA,
+# esta invariante se rompe y pasa a ser una exposición de datos explotable.
 status_limiter = RateLimiter(key_prefix='status', max_requests=90, window_seconds=60)
 
 

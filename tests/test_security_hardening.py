@@ -16,7 +16,7 @@ if BACKEND_DIR not in sys.path:
     sys.path.insert(0, BACKEND_DIR)
 
 from fastapi.testclient import TestClient
-from app.main import app
+from app.main import app, resolve_cors_allow_credentials
 import app.core.security as security_module
 
 
@@ -39,7 +39,15 @@ class AnalyzeStatusRateLimitTests(unittest.TestCase):
         security_module.status_limiter._requests.clear()
 
         try:
-            with patch("app.api.endpoints.analyze.AsyncResult", return_value=fake_result):
+            # RateLimiter.is_allowed() prefiere Redis cuando redis_client está
+            # inicializado (docker-compose.yml lo define para el backend) y solo
+            # cae al diccionario en memoria si redis_client es None. _requests.clear()
+            # de arriba solo resetea el fallback en memoria: si el proceso que corre
+            # este test tiene REDIS_URL configurado, el contador real vive en Redis
+            # y queda sin resetear, haciendo el test flaky/falso-negativo en una
+            # segunda corrida dentro de la ventana de 60s. Forzamos memoria aquí.
+            with patch.object(security_module, "redis_client", None), \
+                 patch("app.api.endpoints.analyze.AsyncResult", return_value=fake_result):
                 responses = [
                     self.client.get("/api/v1/analyze/status/task-abc") for _ in range(6)
                 ]
@@ -81,6 +89,36 @@ class CorsCredentialedWildcardTests(unittest.TestCase):
         self.assertEqual(acao, "*")
         # y jamás se conceden credenciales cross-origin
         self.assertIsNone(acac)
+
+
+class ResolveCorsAllowCredentialsTests(unittest.TestCase):
+    """Cubre las ramas de resolve_cors_allow_credentials(), incluida la que el test
+    de arriba (solo wildcard puro) no ejercita: la rama de producción con dominios
+    explícitos, y la regresión de lista mixta ["dominio", "*"].
+    """
+
+    def test_wildcard_only_disables_credentials(self):
+        self.assertFalse(resolve_cors_allow_credentials(["*"]))
+
+    def test_explicit_domain_list_allows_credentials(self):
+        # Configuración real de producción (ALLOWED_ORIGINS=https://geofeedback.cl).
+        self.assertTrue(resolve_cors_allow_credentials(["https://geofeedback.cl"]))
+        self.assertTrue(resolve_cors_allow_credentials(
+            ["https://geofeedback.cl", "https://www.geofeedback.cl"]
+        ))
+
+    def test_mixed_domain_and_wildcard_disables_credentials(self):
+        # Regresión: Starlette decide allow_all_origins por pertenencia ("*" in
+        # allow_origins), no por igualdad de listas. Una lista mixta como esta
+        # (p.ej. ALLOWED_ORIGINS="https://geofeedback.cl,*" mal configurado) debe
+        # tratarse igual que ["*"] — de lo contrario Starlette reflejaría cualquier
+        # Origin entrante junto con Access-Control-Allow-Credentials: true.
+        self.assertFalse(
+            resolve_cors_allow_credentials(["https://geofeedback.cl", "*"])
+        )
+        self.assertFalse(
+            resolve_cors_allow_credentials(["*", "https://geofeedback.cl"])
+        )
 
 
 if __name__ == "__main__":
