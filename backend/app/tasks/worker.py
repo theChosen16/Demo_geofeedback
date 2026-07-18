@@ -1,6 +1,7 @@
 import math
 import datetime
 import logging
+import concurrent.futures
 import ee
 from celery.signals import worker_process_init
 from sqlmodel import Session
@@ -12,6 +13,18 @@ from app.db.session import engine
 from app.db.models import ApiUsageLog
 
 logger = logging.getLogger(__name__)
+
+# Executor persistente para llamadas a GEE con timeout wall-clock
+_GEE_EXECUTOR = concurrent.futures.ThreadPoolExecutor(max_workers=10)
+
+def get_info_with_timeout(ee_object, timeout=30):
+    """Ejecuta getInfo() de Earth Engine en un hilo con límite de tiempo wall-clock."""
+    future = _GEE_EXECUTOR.submit(ee_object.getInfo)
+    try:
+        return future.result(timeout=timeout)
+    except concurrent.futures.TimeoutError as e:
+        logger.error(f"Operación GEE.getInfo() excedió el timeout de {timeout}s")
+        raise TimeoutError(f"Google Earth Engine operation timed out after {timeout} seconds") from e
 
 # Registrar la inicialización de Earth Engine al iniciar el worker process de Celery.
 @worker_process_init.connect
@@ -37,7 +50,7 @@ def get_sentinel2_image(roi):
             
     try:
         # Check size of collection safely
-        if col.size().getInfo() == 0:
+        if get_info_with_timeout(col.size(), timeout=15) == 0:
             return None
     except Exception as e:
         logger.error(f"Error checking GEE collection size: {e}")
@@ -103,88 +116,98 @@ def process_gee_analysis(self, lat: float, lng: float, radius: int, approach: st
         mean_reducer = ee.Reducer.mean()
         results = {}
         
-        # Lógica por Enfoque (Migrada exactamente del legacy app.py)
+        # Determinar la imagen y escala para la reducción de región según el enfoque
+        stats_image = None
+        scale = 20
+        
         if approach == 'mining':
-            stats = s2_indices.select(['NDVI', 'NDWI']).addBands(slope).reduceRegion(
-                reducer=mean_reducer, geometry=roi, scale=20, maxPixels=1e9
-            ).getInfo()
+            stats_image = s2_indices.select(['NDVI', 'NDWI']).addBands(slope)
+            scale = 20
+        elif approach == 'agriculture':
+            stats_image = s2_indices.select(['NDVI', 'NDMI'])
+            scale = 20
+        elif approach == 'energy':
+            stats_image = elevation.addBands(slope)
+            scale = 30
+        elif approach == 'real-estate':
+            stats_image = s2_indices.select(['NDWI']).addBands(slope)
+            scale = 20
+        elif approach == 'flood-risk':
+            stats_image = s2_indices.select(['NDWI']).addBands(elevation)
+            scale = 30
+        elif approach == 'water-management':
+            stats_image = s2_indices.select(['NDWI', 'NDMI'])
+            scale = 20
+        elif approach == 'environmental':
+            stats_image = s2_indices.select(['NDVI'])
+            scale = 20
+        elif approach == 'land-planning':
+            stats_image = slope
+            scale = 30
+        elif approach == 'fire-risk':
+            stats_image = s2_indices.select(['NDVI', 'NDMI']).addBands(slope)
+            scale = 20
+
+        # Ejecutar la reducción con timeout wall-clock
+        if stats_image is not None:
+            stats = get_info_with_timeout(
+                stats_image.reduceRegion(
+                    reducer=mean_reducer,
+                    geometry=roi,
+                    scale=scale,
+                    maxPixels=1e9
+                ),
+                timeout=30
+            )
+        else:
+            stats = {}
+
+        # Mapear resultados según el enfoque
+        if approach == 'mining':
             results = {
                 "Vegetación Circundante (NDVI)": f"{stats.get('NDVI', 0):.2f}",
                 "Índice de Agua (NDWI)": f"{stats.get('NDWI', 0):.2f}",
                 "Pendiente Promedio (°)": f"{stats.get('slope', 0):.1f}"
             }
-            
         elif approach == 'agriculture':
-            stats = s2_indices.select(['NDVI', 'NDMI']).reduceRegion(
-                reducer=mean_reducer, geometry=roi, scale=20, maxPixels=1e9
-            ).getInfo()
             results = {
                 "Vigor Vegetal (NDVI)": f"{stats.get('NDVI', 0):.2f}",
                 "Humedad Vegetación (NDMI)": f"{stats.get('NDMI', 0):.2f}",
                 "Estado": "Saludable" if stats.get('NDVI', 0) > 0.4 else "Atención Requerida"
             }
-            
         elif approach == 'energy':
-            stats = elevation.addBands(slope).reduceRegion(
-                reducer=mean_reducer, geometry=roi, scale=30, maxPixels=1e9
-            ).getInfo()
             avg_slope = stats.get('slope', 0)
             results = {
                 "Elevación Promedio (msnm)": f"{stats.get('elevation', 0):.0f}",
                 "Pendiente Promedio (°)": f"{avg_slope:.1f}",
                 "Aptitud Solar (Topografía)": "Alta" if avg_slope < 10 else "Media" if avg_slope < 20 else "Baja"
             }
-
         elif approach == 'real-estate':
-            stats = s2_indices.select(['NDWI']).addBands(slope).reduceRegion(
-                reducer=mean_reducer, geometry=roi, scale=20, maxPixels=1e9
-            ).getInfo()
             avg_slope = stats.get('slope', 0)
             results = {
                 "Pendiente Terreno (°)": f"{avg_slope:.1f}",
                 "Índice Agua (NDWI)": f"{stats.get('NDWI', 0):.2f}",
                 "Constructibilidad (Topo)": "Óptima" if avg_slope < 5 else "Buena" if avg_slope < 15 else "Compleja"
             }
-            
         elif approach == 'flood-risk':
-            stats = s2_indices.select(['NDWI']).addBands(elevation).reduceRegion(
-                reducer=mean_reducer, geometry=roi, scale=30, maxPixels=1e9
-            ).getInfo()
             results = {
                 "NDWI Promedio": f"{stats.get('NDWI', 0):.2f}", 
                 "Elevación Media": f"{stats.get('elevation', 0):.0f} m"
             }
-
         elif approach == 'water-management':
-            stats = s2_indices.select(['NDWI', 'NDMI']).reduceRegion(
-                reducer=mean_reducer, geometry=roi, scale=20, maxPixels=1e9
-            ).getInfo()
             results = {
                 "Cuerpos de Agua (NDWI)": f"{stats.get('NDWI', 0):.2f}", 
                 "Humedad Suelo/Veg (NDMI)": f"{stats.get('NDMI', 0):.2f}"
             }
-
         elif approach == 'environmental':
-            stats = s2_indices.select(['NDVI']).reduceRegion(
-                reducer=mean_reducer, geometry=roi, scale=20, maxPixels=1e9
-            ).getInfo()
             results = {
                 "Cobertura Vegetal (NDVI)": f"{stats.get('NDVI', 0):.2f}"
             }
-             
         elif approach == 'land-planning':
-            stats = slope.reduceRegion(
-                reducer=mean_reducer, geometry=roi, scale=30, maxPixels=1e9
-            ).getInfo()
             results = {
                 "Pendiente Promedio": f"{stats.get('slope', 0):.1f}°"
             }
-
         elif approach == 'fire-risk':
-            stats = s2_indices.select(['NDVI', 'NDMI']).addBands(slope).reduceRegion(
-                reducer=mean_reducer, geometry=roi, scale=20, maxPixels=1e9
-            ).getInfo()
-            
             ndvi = stats.get('NDVI', 0)
             ndmi = stats.get('NDMI', 0)
             avg_slope = stats.get('slope', 0)
@@ -244,9 +267,12 @@ def process_gee_analysis(self, lat: float, lng: float, radius: int, approach: st
         tile_url = map_id_dict['tile_fetcher'].url_format
         area_m2 = int(math.pi * radius * radius)
 
-        # Obtener fecha de la imagen
+        # Obtener fecha de la imagen con timeout
         try:
-            image_date = ee.Date(s2_image.get('system:time_start')).format('YYYY-MM-dd').getInfo()
+            image_date = get_info_with_timeout(
+                ee.Date(s2_image.get('system:time_start')).format('YYYY-MM-dd'),
+                timeout=15
+            )
         except Exception as e:
             logger.error(f"Error getting image date from GEE: {e}")
             image_date = datetime.datetime.now().strftime("%Y-%m-%d")
