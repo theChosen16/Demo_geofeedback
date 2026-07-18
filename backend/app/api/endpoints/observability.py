@@ -63,6 +63,13 @@ async def get_observability_snapshot(
             gee_ok = True
         elif hasattr(ee, "data") and getattr(ee.data, "_credentials", None) is not None:
             gee_ok = True
+        elif hasattr(ee, "data") and hasattr(ee.data, "_state"):
+            try:
+                state = ee.data._state.get_state()
+                if state is not None and getattr(state, "credentials", None) is not None:
+                    gee_ok = True
+            except Exception:
+                pass
     except Exception:
         gee_ok = False
 
