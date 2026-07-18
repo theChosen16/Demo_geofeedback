@@ -48,6 +48,10 @@ Thumbs.db
 service-account-key.json
 api/service-account-key.json
 
+# Git backup bundles (local backups, never commit)
+backup_full_*.bundle
+*.bundle
+
 
 #Ignore vscode AI rules
 .github\instructions\codacy.instructions.md
