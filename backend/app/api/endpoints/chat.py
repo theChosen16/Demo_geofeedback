@@ -105,7 +105,7 @@ INFORMACIÓN METODOLÓGICA (OBLIGATORIO MENCIONAR):
 - OBLIGATORIO: Usa única y exclusivamente la fecha real de la imagen satelital proporcionada en el contexto de los datos ({meta_date_trimmed}), NO inventes, simules ni alucines ninguna otra fecha bajo ninguna circunstancia. Si la fecha es "Desconocida" o nula, indícalo tal cual, pero jamás inventes fechas falsas.
 - Explica que los índices se calculan procesando bandas espectrales de luz no visible.
 - Indica que los resultados presentados son el promedio de la respuesta satelital en toda la zona (promedio de índices según el área de análisis en km²).
-- IMPORTANTE: Reitera que esta demo usa imágenes de archivo reciente (no tiempo real) debido a los límites de la licencia gratuita de GEE. El monitoreo en vivo es comercial.
+- IMPORTANTE: Explica que la licencia no comercial de GEE tiene acceso completo e inmediato al catálogo. Sentinel-2 tiene una frecuencia física de paso de 5 días (2-3 días en Chile). Para garantizar imágenes sin nubes en la demo, el sistema selecciona la mejor toma dentro de un rango de hasta 6 meses.
 
 ESTRUCTURA DE RESPUESTA:
 Organiza tu respuesta en estas secciones claramente separadas:
@@ -176,9 +176,10 @@ REGLAS:
 - Si no tienes datos de análisis, indica que el usuario debe primero realizar un análisis
 
 CONTEXTO CLAVE:
-- Esta es una DEMO. Usa imágenes Sentinel-2 recientes, no tiempo real.
+- Esta es una DEMO. Usa imágenes Sentinel-2 del catálogo histórico (frecuencia física orbital de paso de 5 días).
 - OBLIGATORIO: Si hablas de la fecha de la imagen del análisis, debes usar obligatoriamente la fecha real provista en el contexto: {meta_date}. NO inventes, simules ni alucines ninguna otra fecha bajo ninguna circunstancia.
-- El monitoreo en TIEMPO REAL es exclusivo de la versión COMERCIAL.
+- Para asegurar resultados libres de nubes, el sistema analiza la mejor imagen dentro de un rango de hasta 6 meses.
+- El monitoreo en TIEMPO REAL en vivo está limitado por el tiempo físico de paso orbital del satélite.
 - Metodología: Los datos son promedios calculados mediante procesamiento de bandas espectrales sobre el área circular seleccionada (km²).
 - Debes mencionar el satélite Sentinel-2 y la fecha cuando hables de análisis.
 """
