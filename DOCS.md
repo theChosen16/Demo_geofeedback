@@ -65,7 +65,7 @@ GeoFeedback Chile es una plataforma de inteligencia territorial que transforma d
 - **Modalidad:** Comercial (mediante suscripción GeoFeedback) y Research
 - **Capacidades:** Earth Engine Compute Units (EECU) gestionadas
 - **Índices:** NDVI, NDWI, NDMI
-- **Datos terreno:** SRTM v4 (elevación, pendiente)
+- **Datos terreno:** Copernicus DEM GLO-30 (elevación, pendiente)
 - **Autenticación:** Service Account JSON
 
 ### Maps JavaScript API
