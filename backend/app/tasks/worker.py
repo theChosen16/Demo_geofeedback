@@ -75,8 +75,8 @@ def process_gee_analysis(self, lat: float, lng: float, radius: int, approach: st
         roi = point.buffer(radius)
         
         # Datos Base
-        srtm = ee.Image('CGIAR/SRTM90_V4')
-        elevation = srtm.select('elevation')
+        glo30_col = ee.ImageCollection('COPERNICUS/DEM/GLO30_2024_1')
+        elevation = glo30_col.select('DEM').mosaic().setDefaultProjection(glo30_col.first().projection()).rename('elevation')
         slope = ee.Terrain.slope(elevation)
         
         s2_image = get_sentinel2_image(roi)
@@ -125,8 +125,8 @@ def process_gee_analysis(self, lat: float, lng: float, radius: int, approach: st
             }
             
         elif approach == 'energy':
-            stats = srtm.select('elevation').addBands(slope).reduceRegion(
-                reducer=mean_reducer, geometry=roi, scale=90, maxPixels=1e9
+            stats = elevation.addBands(slope).reduceRegion(
+                reducer=mean_reducer, geometry=roi, scale=30, maxPixels=1e9
             ).getInfo()
             avg_slope = stats.get('slope', 0)
             results = {
@@ -174,7 +174,7 @@ def process_gee_analysis(self, lat: float, lng: float, radius: int, approach: st
              
         elif approach == 'land-planning':
             stats = slope.reduceRegion(
-                reducer=mean_reducer, geometry=roi, scale=90, maxPixels=1e9
+                reducer=mean_reducer, geometry=roi, scale=30, maxPixels=1e9
             ).getInfo()
             results = {
                 "Pendiente Promedio": f"{stats.get('slope', 0):.1f}°"
@@ -275,7 +275,7 @@ def process_gee_analysis(self, lat: float, lng: float, radius: int, approach: st
             },
             "meta": {
                 "satellite": "Sentinel-2 MSI (Level-2A)",
-                "terrain": "SRTM v4",
+                "terrain": "Copernicus DEM GLO-30",
                 "date": image_date,
                 "buffer_radius_m": radius
             }
