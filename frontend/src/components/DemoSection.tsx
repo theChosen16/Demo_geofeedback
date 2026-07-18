@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { APIProvider, Map, useMap, MapControl, ControlPosition } from '@vis.gl/react-google-maps'
+import { APIProvider, Map, useMap, MapControl, ControlPosition, AdvancedMarker } from '@vis.gl/react-google-maps'
 import { useStore, type AnalysisResult } from '../store/useStore'
 import { Search, MapPin, Satellite as SatIcon, AlertTriangle, RefreshCw } from 'lucide-react'
 
@@ -68,12 +68,12 @@ export const DemoSection: React.FC = () => {
 
   return (
     <APIProvider apiKey={mapsKey} language={i18n.language} region="CL">
-      <DemoSectionContent />
+      <DemoSectionContent mapsKey={mapsKey} />
     </APIProvider>
   )
 }
 
-const DemoSectionContent: React.FC = () => {
+const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
   const { t, i18n } = useTranslation()
   const map = useMap()
   const isEn = i18n.language === 'en'
@@ -104,7 +104,6 @@ const DemoSectionContent: React.FC = () => {
   const searchContainerRef = useRef<HTMLDivElement>(null)
   const [pollingStatus, setPollingStatus] = useState<string | null>(null)
   
-  const markerRef = useRef<any>(null)
   const circleRef = useRef<any>(null)
   const geeLayerRef = useRef<any>(null)
 
@@ -128,22 +127,10 @@ const DemoSectionContent: React.FC = () => {
     setMapType(prev => (prev === 'hybrid' ? 'roadmap' : 'hybrid'))
   }
 
-  // Draw Marker and Radius Circle on coordinates update
+  // Draw radius circle buffer on coordinates update (the marker renders declaratively as <AdvancedMarker>)
   useEffect(() => {
     if (!map || !selectedLocation) return
 
-    // Draw Advanced Marker
-    if (markerRef.current) {
-      markerRef.current.setMap(null)
-    }
-    markerRef.current = new google.maps.Marker({
-      position: { lat: selectedLocation.lat, lng: selectedLocation.lng },
-      map: map,
-      title: selectedLocation.name,
-      animation: google.maps.Animation.DROP,
-    })
-
-    // Draw radius circle buffer
     if (circleRef.current) {
       circleRef.current.setMap(null)
     }
@@ -163,7 +150,6 @@ const DemoSectionContent: React.FC = () => {
     map.fitBounds(circleRef.current.getBounds())
 
     return () => {
-      if (markerRef.current) markerRef.current.setMap(null)
       if (circleRef.current) circleRef.current.setMap(null)
     }
   }, [map, selectedLocation, selectedRadius])
@@ -218,31 +204,19 @@ const DemoSectionContent: React.FC = () => {
 
           setLiveMetrics({
             elevation: `${Math.round(centerElev)} m`,
-            aqi: liveMetrics?.aqi || 'N/D',
-            solar: liveMetrics?.solar || 'N/D',
             slope: `${Math.round(slopePercent)}% (${slopeClass})`
           })
         } else {
-          setLiveMetrics({
-            elevation: 'N/D',
-            aqi: liveMetrics?.aqi || 'N/D',
-            solar: liveMetrics?.solar || 'N/D',
-            slope: 'N/D'
-          })
+          setLiveMetrics({ elevation: 'N/D', slope: 'N/D' })
         }
       })
     } catch {
-      setLiveMetrics({
-        elevation: 'Error',
-        aqi: liveMetrics?.aqi || 'Error',
-        solar: liveMetrics?.solar || 'Error',
-        slope: 'Error'
-      })
+      setLiveMetrics({ elevation: 'Error', slope: 'Error' })
     }
 
     // 2. Air Quality
     try {
-      const url = `https://airquality.googleapis.com/v1/currentConditions:lookup?key=${map?.['__gm']?.['key'] || ''}`
+      const url = `https://airquality.googleapis.com/v1/currentConditions:lookup?key=${mapsKey}`
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -252,74 +226,34 @@ const DemoSectionContent: React.FC = () => {
         const data = await res.json()
         if (data.indexes && data.indexes[0]) {
           const idx = data.indexes[0]
-          setLiveMetrics({
-            elevation: liveMetrics?.elevation || 'N/D',
-            aqi: `${idx.aqi} (${idx.category})`,
-            solar: liveMetrics?.solar || 'N/D',
-            slope: liveMetrics?.slope || 'N/D'
-          })
+          setLiveMetrics({ aqi: `${idx.aqi} (${idx.category})` })
         } else {
-          setLiveMetrics({
-            elevation: liveMetrics?.elevation || 'N/D',
-            aqi: 'N/D',
-            solar: liveMetrics?.solar || 'N/D',
-            slope: liveMetrics?.slope || 'N/D'
-          })
+          setLiveMetrics({ aqi: 'N/D' })
         }
       } else {
-        setLiveMetrics({
-          elevation: liveMetrics?.elevation || 'N/D',
-          aqi: 'N/D',
-          solar: liveMetrics?.solar || 'N/D',
-          slope: liveMetrics?.slope || 'N/D'
-        })
+        setLiveMetrics({ aqi: 'N/D' })
       }
     } catch {
-      setLiveMetrics({
-        elevation: liveMetrics?.elevation || 'N/D',
-        aqi: 'N/D',
-        solar: liveMetrics?.solar || 'N/D',
-        slope: liveMetrics?.slope || 'N/D'
-      })
+      setLiveMetrics({ aqi: 'N/D' })
     }
 
     // 3. Solar Potential
     try {
-      const url = `https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${lat}&location.longitude=${lng}&requiredQuality=LOW&key=${map?.['__gm']?.['key'] || ''}`
+      const url = `https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${lat}&location.longitude=${lng}&requiredQuality=LOW&key=${mapsKey}`
       const res = await fetch(url)
       if (res.ok) {
         const data = await res.json()
         if (data.solarPotential) {
           const hours = Math.round(data.solarPotential.maxSunshineHoursPerYear || 0)
-          setLiveMetrics({
-            elevation: liveMetrics?.elevation || 'N/D',
-            aqi: liveMetrics?.aqi || 'N/D',
-            solar: `${hours} hrs/yr`,
-            slope: liveMetrics?.slope || 'N/D'
-          })
+          setLiveMetrics({ solar: `${hours} hrs/yr` })
         } else {
-          setLiveMetrics({
-            elevation: liveMetrics?.elevation || 'N/D',
-            aqi: liveMetrics?.aqi || 'N/D',
-            solar: 'Sin edificio',
-            slope: liveMetrics?.slope || 'N/D'
-          })
+          setLiveMetrics({ solar: 'Sin edificio' })
         }
       } else {
-        setLiveMetrics({
-          elevation: liveMetrics?.elevation || 'N/D',
-          aqi: liveMetrics?.aqi || 'N/D',
-          solar: 'N/D',
-          slope: liveMetrics?.slope || 'N/D'
-        })
+        setLiveMetrics({ solar: 'N/D' })
       }
     } catch {
-      setLiveMetrics({
-        elevation: liveMetrics?.elevation || 'N/D',
-        aqi: liveMetrics?.aqi || 'N/D',
-        solar: 'N/D',
-        slope: liveMetrics?.slope || 'N/D'
-      })
+      setLiveMetrics({ solar: 'N/D' })
     }
   }
 
@@ -587,6 +521,7 @@ const DemoSectionContent: React.FC = () => {
           <div className="lg:col-span-8 flex flex-col gap-4">
             <div className="relative w-full h-[350px] sm:h-[480px] lg:h-[580px] rounded-2xl overflow-hidden border border-white/5 shadow-2xl bg-[#0b0c10]">
               <Map
+                mapId="DEMO_MAP_ID"
                 defaultCenter={{ lat: -33.4489, lng: -70.6693 }}
                 defaultZoom={5}
                 gestureHandling="cooperative"
@@ -594,6 +529,12 @@ const DemoSectionContent: React.FC = () => {
                 onClick={handleMapClick}
                 className="w-full h-full"
               >
+                {selectedLocation && (
+                  <AdvancedMarker
+                    position={{ lat: selectedLocation.lat, lng: selectedLocation.lng }}
+                    title={selectedLocation.name}
+                  />
+                )}
                 {/* Custom Map Controls */}
                 <MapControl position={ControlPosition.TOP_RIGHT}>
                   <div className="flex gap-2 m-4">
