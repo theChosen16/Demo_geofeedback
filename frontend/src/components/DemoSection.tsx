@@ -475,7 +475,7 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
       lng: selectedLocation!.lng,
       radius: selectedRadius,
       approach: selectedApproach,
-      timestamp: new Date().toLocaleTimeString(),
+      timestamp: new Date().toLocaleString(),
       indices: result.data,
       chart_data: [],
       map_layer: result.map_layer,

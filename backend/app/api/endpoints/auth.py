@@ -113,7 +113,7 @@ def _to_history_item(row: UserAnalysis) -> AnalysisHistoryItem:
         lng=row.lng,
         radius=row.radius,
         approach=row.approach,
-        timestamp=row.created_at.strftime("%H:%M:%S"),
+        timestamp=row.created_at.strftime("%d/%m/%Y %H:%M:%S"),
         indices=row.indices,
         chart_data=row.chart_data,
         map_layer={"url": row.map_layer_url} if row.map_layer_url else None,

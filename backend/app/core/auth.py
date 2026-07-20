@@ -80,8 +80,8 @@ def decode_session_token(token: str) -> Optional[dict]:
     firmado, o expiró (nunca lanza excepción: se trata como 'no autenticado')."""
     try:
         return jwt.decode(token, _get_signing_key(), algorithms=[JWT_ALGORITHM])
-    except jwt.PyJWTError as e:
-        logger.info(f"Sesión inválida o expirada: {e}")
+    except (jwt.PyJWTError, RuntimeError) as e:
+        logger.warning(f"Sesión inválida, expirada o error de configuración: {e}")
         return None
 
 
@@ -100,7 +100,13 @@ def set_session_cookie(response: Response, token: str) -> None:
 
 
 def clear_session_cookie(response: Response) -> None:
-    response.delete_cookie(key=SESSION_COOKIE_NAME, path="/")
+    response.delete_cookie(
+        key=SESSION_COOKIE_NAME,
+        path="/",
+        httponly=True,
+        secure=bool(settings.RAILWAY_ENVIRONMENT),
+        samesite="lax",
+    )
 
 
 def _resolve_user_from_request(request: Request, session: Session) -> Optional[User]:
