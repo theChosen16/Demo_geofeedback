@@ -18,6 +18,7 @@ from app.api.endpoints.chat import router as chat_router
 from app.api.endpoints.stats import router as stats_router
 from app.api.endpoints.observability import router as observability_router
 from app.api.endpoints.contact import router as contact_router
+from app.api.endpoints.auth import router as auth_router
 
 logger = logging.getLogger(__name__)
 
@@ -100,13 +101,13 @@ async def add_security_headers(request: Request, call_next):
     # Content-Security-Policy (CSP) adaptado para APIs y Mapas
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' blob: https://maps.googleapis.com https://*.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; "
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; "
+        "script-src 'self' 'unsafe-inline' blob: https://maps.googleapis.com https://*.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://accounts.google.com; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://accounts.google.com; "
         "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com; "
         "img-src 'self' data: blob: https://*.googleapis.com https://*.gstatic.com https://earthengine.googleapis.com https://*.google.com https://cdn.jsdelivr.net; "
-        "connect-src 'self' data: https://*.googleapis.com https://*.gstatic.com https://earthengine.googleapis.com https://api.resend.com; "
+        "connect-src 'self' data: https://*.googleapis.com https://*.gstatic.com https://earthengine.googleapis.com https://api.resend.com https://accounts.google.com; "
         "worker-src 'self' blob:; "
-        "frame-src 'self' https://*.google.com https://*.googleapis.com https://*.gstatic.com"
+        "frame-src 'self' https://*.google.com https://*.googleapis.com https://*.gstatic.com https://accounts.google.com"
     )
     return response
 
@@ -119,6 +120,17 @@ async def add_security_headers(request: Request, call_next):
 async def get_maps_key():
     """Retorna la clave pública de Google Maps para el frontend."""
     return {"google_maps_api_key": settings.GOOGLE_MAPS_API_KEY}
+
+
+@app.get("/api/v1/config/google-client-id")
+async def get_google_client_id():
+    """
+    Retorna el Client ID de Google Sign-In (OAuth) para el frontend.
+    No es un secreto: es el identificador público que Google Identity Services
+    necesita para renderizar el botón de login (la verificación real del token
+    ocurre en el backend contra Google, ver app/core/auth.py).
+    """
+    return {"google_oauth_client_id": settings.GOOGLE_OAUTH_CLIENT_ID}
 
 
 @app.post("/api/v1/visit", dependencies=[Depends(verify_rate_limit(visit_limiter))])
@@ -173,6 +185,7 @@ app.include_router(chat_router, prefix=settings.API_PREFIX, tags=["AI Chatbot"])
 app.include_router(stats_router, prefix=settings.API_PREFIX, tags=["Estadísticas Públicas"])
 app.include_router(observability_router, prefix=settings.API_PREFIX, tags=["Observabilidad"])
 app.include_router(contact_router, prefix=settings.API_PREFIX, tags=["Formulario Contacto"])
+app.include_router(auth_router, prefix=settings.API_PREFIX, tags=["Autenticación"])
 
 
 # ============================================================================

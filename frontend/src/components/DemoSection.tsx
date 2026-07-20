@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { APIProvider, Map, useMap, MapControl, ControlPosition, AdvancedMarker } from '@vis.gl/react-google-maps'
 import { useStore, type AnalysisResult } from '../store/useStore'
 import { Search, MapPin, Satellite as SatIcon, AlertTriangle, RefreshCw } from 'lucide-react'
+import { TerritorialPulse } from './TerritorialPulse'
 
 // Declare google as a global variable to satisfy TypeScript
 declare const google: any
@@ -79,6 +80,7 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
   const isEn = i18n.language === 'en'
 
   const {
+    user,
     selectedLocation,
     setSelectedLocation,
     selectedApproach,
@@ -92,8 +94,11 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
     activeAnalysis,
     setActiveAnalysis,
     setActiveInterpretation,
+    setIsInterpreting,
+    bumpInterpretationToken,
     analysisHistory,
     addAnalysisToHistory,
+    updateHistoryChartData,
   } = useStore()
 
   const [searchQuery, setSearchQuery] = useState('')
@@ -103,9 +108,13 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
   const autocompleteServiceRef = useRef<any>(null)
   const searchContainerRef = useRef<HTMLDivElement>(null)
   const [pollingStatus, setPollingStatus] = useState<string | null>(null)
-  
+  const [isPulseLoading, setIsPulseLoading] = useState(false)
+
   const circleRef = useRef<any>(null)
   const geeLayerRef = useRef<any>(null)
+  // task_id del análisis actualmente activo: fetchInterpretation lo compara antes de escribir
+  // en el store, para que una interpretación vieja resuelta tarde no pise un análisis más nuevo.
+  const latestTaskIdRef = useRef<string | null>(null)
 
   // Sync Google Map type selection
   useEffect(() => {
@@ -347,12 +356,20 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
 
   // Replay historical analyses
   const replayHistory = (item: AnalysisResult) => {
+    // Este item ya no está "en curso": cualquier fetchInterpretation/fetchTimeseries viejo que
+    // siga pendiente para el análisis previamente activo no debe pisar lo que se está por
+    // mostrar acá. No se vuelve a pedir el Pulso Territorial: se muestra el chart_data ya
+    // persistido en el historial (o el estado "sin datos" si nunca se calculó para este item).
+    latestTaskIdRef.current = item.task_id
+    setIsPulseLoading(false)
     setSelectedLocation({ lat: item.lat, lng: item.lng, name: item.location_name })
     setSelectedApproach(item.approach)
     setSelectedRadius(item.radius)
     setActiveAnalysis(item)
     if (item.interpreted_result) {
       setActiveInterpretation(item.interpreted_result)
+      // Reabre el modal aunque el usuario ya lo hubiera cerrado antes en esta sesión.
+      bumpInterpretationToken()
     }
     if (map) {
       map.setCenter({ lat: item.lat, lng: item.lng })
@@ -369,6 +386,8 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
     setPollingStatus('Encolando análisis...')
     setActiveAnalysis(null)
     setActiveInterpretation(null)
+    setIsInterpreting(false)
+    setIsPulseLoading(false)
 
     try {
       const payload = {
@@ -387,10 +406,15 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
 
       if (res.ok) {
         const queueData = await res.json()
-        const taskId = queueData.task_id
-        
-        // Start polling Celery status
-        pollCeleryTask(taskId)
+        const tsTaskId = queueData.timeseries_task_id ?? null
+        const tsResult = queueData.timeseries_result ?? null
+
+        if (queueData.status === 'complete') {
+          // Cache hit del backend: el resultado ya está listo, sin necesidad de sondear Celery.
+          handleAnalysisResult(queueData.task_id, queueData.result, tsTaskId, tsResult)
+        } else {
+          pollCeleryTask(queueData.task_id, tsTaskId, tsResult)
+        }
       } else {
         const errorData = await res.json().catch(() => ({}))
         setPollingStatus(null)
@@ -404,36 +428,19 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
     }
   }
 
-  // Poll Celery task
-  const pollCeleryTask = (taskId: string) => {
-    const intervalId = setInterval(async () => {
+  // Poll Celery task (primer chequeo rápido a los 500ms, luego cada 2s)
+  const pollCeleryTask = (taskId: string, tsTaskId: string | null, tsResult: any | null) => {
+    let intervalId: number
+
+    const checkStatus = async () => {
       try {
         const res = await fetch(`/api/v1/analyze/status/${taskId}`)
         if (res.ok) {
           const data = await res.json()
-          
+
           if (data.status === 'success') {
             clearInterval(intervalId)
-            const result = data.result
-            
-            const newAnalysis: AnalysisResult = {
-              task_id: taskId,
-              location_name: selectedLocation!.name,
-              lat: selectedLocation!.lat,
-              lng: selectedLocation!.lng,
-              radius: selectedRadius,
-              approach: selectedApproach,
-              timestamp: new Date().toLocaleTimeString(),
-              indices: result.data,
-              chart_data: result.chart_data || [],
-              map_layer: result.map_layer,
-              meta_date: result.meta?.date ?? 'Desconocida',
-              status: 'success'
-            }
-
-            // Fetch AI Gemini interpretation
-            setPollingStatus('Generando interpretación con IA...')
-            fetchInterpretation(newAnalysis)
+            handleAnalysisResult(taskId, data.result, tsTaskId, tsResult)
           } else if (data.status === 'failed') {
             clearInterval(intervalId)
             setPollingStatus(null)
@@ -451,10 +458,120 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
         setIsAnalyzing(false)
         console.error('Error polling Celery task:', err)
       }
-    }, 2000)
+    }
+
+    setTimeout(checkStatus, 500)
+    intervalId = setInterval(checkStatus, 2000)
   }
 
-  // Fetch AI Gemini interpretation
+  // Se llama en cuanto Google Earth Engine termina (por polling o por cache-hit inmediato):
+  // muestra de inmediato los índices y la capa satelital en el mapa, sin esperar a que Gemini
+  // termine de generar la interpretación en lenguaje natural (que se dispara justo después).
+  const handleAnalysisResult = (taskId: string, result: any, tsTaskId: string | null, tsResult: any | null) => {
+    const newAnalysis: AnalysisResult = {
+      task_id: taskId,
+      location_name: selectedLocation!.name,
+      lat: selectedLocation!.lat,
+      lng: selectedLocation!.lng,
+      radius: selectedRadius,
+      approach: selectedApproach,
+      timestamp: new Date().toLocaleTimeString(),
+      indices: result.data,
+      chart_data: [],
+      map_layer: result.map_layer,
+      meta_date: result.meta?.date ?? 'Desconocida',
+      status: 'success'
+    }
+
+    // Este es ahora el análisis activo: si un fetchInterpretation/fetchTimeseries de uno
+    // anterior (todavía en vuelo) resuelve después, lo detecta comparando contra este valor
+    // y no pisa lo de acá.
+    latestTaskIdRef.current = taskId
+
+    setActiveAnalysis(newAnalysis)
+    setIsAnalyzing(false)
+    setPollingStatus(null)
+
+    // La interpretación de IA se pide en paralelo; el modal muestra un placeholder mientras llega.
+    setIsInterpreting(true)
+    bumpInterpretationToken()
+    fetchInterpretation(newAnalysis)
+
+    // El Pulso Territorial (usuarios logeados) también se resuelve en paralelo.
+    fetchTimeseries(newAnalysis, tsTaskId, tsResult)
+  }
+
+  // Trae la evolución mensual de índices para el Pulso Territorial (solo usuarios logeados;
+  // tsTaskId/tsResult vienen null para anónimos y esta función no hace nada). Igual que
+  // fetchInterpretation, corre en paralelo y respeta latestTaskIdRef para no pisar un
+  // análisis más nuevo con datos de uno viejo si el usuario ya siguió adelante.
+  const fetchTimeseries = (analysis: AnalysisResult, tsTaskId: string | null, tsResultInline: any | null) => {
+    const applyChartData = async (chartData: AnalysisResult['chart_data']) => {
+      const current = useStore.getState().activeAnalysis
+      if (latestTaskIdRef.current === analysis.task_id && current?.task_id === analysis.task_id) {
+        setActiveAnalysis({ ...current, chart_data: chartData })
+      }
+      if (latestTaskIdRef.current === analysis.task_id) {
+        setIsPulseLoading(false)
+      }
+      updateHistoryChartData(analysis.task_id, chartData)
+
+      // Persistir en el historial del usuario (best-effort; si falla, el dato sigue
+      // visible en esta sesión, solo no sobrevive a un refresh de página).
+      try {
+        await fetch(`/api/v1/me/analyses/${analysis.task_id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chart_data: chartData }),
+        })
+      } catch (err) {
+        console.warn('No se pudo persistir el Pulso Territorial en el historial:', err)
+      }
+    }
+
+    if (tsResultInline) {
+      setIsPulseLoading(false)
+      applyChartData(tsResultInline.chart_data || [])
+      return
+    }
+
+    if (!tsTaskId) {
+      setIsPulseLoading(false)
+      return
+    }
+
+    setIsPulseLoading(true)
+    let intervalId: number
+
+    const checkStatus = async () => {
+      try {
+        const res = await fetch(`/api/v1/analyze/status/${tsTaskId}`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data.status === 'success') {
+            clearInterval(intervalId)
+            applyChartData(data.result?.chart_data || [])
+          } else if (data.status === 'failed') {
+            clearInterval(intervalId)
+            if (latestTaskIdRef.current === analysis.task_id) setIsPulseLoading(false)
+          }
+        }
+      } catch (err) {
+        clearInterval(intervalId)
+        if (latestTaskIdRef.current === analysis.task_id) setIsPulseLoading(false)
+        console.error('Error consultando el Pulso Territorial:', err)
+      }
+    }
+
+    setTimeout(checkStatus, 800)
+    intervalId = setInterval(checkStatus, 3000)
+  }
+
+  // Fetch AI Gemini interpretation (corre en segundo plano; no bloquea la vista de resultados).
+  // Guarda internamente contra que dos análisis se solapen: si el usuario ya inició uno nuevo
+  // (o reprodujo un ítem del historial) antes de que esta llamada resuelva, esta ya no es la
+  // "última" (latestTaskIdRef cambió) y sus resultados se agregan solo al historial, sin pisar
+  // lo que se está mostrando actualmente en pantalla.
   const fetchInterpretation = async (analysis: AnalysisResult) => {
     try {
       const metaDate = analysis.meta_date && analysis.meta_date !== 'Desconocida'
@@ -473,23 +590,28 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
         body: JSON.stringify(payload),
       })
 
+      const isStillActive = latestTaskIdRef.current === analysis.task_id
+
       if (res.ok) {
         const interpretData = await res.json()
-        analysis.interpreted_result = interpretData.interpretation
-        
-        setActiveAnalysis(analysis)
-        setActiveInterpretation(analysis.interpreted_result!)
-        addAnalysisToHistory(analysis)
+        const updatedAnalysis = { ...analysis, interpreted_result: interpretData.interpretation }
+        if (isStillActive) {
+          setActiveAnalysis(updatedAnalysis)
+          setActiveInterpretation(updatedAnalysis.interpreted_result!)
+        }
+        addAnalysisToHistory(updatedAnalysis)
       } else {
-        setActiveAnalysis(analysis)
         addAnalysisToHistory(analysis)
       }
+
+      if (isStillActive) {
+        setIsInterpreting(false)
+      }
     } catch {
-      setActiveAnalysis(analysis)
       addAnalysisToHistory(analysis)
-    } finally {
-      setIsAnalyzing(false)
-      setPollingStatus(null)
+      if (latestTaskIdRef.current === analysis.task_id) {
+        setIsInterpreting(false)
+      }
     }
   }
 
@@ -595,6 +717,15 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
                 </div>
               </div>
             </div>
+
+            {/* Pulso Territorial: contenido premium para usuarios logeados, aparece tras un análisis */}
+            {selectedApproach && activeAnalysis && activeAnalysis.approach === selectedApproach && (
+              <TerritorialPulse
+                isLoggedIn={!!user}
+                isLoading={isPulseLoading}
+                chartData={activeAnalysis.chart_data && activeAnalysis.chart_data.length > 0 ? activeAnalysis.chart_data : null}
+              />
+            )}
           </div>
 
           {/* Sidebar Controls Column */}

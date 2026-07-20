@@ -45,6 +45,7 @@ class Settings(BaseSettings):
     GOOGLE_MAPS_API_KEY: str = Field(default="")
     GEMINI_API_KEY: str = Field(default="")
     GOOGLE_APPLICATION_CREDENTIALS_JSON: Optional[str] = Field(default=None)
+    GOOGLE_OAUTH_CLIENT_ID: str = Field(default="")
 
     # Email
     RESEND_API_KEY: Optional[str] = Field(default=None)
