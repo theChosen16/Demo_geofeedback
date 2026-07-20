@@ -55,8 +55,15 @@ HEALTHCHECK --interval=30s --timeout=15s --start-period=60s --retries=3 \
     fi
 
 # Comando por defecto para levantar FastAPI o Celery Worker dinámicamente
+#
+# El worker usa el pool prefork por defecto (no threads/gevent) a propósito: es el único
+# que soporta task_time_limit/task_soft_time_limit (celery_app.py) vía señales al proceso hijo,
+# el backstop que mata una tarea de GEE realmente colgada. Lo que sí se ajusta es la
+# concurrencia (WORKER_CONCURRENCY, 4 procesos por defecto) para poder atender varios
+# análisis a la vez en vez de uno a la vez, ya que sin este flag Celery calcula la
+# concurrencia según los CPUs visibles del contenedor, que en Railway puede ser 1-2.
 CMD ["sh", "-c", "if [ \"$SERVICE_TYPE\" = \"worker\" ]; then \
-    python -m celery -A app.tasks.celery_app worker --loglevel=info; \
+    python -m celery -A app.tasks.celery_app worker --loglevel=info --concurrency=${WORKER_CONCURRENCY:-4}; \
     else \
     gunicorn \
         --bind 0.0.0.0:${PORT:-5000} \

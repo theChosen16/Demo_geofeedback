@@ -145,6 +145,10 @@ const resources = {
       modal: {
         title: 'Interpretación de Resultados',
         close: 'Cerrar',
+        loading: 'GeoBot está analizando los resultados... 🛰️',
+      },
+      auth: {
+        logout: 'Cerrar sesión',
       },
       chatbot: {
         title: 'Asistente GeoFeedback',
@@ -296,6 +300,10 @@ const resources = {
       modal: {
         title: 'Result Interpretation',
         close: 'Close',
+        loading: 'GeoBot is analyzing the results... 🛰️',
+      },
+      auth: {
+        logout: 'Log out',
       },
       chatbot: {
         title: 'GeoFeedback Assistant',

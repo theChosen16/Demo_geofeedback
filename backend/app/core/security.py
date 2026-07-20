@@ -128,6 +128,13 @@ stats_limiter = RateLimiter(key_prefix='stats', max_requests=60, window_seconds=
 # esta invariante se rompe y pasa a ser una exposición de datos explotable.
 status_limiter = RateLimiter(key_prefix='status', max_requests=90, window_seconds=60)
 
+# Login/logout: acotado más estricto que el resto porque cada intento implica una
+# verificación criptográfica contra Google y una escritura en la tabla de usuarios.
+auth_limiter = RateLimiter(key_prefix='auth', max_requests=10, window_seconds=60)
+
+# Lectura/edición del propio historial de análisis (usuario ya autenticado).
+me_limiter = RateLimiter(key_prefix='me', max_requests=30, window_seconds=60)
+
 
 def verify_rate_limit(limiter: RateLimiter):
     """Generador de dependencia para inyectar rate limits en los endpoints de FastAPI."""

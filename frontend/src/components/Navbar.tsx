@@ -1,6 +1,68 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useStore } from '../store/useStore'
-import { Globe, Code } from 'lucide-react'
+import { Globe, Code, LogOut } from 'lucide-react'
+import { GoogleLoginButton } from './GoogleLoginButton'
+
+const UserMenu: React.FC = () => {
+  const { t } = useTranslation()
+  const { user, setUser, setAnalysisHistory } = useStore()
+  const [open, setOpen] = useState(false)
+
+  if (!user) return <GoogleLoginButton />
+
+  const initial = (user.name || user.email).charAt(0).toUpperCase()
+
+  const handleLogout = async () => {
+    try {
+      const res = await fetch('/api/v1/auth/logout', { method: 'POST' })
+      if (!res.ok) throw new Error(`logout respondió ${res.status}`)
+      // Solo limpiar el estado local si el backend realmente invalidó la cookie de sesión:
+      // si esto se limpiara igual ante un fallo de red, la UI mostraría "sesión cerrada"
+      // mientras la cookie httpOnly sigue siendo válida, y una recarga de página
+      // reautenticaría silenciosamente a quien esté frente a la pantalla.
+      setUser(null)
+      setAnalysisHistory([])
+    } catch (err) {
+      console.error('Error cerrando sesión:', err)
+      alert('No se pudo cerrar la sesión (problema de red). Intenta de nuevo.')
+    } finally {
+      setOpen(false)
+    }
+  }
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-2 rounded-full border border-white/10 hover:bg-white/5 pl-1 pr-3 py-1"
+        title={user.email}
+      >
+        {user.picture_url ? (
+          <img src={user.picture_url} alt={user.name || user.email} className="h-7 w-7 rounded-full" referrerPolicy="no-referrer" />
+        ) : (
+          <span className="h-7 w-7 rounded-full bg-teal-500/20 text-teal-300 flex items-center justify-center text-xs font-bold">
+            {initial}
+          </span>
+        )}
+        <span className="text-xs text-gray-200 font-semibold max-w-[120px] truncate">{user.name || user.email}</span>
+      </button>
+
+      {open && (
+        <div className="absolute right-0 mt-2 w-48 bg-[#16171d] border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50">
+          <div className="px-4 py-3 text-xs text-gray-400 border-b border-white/5 truncate">{user.email}</div>
+          <button
+            onClick={handleLogout}
+            className="w-full text-left px-4 py-2.5 text-xs text-gray-300 hover:bg-white/5 hover:text-white flex items-center gap-2"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            {t('auth.logout')}
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export const Navbar: React.FC = () => {
   const { t, i18n } = useTranslation()
@@ -36,6 +98,7 @@ export const Navbar: React.FC = () => {
             <span>{language === 'es' ? '🇺🇸' : '🇨🇱'}</span>
             <span>{language === 'es' ? 'EN' : 'ES'}</span>
           </button>
+          <UserMenu />
         </div>
       </div>
 
@@ -92,6 +155,8 @@ export const Navbar: React.FC = () => {
               <span>{language === 'es' ? '🇺🇸' : '🇨🇱'}</span>
               <span className="text-xs">{language === 'es' ? 'EN' : 'ES'}</span>
             </button>
+
+            <UserMenu />
           </div>
         </div>
       </nav>

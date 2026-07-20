@@ -25,6 +25,7 @@ export interface AnalysisResult {
     ndvi: number
     ndwi: number
     ndmi: number
+    clouds?: number
   }[]
   interpreted_result?: string
   status?: string
@@ -48,10 +49,20 @@ export interface ChatMessage {
   timestamp: Date
 }
 
+export interface AuthUser {
+  email: string
+  name?: string | null
+  picture_url?: string | null
+}
+
 interface AppState {
   // Localization
   language: 'es' | 'en'
   setLanguage: (lang: 'es' | 'en') => void
+
+  // Sesión (Google Sign-In)
+  user: AuthUser | null
+  setUser: (user: AuthUser | null) => void
 
   // Selected parameters
   selectedLocation: Location | null
@@ -72,9 +83,20 @@ interface AppState {
   setActiveAnalysis: (analysis: AnalysisResult | null) => void
   activeInterpretation: string | null
   setActiveInterpretation: (text: string | null) => void
+  isInterpreting: boolean
+  setIsInterpreting: (status: boolean) => void
+  // Se incrementa cada vez que hay una interpretación nueva que mostrar (análisis en vivo o
+  // reproducido del historial). ResultModal lo usa para "despertar" el modal si el usuario ya
+  // lo había cerrado antes, sin reabrirse solo cuando una interpretación vieja en segundo plano
+  // termina de resolver.
+  interpretationToken: number
+  bumpInterpretationToken: () => void
   analysisHistory: AnalysisResult[]
   setAnalysisHistory: (history: AnalysisResult[]) => void
   addAnalysisToHistory: (analysis: AnalysisResult) => void
+  // Parcha el chart_data de una entrada ya agregada al historial (el Pulso Territorial llega
+  // en una llamada separada y a veces resuelve después de que la entrada ya fue agregada).
+  updateHistoryChartData: (taskId: string, chartData: AnalysisResult['chart_data']) => void
 
   // Chatbot
   isChatOpen: boolean
@@ -95,6 +117,9 @@ interface AppState {
 export const useStore = create<AppState>((set) => ({
   language: 'es',
   setLanguage: (lang) => set({ language: lang }),
+
+  user: null,
+  setUser: (user) => set({ user }),
 
   selectedLocation: null,
   setSelectedLocation: (loc) => set({ selectedLocation: loc }),
@@ -127,11 +152,23 @@ export const useStore = create<AppState>((set) => ({
   activeInterpretation: null,
   setActiveInterpretation: (text) => set({ activeInterpretation: text }),
 
+  isInterpreting: false,
+  setIsInterpreting: (status) => set({ isInterpreting: status }),
+
+  interpretationToken: 0,
+  bumpInterpretationToken: () => set((state) => ({ interpretationToken: state.interpretationToken + 1 })),
+
   analysisHistory: [],
   setAnalysisHistory: (history) => set({ analysisHistory: history }),
   addAnalysisToHistory: (analysis) =>
     set((state) => ({
       analysisHistory: [analysis, ...state.analysisHistory.slice(0, 9)], // limit to 10 items
+    })),
+  updateHistoryChartData: (taskId, chartData) =>
+    set((state) => ({
+      analysisHistory: state.analysisHistory.map((item) =>
+        item.task_id === taskId ? { ...item, chart_data: chartData } : item
+      ),
     })),
 
   isChatOpen: false,
