@@ -36,7 +36,7 @@ def _user_out(user: User) -> UserOut:
 
 
 @router.post("/auth/google", dependencies=[Depends(verify_rate_limit(auth_limiter))])
-async def login_with_google(data: GoogleLoginRequest, response: Response, session: Session = Depends(get_session)):
+def login_with_google(data: GoogleLoginRequest, response: Response, session: Session = Depends(get_session)):
     """
     Verifica el ID token de Google Identity Services (firma, emisor, audiencia),
     crea o actualiza el usuario correspondiente y abre una sesión propia (cookie httpOnly).
@@ -80,13 +80,13 @@ async def login_with_google(data: GoogleLoginRequest, response: Response, sessio
 
 
 @router.post("/auth/logout")
-async def logout(response: Response):
+def logout(response: Response):
     clear_session_cookie(response)
     return {"status": "success"}
 
 
 @router.get("/auth/me")
-async def get_me(user: User = Depends(get_current_user)):
+def get_me(user: User = Depends(get_current_user)):
     return {"user": _user_out(user)}
 
 
@@ -123,7 +123,7 @@ def _to_history_item(row: UserAnalysis) -> AnalysisHistoryItem:
 
 
 @router.get("/me/analyses", response_model=List[AnalysisHistoryItem], dependencies=[Depends(verify_rate_limit(me_limiter))])
-async def list_my_analyses(
+def list_my_analyses(
     days: int = 30,
     user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
@@ -150,7 +150,7 @@ class AnalysisPatchRequest(BaseModel):
 
 
 @router.patch("/me/analyses/{task_id}", dependencies=[Depends(verify_rate_limit(me_limiter))])
-async def patch_analysis(
+def patch_analysis(
     task_id: str,
     data: AnalysisPatchRequest,
     user: User = Depends(get_current_user),

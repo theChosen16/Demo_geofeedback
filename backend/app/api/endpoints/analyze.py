@@ -83,7 +83,7 @@ class AnalyzeRequest(BaseModel):
 
 
 @router.post("/analyze", dependencies=[Depends(verify_rate_limit(analysis_limiter))])
-async def trigger_analysis(data: AnalyzeRequest, user: Optional[User] = Depends(get_optional_user)):
+def trigger_analysis(data: AnalyzeRequest, user: Optional[User] = Depends(get_optional_user)):
     """
     Inicia un análisis satelital con Google Earth Engine.
     El procesamiento se ejecuta de forma asíncrona en Celery.
@@ -152,7 +152,7 @@ async def trigger_analysis(data: AnalyzeRequest, user: Optional[User] = Depends(
 
 
 @router.get("/analyze/status/{task_id}", dependencies=[Depends(verify_rate_limit(status_limiter))])
-async def get_analysis_status(task_id: str):
+def get_analysis_status(task_id: str):
     """
     Consulta el estado de una tarea de análisis satelital encolada.
     """
