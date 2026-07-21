@@ -17,6 +17,10 @@ from app.tasks.tasks_periodic import check_active_alerts
 
 class AlertsAndPdfTests(unittest.TestCase):
     def setUp(self):
+        from app.core.config import settings
+        self.original_secret = settings.SECRET_KEY
+        settings.SECRET_KEY = "test-secret-key-1234567890-abcdef-ghijkl"
+
         self.client = TestClient(app)
         self.mock_session = MagicMock()
         self.mock_session.__enter__.return_value = self.mock_session
@@ -46,6 +50,8 @@ class AlertsAndPdfTests(unittest.TestCase):
         self.mock_session.add.side_effect = mock_add
 
     def tearDown(self):
+        from app.core.config import settings
+        settings.SECRET_KEY = self.original_secret
         app.dependency_overrides.clear()
 
     def test_create_alert_requires_auth(self):
