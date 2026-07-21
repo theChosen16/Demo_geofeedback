@@ -8,52 +8,29 @@ test.describe('Regresión Visual Determinista', () => {
   });
 
   test('Captura visual de la vista principal (Hero & Navbar)', async ({ page }) => {
-    try {
-      await expect(page).toHaveScreenshot('homepage-hero.png', {
-        mask: [
-          page.locator('canvas'), // Oculta el canvas 3D animado para evitar parpadeos
-        ],
-        fullPage: false,
-      });
-    } catch (err: any) {
-      if (err?.message?.includes("doesn't exist")) {
-        console.log('[-] Snapshot base de Hero generado por primera vez en este entorno.');
-      } else {
-        throw err;
-      }
-    }
+    await expect(page).toHaveScreenshot('homepage-hero.png', {
+      mask: [
+        page.locator('canvas'), // Oculta el canvas 3D animado para evitar parpadeos
+      ],
+      fullPage: false,
+    });
   });
 
-  test('Captura visual del Navbar y navegación', async ({ page }) => {
-    const navbar = page.locator('nav');
-    if (await navbar.count() > 0 && await navbar.first().isVisible()) {
-      try {
-        await expect(navbar.first()).toHaveScreenshot('navbar-header.png');
-      } catch (err: any) {
-        if (err?.message?.includes("doesn't exist")) {
-          console.log('[-] Snapshot base de Navbar generado por primera vez en este entorno.');
-        } else {
-          throw err;
-        }
-      }
+  test('Captura visual del Navbar y navegación', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'Navegación de escritorio exclusiva');
+    const navbar = page.locator('nav.lg\\:block').first();
+    if (await navbar.count() > 0 && await navbar.isVisible()) {
+      await expect(navbar).toHaveScreenshot('navbar-header.png');
     }
   });
 
   test('Captura visual de la sección Demo Interactive', async ({ page }) => {
-    const demoSection = page.locator('#demo');
+    const demoSection = page.locator('#demo').first();
     if (await demoSection.count() > 0) {
       await demoSection.scrollIntoViewIfNeeded();
-      try {
-        await expect(demoSection.first()).toHaveScreenshot('demo-section.png', {
-          mask: [page.locator('canvas')],
-        });
-      } catch (err: any) {
-        if (err?.message?.includes("doesn't exist")) {
-          console.log('[-] Snapshot base de DemoSection generado por primera vez en este entorno.');
-        } else {
-          throw err;
-        }
-      }
+      await expect(demoSection).toHaveScreenshot('demo-section.png', {
+        mask: [page.locator('canvas')],
+      });
     }
   });
 });
