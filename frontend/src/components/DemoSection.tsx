@@ -2,8 +2,13 @@ import { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { APIProvider, Map, useMap, MapControl, ControlPosition, AdvancedMarker } from '@vis.gl/react-google-maps'
 import { useStore, type AnalysisResult } from '../store/useStore'
-import { Search, MapPin, Satellite as SatIcon, AlertTriangle, RefreshCw } from 'lucide-react'
+import { AlertTriangle } from 'lucide-react'
 import { TerritorialPulse } from './TerritorialPulse'
+import { OnboardingModal } from './demo/OnboardingModal'
+import { AlertsSection } from './demo/AlertsSection'
+import { HistorySection } from './demo/HistorySection'
+import { DemoSearchPanel } from './demo/DemoSearchPanel'
+import { DemoResultsCards } from './demo/DemoResultsCards'
 
 // Declare google as a global variable to satisfy TypeScript
 declare const google: any
@@ -122,7 +127,7 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
   const [alertFrequency, setAlertFrequency] = useState('daily')
   const [isSavingAlert, setIsSavingAlert] = useState(false)
 
-  // Estados de Onboarding / Personalización
+  // Onboarding modal states
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [onboardingStep, setOnboardingStep] = useState(1)
   const [onboardingSector, setOnboardingSector] = useState('')
@@ -265,8 +270,6 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
 
   const circleRef = useRef<any>(null)
   const geeLayerRef = useRef<any>(null)
-  // task_id del análisis actualmente activo: fetchInterpretation lo compara antes de escribir
-  // en el store, para que una interpretación vieja resuelta tarde no pise un análisis más nuevo.
   const latestTaskIdRef = useRef<string | null>(null)
 
   // Sync Google Map type selection
@@ -276,7 +279,6 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
     }
   }, [map, mapType])
 
-  // Center map on Chile by default
   const centerMapOnChile = () => {
     if (map) {
       map.setCenter({ lat: -33.4489, lng: -70.6693 })
@@ -284,12 +286,11 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
     }
   }
 
-  // Toggle map roadmap / satellite hybrid view
   const toggleMapType = () => {
     setMapType(prev => (prev === 'hybrid' ? 'roadmap' : 'hybrid'))
   }
 
-  // Draw radius circle buffer on coordinates update (the marker renders declaratively as <AdvancedMarker>)
+  // Draw radius circle buffer on coordinates update
   useEffect(() => {
     if (!map || !selectedLocation) return
 
@@ -308,7 +309,6 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
       clickable: false,
     })
 
-    // Fit map bounds to circle
     map.fitBounds(circleRef.current.getBounds())
 
     return () => {
@@ -345,7 +345,6 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
 
   // Fetch public Google Maps APIs metadata (Elevation, AQI, Solar)
   const fetchLocalApiMetrics = async (lat: number, lng: number) => {
-    // 1. Elevation and Slope
     try {
       const elevator = new google.maps.ElevationService()
       const offset = 0.001
@@ -376,7 +375,6 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
       setLiveMetrics({ elevation: 'Error', slope: 'Error' })
     }
 
-    // 2. Air Quality
     try {
       const url = `https://airquality.googleapis.com/v1/currentConditions:lookup?key=${mapsKey}`
       const res = await fetch(url, {
@@ -399,7 +397,6 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
       setLiveMetrics({ aqi: 'N/D' })
     }
 
-    // 3. Solar Potential
     try {
       const url = `https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${lat}&location.longitude=${lng}&requiredQuality=LOW&key=${mapsKey}`
       const res = await fetch(url)
@@ -419,7 +416,6 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
     }
   }
 
-  // Initialize AutocompleteService lazily once Maps API is loaded
   const getAutocompleteService = () => {
     if (!autocompleteServiceRef.current && typeof google !== 'undefined' && google.maps?.places) {
       autocompleteServiceRef.current = new google.maps.places.AutocompleteService()
@@ -427,7 +423,6 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
     return autocompleteServiceRef.current
   }
 
-  // Handle search input changes and fetch suggestions
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value
     setSearchQuery(val)
@@ -452,7 +447,6 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
     )
   }
 
-  // Select a suggestion and resolve coordinates
   const handleSelectSuggestion = (prediction: any) => {
     setSearchQuery(prediction.description)
     setSuggestions([])
@@ -469,7 +463,6 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
     })
   }
 
-  // Fallback: Geocode on form submit (for typed queries without selecting suggestion)
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!searchQuery.trim()) return
@@ -488,7 +481,6 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
     })
   }
 
-  // Map Click Listener
   const handleMapClick = async (e: any) => {
     const lat = e.detail.latLng.lat
     const lng = e.detail.latLng.lng
@@ -507,12 +499,7 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
     })
   }
 
-  // Replay historical analyses
   const replayHistory = (item: AnalysisResult) => {
-    // Este item ya no está "en curso": cualquier fetchInterpretation/fetchTimeseries viejo que
-    // siga pendiente para el análisis previamente activo no debe pisar lo que se está por
-    // mostrar acá. No se vuelve a pedir el Pulso Territorial: se muestra el chart_data ya
-    // persistido en el historial (o el estado "sin datos" si nunca se calculó para este item).
     latestTaskIdRef.current = item.task_id
     setIsPulseLoading(false)
     setSelectedLocation({ lat: item.lat, lng: item.lng, name: item.location_name })
@@ -521,7 +508,6 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
     setActiveAnalysis(item)
     if (item.interpreted_result) {
       setActiveInterpretation(item.interpreted_result)
-      // Reabre el modal aunque el usuario ya lo hubiera cerrado antes en esta sesión.
       bumpInterpretationToken()
     }
     if (map) {
@@ -531,7 +517,6 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
     fetchLocalApiMetrics(item.lat, item.lng)
   }
 
-  // Trigger Satellite Analysis
   const handleAnalyze = async () => {
     if (!selectedLocation || !selectedApproach) return
 
@@ -564,7 +549,6 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
         const tsResult = queueData.timeseries_result ?? null
 
         if (queueData.status === 'complete') {
-          // Cache hit del backend: el resultado ya está listo, sin necesidad de sondear Celery.
           handleAnalysisResult(queueData.task_id, queueData.result, tsTaskId, tsResult)
         } else {
           pollCeleryTask(queueData.task_id, tsTaskId, tsResult)
@@ -582,7 +566,6 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
     }
   }
 
-  // Poll Celery task (primer chequeo rápido a los 500ms, luego cada 2s)
   const pollCeleryTask = (taskId: string, tsTaskId: string | null, tsResult: any | null) => {
     let intervalId: number
 
@@ -618,9 +601,6 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
     intervalId = setInterval(checkStatus, 2000)
   }
 
-  // Se llama en cuanto Google Earth Engine termina (por polling o por cache-hit inmediato):
-  // muestra de inmediato los índices y la capa satelital en el mapa, sin esperar a que Gemini
-  // termine de generar la interpretación en lenguaje natural (que se dispara justo después).
   const handleAnalysisResult = (taskId: string, result: any, tsTaskId: string | null, tsResult: any | null) => {
     const newAnalysis: AnalysisResult = {
       task_id: taskId,
@@ -637,28 +617,17 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
       status: 'success'
     }
 
-    // Este es ahora el análisis activo: si un fetchInterpretation/fetchTimeseries de uno
-    // anterior (todavía en vuelo) resuelve después, lo detecta comparando contra este valor
-    // y no pisa lo de acá.
     latestTaskIdRef.current = taskId
-
     setActiveAnalysis(newAnalysis)
     setIsAnalyzing(false)
     setPollingStatus(null)
 
-    // La interpretación de IA se pide en paralelo; el modal muestra un placeholder mientras llega.
     setIsInterpreting(true)
     bumpInterpretationToken()
     fetchInterpretation(newAnalysis)
-
-    // El Pulso Territorial (usuarios logeados) también se resuelve en paralelo.
     fetchTimeseries(newAnalysis, tsTaskId, tsResult)
   }
 
-  // Trae la evolución mensual de índices para el Pulso Territorial (solo usuarios logeados;
-  // tsTaskId/tsResult vienen null para anónimos y esta función no hace nada). Igual que
-  // fetchInterpretation, corre en paralelo y respeta latestTaskIdRef para no pisar un
-  // análisis más nuevo con datos de uno viejo si el usuario ya siguió adelante.
   const fetchTimeseries = (analysis: AnalysisResult, tsTaskId: string | null, tsResultInline: any | null) => {
     const applyChartData = async (chartData: AnalysisResult['chart_data']) => {
       const current = useStore.getState().activeAnalysis
@@ -670,8 +639,6 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
       }
       updateHistoryChartData(analysis.task_id, chartData)
 
-      // Persistir en el historial del usuario (best-effort; si falla, el dato sigue
-      // visible en esta sesión, solo no sobrevive a un refresh de página).
       try {
         await fetch(`/api/v1/me/analyses/${analysis.task_id}`, {
           method: 'PATCH',
@@ -721,11 +688,6 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
     intervalId = setInterval(checkStatus, 3000)
   }
 
-  // Fetch AI Gemini interpretation (corre en segundo plano; no bloquea la vista de resultados).
-  // Guarda internamente contra que dos análisis se solapen: si el usuario ya inició uno nuevo
-  // (o reprodujo un ítem del historial) antes de que esta llamada resuelva, esta ya no es la
-  // "última" (latestTaskIdRef cambió) y sus resultados se agregan solo al historial, sin pisar
-  // lo que se está mostrando actualmente en pantalla.
   const fetchInterpretation = async (analysis: AnalysisResult) => {
     try {
       const metaDate = analysis.meta_date && analysis.meta_date !== 'Desconocida'
@@ -811,7 +773,6 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
                     title={selectedLocation.name}
                   />
                 )}
-                {/* Custom Map Controls */}
                 <MapControl position={ControlPosition.TOP_RIGHT}>
                   <div className="flex gap-2 m-4">
                     <button
@@ -832,7 +793,6 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
                 </MapControl>
               </Map>
               
-              {/* Tap to select overlay */}
               {!selectedLocation && (
                 <div className="absolute inset-0 z-10 bg-black/40 flex items-center justify-center pointer-events-none">
                   <div className="bg-[#16171d]/90 backdrop-blur border border-white/10 px-5 py-2.5 rounded-full text-xs text-white font-medium shadow-xl flex items-center gap-2 animate-bounce">
@@ -843,36 +803,16 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
               )}
             </div>
 
-            {/* Results Grid Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="glass-panel p-5 rounded-xl flex gap-4 items-start">
-                <MapPin className="h-6 w-6 text-teal-400 flex-shrink-0" />
-                <div>
-                  <h4 className="font-bold text-white text-sm">{t('demo.resultLocationTitle')}</h4>
-                  <p className="text-gray-400 text-xs mt-1 leading-relaxed truncate max-w-[180px]" title={selectedLocation?.name}>
-                    {selectedLocation ? selectedLocation.name : t('demo.resultLocationDesc')}
-                  </p>
-                </div>
-              </div>
-              <div className="glass-panel p-5 rounded-xl flex gap-4 items-start">
-                <i className="fas fa-crosshairs text-teal-400 text-lg flex-shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-bold text-white text-sm">{t('demo.resultApproachTitle')}</h4>
-                  <p className="text-gray-400 text-xs mt-1">
-                    {selectedApproach ? (isEn ? approachesConfig[selectedApproach]?.enName : approachesConfig[selectedApproach]?.name) : t('demo.resultApproachDesc')}
-                  </p>
-                </div>
-              </div>
-              <div className="glass-panel p-5 rounded-xl flex gap-4 items-start">
-                <i className="fas fa-satellite text-teal-400 text-lg flex-shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-bold text-white text-sm">{t('demo.resultApisTitle')}</h4>
-                  <p className="text-gray-400 text-xs mt-1">{t('demo.resultApisDesc')}</p>
-                </div>
-              </div>
-            </div>
+            {/* Results summary cards */}
+            <DemoResultsCards
+              selectedLocation={selectedLocation}
+              selectedApproach={selectedApproach}
+              t={t}
+              isEn={isEn}
+              approachesConfig={approachesConfig}
+            />
 
-            {/* Pulso Territorial: contenido premium para usuarios logeados, aparece tras un análisis */}
+            {/* Pulso Territorial */}
             {selectedApproach && activeAnalysis && activeAnalysis.approach === selectedApproach && (
               <TerritorialPulse
                 isLoggedIn={!!user}
@@ -897,652 +837,86 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
               </div>
             </div>
 
-            {/* Buscar Ubicación */}
-            <div className="glass-panel p-6 rounded-xl flex flex-col gap-4">
-              <h4 className="flex items-center gap-2 text-white font-bold text-sm font-outfit">
-                <Search className="h-4 w-4 text-teal-400" />
-                {t('demo.searchLabel')}
-              </h4>
-              <div ref={searchContainerRef} className="relative">
-                <form onSubmit={handleSearchSubmit} className="flex gap-2">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={handleSearchChange}
-                    onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-                    onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-                    placeholder={t('demo.searchPlaceholder')}
-                    className="input input-sm flex-1 bg-[#111318] border-white/10 focus:border-teal-500 rounded-lg text-xs text-white"
-                    autoComplete="off"
-                  />
-                  <button type="submit" className="btn btn-sm btn-ghost hover:bg-[#1e2028] border border-white/10 text-teal-400 rounded-lg">
-                    <Search className="h-3.5 w-3.5" />
-                  </button>
-                </form>
-                {showSuggestions && suggestions.length > 0 && (
-                  <ul className="absolute z-50 top-full mt-1 w-full bg-[#16171d] border border-white/10 rounded-xl shadow-2xl overflow-hidden">
-                    {suggestions.map((s) => (
-                      <li
-                        key={s.place_id}
-                        onMouseDown={() => handleSelectSuggestion(s)}
-                        className="px-4 py-2.5 text-xs text-gray-200 hover:bg-teal-500/10 hover:text-teal-300 cursor-pointer flex items-start gap-2 border-b border-white/5 last:border-0 transition-colors"
-                      >
-                        <i className="fas fa-map-marker-alt text-teal-400 mt-0.5 flex-shrink-0" />
-                        <span className="leading-tight">{s.description}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+            {/* Search, Approach & Radius Controls */}
+            <DemoSearchPanel
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              handleSearchChange={handleSearchChange}
+              handleSearchSubmit={handleSearchSubmit}
+              suggestions={suggestions}
+              showSuggestions={showSuggestions}
+              setShowSuggestions={setShowSuggestions}
+              handleSelectSuggestion={handleSelectSuggestion}
+              searchContainerRef={searchContainerRef}
+              selectedLocation={selectedLocation}
+              liveMetrics={liveMetrics}
+              selectedApproach={selectedApproach}
+              setSelectedApproach={setSelectedApproach}
+              activeAnalysis={activeAnalysis}
+              selectedRadius={selectedRadius}
+              setSelectedRadius={setSelectedRadius}
+              useCustomDates={useCustomDates}
+              setUseCustomDates={setUseCustomDates}
+              startDate={startDate}
+              setStartDate={setStartDate}
+              endDate={endDate}
+              setEndDate={setEndDate}
+              user={user}
+              t={t}
+              triggerAnalysis={handleAnalyze}
+              isAnalyzing={isAnalyzing}
+              pollingStatus={pollingStatus}
+            />
 
-              {selectedLocation && (
-                <div className="bg-[#111318] border border-white/5 p-4 rounded-xl text-left flex flex-col gap-1">
-                  <div className="font-bold text-white text-xs leading-normal line-clamp-1">{selectedLocation.name}</div>
-                  <div className="text-[10px] text-gray-500 font-semibold font-mono">
-                    {selectedLocation.lat.toFixed(5)}, {selectedLocation.lng.toFixed(5)}
-                  </div>
-                </div>
-              )}
+            {/* Monitoring & Alerts Section */}
+            <AlertsSection
+              user={user}
+              userAlerts={userAlerts}
+              selectedLocation={selectedLocation}
+              selectedApproach={selectedApproach}
+              isSettingAlert={isSettingAlert}
+              setIsSettingAlert={setIsSettingAlert}
+              alertTriggerType={alertTriggerType}
+              setAlertTriggerType={setAlertTriggerType}
+              alertTriggerValue={alertTriggerValue}
+              setAlertTriggerValue={setAlertTriggerValue}
+              alertFrequency={alertFrequency}
+              setAlertFrequency={setAlertFrequency}
+              isSavingAlert={isSavingAlert}
+              handleCreateAlert={handleCreateAlert}
+              handleDeleteAlert={handleDeleteAlert}
+            />
 
-              {/* Live metrics (Skeletons / Loaded) */}
-              {liveMetrics && (
-                <div className="bg-[#111318]/50 border border-white/5 p-4 rounded-xl flex flex-col gap-3 text-left">
-                  <h5 className="text-[10px] uppercase font-bold text-gray-400 tracking-wider flex items-center gap-1.5">
-                    <i className="fas fa-broadcast-tower text-teal-400"></i>
-                    {t('demo.livePanelTitle')}
-                  </h5>
-                  <div className="grid grid-cols-2 gap-3 text-xs">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-gray-500 font-semibold text-[10px]">{t('demo.elevation')}</span>
-                      <span className={`font-bold ${(!user || user.preferences?.layers?.elevation !== false) ? 'text-white' : 'text-gray-600'}`}>
-                        {(!user || user.preferences?.layers?.elevation !== false) ? liveMetrics.elevation : 'Desactivado'}
-                      </span>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <span className="text-gray-500 font-semibold text-[10px]">{t('demo.aqi')}</span>
-                      <span className={`font-bold ${(!user || user.preferences?.layers?.aqi !== false) ? 'text-white' : 'text-gray-600'}`}>
-                        {(!user || user.preferences?.layers?.aqi !== false) ? liveMetrics.aqi : 'Desactivado'}
-                      </span>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <span className="text-gray-500 font-semibold text-[10px]">{t('demo.solar')}</span>
-                      <span className={`font-bold ${(!user || user.preferences?.layers?.solar !== false) ? 'text-white' : 'text-gray-600'}`}>
-                        {(!user || user.preferences?.layers?.solar !== false) ? liveMetrics.solar : 'Desactivado'}
-                      </span>
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <span className="text-gray-500 font-semibold text-[10px]">{t('demo.slope')}</span>
-                      <span className={`font-bold ${(!user || user.preferences?.layers?.slope !== false) ? 'text-white' : 'text-gray-600'}`}>
-                        {(!user || user.preferences?.layers?.slope !== false) ? liveMetrics.slope : 'Desactivado'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Seleccionar Enfoque */}
-            <div className="glass-panel p-6 rounded-xl flex flex-col gap-4">
-              <h4 className="flex items-center gap-2 text-white font-bold text-sm font-outfit">
-                <i className="fas fa-crosshairs text-teal-400 text-sm"></i>
-                {t('demo.selectApproachLabel')}
-              </h4>
-              <select
-                value={selectedApproach}
-                onChange={(e) => setSelectedApproach(e.target.value)}
-                className="select select-sm bg-[#111318] border-white/10 focus:border-teal-500 rounded-lg text-xs text-white w-full"
-              >
-                <option value="">{t('demo.chooseApproachOpt')}</option>
-                <optgroup label="Sectores Industriales">
-                  <option value="mining">Minería Sostenible</option>
-                  <option value="agriculture">Agroindustria Inteligente</option>
-                  <option value="energy">Energías Renovables</option>
-                  <option value="real-estate">Desarrollo Inmobiliario</option>
-                </optgroup>
-                <optgroup label="Análisis General">
-                  <option value="fire-risk">Riesgo de Incendio Forestal</option>
-                  <option value="flood-risk">Riesgo de Inundación</option>
-                  <option value="water-management">Gestión Hídrica</option>
-                  <option value="environmental">Calidad Ambiental</option>
-                  <option value="land-planning">Planificación Territorial</option>
-                </optgroup>
-              </select>
-
-              {selectedApproach && activeAnalysis && activeAnalysis.approach === selectedApproach && (
-                <div className="mt-2 text-left flex flex-col gap-3">
-                  <div className="text-gray-400 text-xs font-semibold">{t('demo.indicesAndData')}</div>
-                  <div className="flex flex-col gap-2">
-                    {Object.entries(activeAnalysis.indices || {})
-                      .filter(([key]) => {
-                        const lowKey = key.toLowerCase();
-                        if (user && user.preferences?.layers) {
-                          if (lowKey === 'ndvi' && user.preferences.layers.ndvi === false) return false;
-                          if (lowKey === 'ndwi' && user.preferences.layers.ndwi === false) return false;
-                          if (lowKey === 'ndmi' && user.preferences.layers.ndmi === false) return false;
-                        }
-                        return true;
-                      })
-                      .map(([key, val]) => (
-                        <div key={key} className="flex justify-between items-center text-xs py-1.5 border-b border-white/5">
-                          <span className="text-gray-400 font-semibold">{key}</span>
-                          <span className="text-white font-bold font-mono">{typeof val === 'number' ? val.toFixed(4) : val}</span>
-                        </div>
-                      ))}
-                  </div>
-
-                  {/* Exportar Reporte PDF (Premium) */}
-                  <button
-                    type="button"
-                    onClick={() => window.open(`/api/v1/analyze/export/${activeAnalysis.task_id}`, '_blank')}
-                    className="btn btn-xs bg-[#16171d] hover:bg-[#1e2028] border border-white/10 text-teal-400 rounded-lg flex items-center justify-center gap-1.5 w-full mt-1 font-semibold"
-                  >
-                    <i className="fas fa-file-pdf text-[11px]"></i>
-                    <span>Exportar Reporte Ejecutivo PDF</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Radio de Análisis */}
-            <div className="glass-panel p-6 rounded-xl flex flex-col gap-4">
-              <h4 className="flex items-center gap-2 text-white font-bold text-sm font-outfit">
-                <i className="fas fa-ruler-combined text-teal-400 text-sm"></i>
-                {t('demo.radiusLabel')}
-              </h4>
-              <select
-                value={selectedRadius}
-                onChange={(e) => setSelectedRadius(Number(e.target.value))}
-                className="select select-sm bg-[#111318] border-white/10 focus:border-teal-500 rounded-lg text-xs text-white w-full"
-              >
-                <option value={2000}>2 kilómetros (~12.57 km²)</option>
-                <option value={5000}>5 kilómetros (~78.54 km²)</option>
-                <option value={10000}>10 kilómetros (~314.16 km²)</option>
-              </select>
-              <div className="text-[10px] text-gray-500 leading-normal text-left">
-                <i className="fas fa-info-circle"></i> {t('demo.radiusDesc')}
-              </div>
-
-              {/* Rango de Fechas Histórico (Premium) */}
-              <div className="border-t border-white/5 pt-3 mt-1 flex flex-col gap-2 text-left">
-                <label className="flex items-center gap-2 text-xs font-semibold text-gray-300 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={useCustomDates && !!user}
-                    disabled={!user}
-                    onChange={(e) => setUseCustomDates(e.target.checked)}
-                    className="checkbox checkbox-xs checkbox-primary"
-                  />
-                  {user ? (
-                    <span>📅 Rango Histórico (Premium)</span>
-                  ) : (
-                    <span className="text-gray-500 flex items-center gap-1">
-                      <i className="fas fa-lock text-[10px]"></i>
-                      📅 Rango Histórico (Premium)
-                    </span>
-                  )}
-                </label>
-                
-                {!user && (
-                  <p className="text-[9px] text-gray-500 leading-snug">
-                    Inicia sesión para comparar imágenes históricas de los últimos 3 años.
-                  </p>
-                )}
-
-                {useCustomDates && user && (
-                  <div className="grid grid-cols-2 gap-2 mt-1">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[9px] text-gray-400">Fecha Inicio</span>
-                      <input
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                        className="input input-xs bg-[#111318] border-white/10 text-white rounded text-[10px]"
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[9px] text-gray-400">Fecha Fin</span>
-                      <input
-                        type="date"
-                        value={endDate}
-                        onChange={(e) => setEndDate(e.target.value)}
-                        className="input input-xs bg-[#111318] border-white/10 text-white rounded text-[10px]"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Iniciar Análisis */}
-            <div className="glass-panel p-6 rounded-xl flex flex-col gap-4 text-center">
-              <button
-                onClick={handleAnalyze}
-                disabled={!selectedLocation || !selectedApproach || isAnalyzing}
-                className="btn btn-primary bg-gradient-to-r from-teal-500 to-emerald-600 border-none hover:opacity-90 text-[#111318] rounded-xl h-11 font-bold flex items-center justify-center gap-2 w-full disabled:opacity-50"
-              >
-                {isAnalyzing ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 animate-spin" />
-                    <span>{t('demo.btnAnalyzing')}</span>
-                  </>
-                ) : (
-                  <>
-                    <SatIcon className="h-4 w-4" />
-                    <span>{t('demo.btnAnalyze')}</span>
-                  </>
-                )}
-              </button>
-              
-              <p className={`text-xs font-semibold ${selectedLocation && selectedApproach ? 'text-teal-400' : 'text-gray-500'}`}>
-                {selectedLocation && selectedApproach ? '✓ Listo para analizar' : t('demo.btnRequireSelection')}
-              </p>
-
-              {pollingStatus && (
-                <div className="text-gray-400 text-xs mt-1 animate-pulse italic flex items-center justify-center gap-1.5">
-                  <LoaderIcon className="h-3.5 w-3.5 animate-spin text-teal-400" />
-                  <span>{pollingStatus}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Monitoreo Satelital Activo (Alertas) */}
-            <div className="glass-panel p-6 rounded-xl flex flex-col gap-4 text-left">
-              <h4 className="flex items-center gap-2 text-white font-bold text-sm font-outfit">
-                <i className="fas fa-bell text-teal-400 text-sm"></i>
-                Monitoreo Satelital y Alertas
-              </h4>
-              
-              {user ? (
-                <div className="flex flex-col gap-3">
-                  {userAlerts.length > 0 ? (
-                    userAlerts.map((alertItem: any) => (
-                      <div key={alertItem.id} className="bg-[#111318]/60 border border-white/5 p-3.5 rounded-xl flex flex-col gap-2">
-                        <div className="flex justify-between items-start gap-2">
-                          <span className="font-bold text-white text-xs truncate max-w-[170px]" title={alertItem.location_name}>
-                            📍 {alertItem.location_name}
-                          </span>
-                          <button
-                            onClick={() => handleDeleteAlert(alertItem.id)}
-                            className="text-red-400 hover:text-red-300 font-semibold text-[10px] uppercase tracking-wider"
-                          >
-                            Eliminar
-                          </button>
-                        </div>
-                        <div className="text-[10px] text-gray-400 leading-normal flex flex-col gap-1 font-semibold">
-                          <div>
-                            Enfoque: <span className="text-gray-300 font-bold">{(isEn ? approachesConfig[alertItem.approach]?.enName : approachesConfig[alertItem.approach]?.name) || alertItem.approach}</span>
-                          </div>
-                          <div>
-                            Disparador: <span className="text-teal-400 font-bold">{alertItem.trigger_type.toUpperCase().replace('_', ' ')} = {alertItem.trigger_value}</span>
-                          </div>
-                          <div>
-                            Frecuencia: <span className="text-gray-300 font-bold">{alertItem.frequency === 'weekly' ? 'Semanal' : 'Diaria'}</span>
-                          </div>
-                          {alertItem.last_index_value !== null && (
-                            <div>
-                              Último Valor: <span className="text-gray-300 font-mono">{alertItem.last_index_value.toFixed(4)}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-2">
-                      <p className="text-xs text-gray-500 mb-3 font-semibold">No tienes alertas configuradas.</p>
-                      {selectedLocation && selectedApproach && !isSettingAlert && (
-                        <button
-                          onClick={() => setIsSettingAlert(true)}
-                          className="btn btn-xs btn-outline btn-primary text-teal-400 hover:bg-teal-500/10 hover:text-teal-300 rounded-lg w-full font-bold"
-                        >
-                          🔔 Activar Monitoreo en esta Zona
-                        </button>
-                      )}
-                    </div>
-                  )}
-
-                  {isSettingAlert && selectedLocation && selectedApproach && (
-                    <div className="bg-[#111318] border border-teal-500/20 p-4 rounded-xl flex flex-col gap-3">
-                      <div className="text-xs font-bold text-white">Configurar Alerta</div>
-                      
-                      <div className="flex flex-col gap-1">
-                        <span className="text-[9px] text-gray-400 font-semibold">Condición Disparadora</span>
-                        <select
-                          value={alertTriggerType}
-                          onChange={(e) => setAlertTriggerType(e.target.value)}
-                          className="select select-xs bg-[#16171d] border-white/10 text-white rounded text-[10px] w-full"
-                        >
-                          <option value="ndvi_below">NDVI (Vegetación) menor que</option>
-                          <option value="ndwi_above">NDWI (Inundación/Agua) mayor que</option>
-                          <option value="ndmi_below">NDMI (Humedad Suelo) menor que</option>
-                          <option value="ndvi_drop_pct">Caída de NDVI (%) mayor o igual a</option>
-                        </select>
-                      </div>
-
-                      <div className="flex flex-col gap-1">
-                        <span className="text-[9px] text-gray-400 font-semibold">Frecuencia de Monitoreo</span>
-                        <select
-                          value={alertFrequency}
-                          onChange={(e) => setAlertFrequency(e.target.value)}
-                          className="select select-xs bg-[#16171d] border-white/10 text-white rounded text-[10px] w-full"
-                        >
-                          <option value="daily">Monitoreo Diario</option>
-                          <option value="weekly">Monitoreo Semanal</option>
-                        </select>
-                      </div>
-
-                      <div className="flex flex-col gap-1">
-                        <span className="text-[9px] text-gray-400 font-semibold">Valor de Umbral</span>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={alertTriggerValue}
-                          onChange={(e) => setAlertTriggerValue(Number(e.target.value))}
-                          className="input input-xs bg-[#16171d] border-white/10 text-white rounded text-[10px]"
-                        />
-                      </div>
-
-                      <div className="flex gap-2 mt-1">
-                        <button
-                          onClick={handleCreateAlert}
-                          disabled={isSavingAlert}
-                          className="btn btn-xs btn-primary flex-1 rounded-lg font-bold"
-                        >
-                          {isSavingAlert ? 'Guardando...' : 'Crear Alerta'}
-                        </button>
-                        <button
-                          onClick={() => setIsSettingAlert(false)}
-                          className="btn btn-xs btn-ghost text-gray-400 flex-1 rounded-lg font-bold"
-                        >
-                          Cancelar
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2 bg-[#111318]/40 border border-white/5 p-4 rounded-xl text-xs">
-                  <div className="text-gray-400 font-semibold leading-relaxed">
-                    💡 <span className="text-white font-bold">Monitoreo Semanal Satelital (Premium):</span> Guarda un punto de interés para vigilar variaciones críticas de sequía o vegetación y recibir alertas automáticas por email.
-                  </div>
-                  <div className="text-gray-500 font-semibold text-[10px] mt-1">
-                    Inicia sesión con Google para acceder a esta prueba gratuita del plan premium.
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Análisis Recientes */}
-            {analysisHistory.length > 0 && (
-              <div className="glass-panel p-6 rounded-xl flex flex-col gap-4 text-left">
-                <h4 className="flex items-center gap-2 text-white font-bold text-sm font-outfit">
-                  <i className="fas fa-history text-teal-400 text-sm"></i>
-                  {t('demo.historyTitle')}
-                </h4>
-                <div className="flex flex-col gap-2 max-h-[160px] overflow-y-auto custom-scroll">
-                  {analysisHistory.map((item, idx) => (
-                    <div
-                      key={idx}
-                      onClick={() => replayHistory(item)}
-                      className="p-2.5 border border-white/5 hover:border-teal-500/20 hover:bg-[#1e2028]/40 rounded-lg text-xs cursor-pointer flex justify-between items-center transition-colors"
-                      title={item.location_name}
-                    >
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-3.5 w-3.5 text-teal-400 flex-shrink-0" />
-                        <span className="text-gray-300 font-bold truncate max-w-[150px]">
-                          {(isEn ? approachesConfig[item.approach]?.enName : approachesConfig[item.approach]?.name) || item.approach}
-                        </span>
-                      </div>
-                      <span className="text-[10px] text-gray-500 font-semibold">{item.timestamp}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* User Analysis History */}
+            <HistorySection
+              analysisHistory={analysisHistory}
+              replayHistory={replayHistory}
+              t={t}
+              isEn={isEn}
+              approachesConfig={approachesConfig}
+            />
           </div>
         </div>
       </div>
 
       {/* Onboarding Modal Overlay */}
-      {showOnboarding && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
-          <div className="relative w-full max-w-lg bg-[#16171d] border border-white/10 p-6 rounded-2xl shadow-2xl text-left flex flex-col gap-5 overflow-hidden">
-            
-            {/* Ambient Background Gradient for WOW effect */}
-            <div className="absolute top-0 right-0 w-48 h-48 bg-teal-500/10 rounded-full blur-3xl -z-10 pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl -z-10 pointer-events-none" />
-
-            {/* Title / Header */}
-            <div>
-              <div className="text-[10px] text-teal-400 font-bold uppercase tracking-wider mb-1">
-                Paso {onboardingStep} de 2 • Personalización
-              </div>
-              <h3 className="text-lg font-bold text-white font-outfit">
-                Personaliza tu experiencia territorial
-              </h3>
-              <p className="text-xs text-gray-400 mt-1">
-                Esta información opcional nos ayuda a adaptar los indicadores y mapas a tus intereses.
-              </p>
-            </div>
-
-            {/* Step 1: Metadata Questions */}
-            {onboardingStep === 1 && (
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs text-gray-300 font-semibold">Sector o Industria de Interés</label>
-                  <select
-                    value={onboardingSector}
-                    onChange={(e) => setOnboardingSector(e.target.value)}
-                    className="select select-sm bg-[#111318] border-white/10 text-white rounded-lg text-xs"
-                  >
-                    <option value="">Selecciona una opción...</option>
-                    <option value="agriculture">Agricultura y Forestal</option>
-                    <option value="mining">Minería y Recursos Naturales</option>
-                    <option value="energy">Energía y Renovables</option>
-                    <option value="real-estate">Inmobiliaria y Construcción</option>
-                    <option value="environmental">Medio Ambiente y Conservación</option>
-                    <option value="academia">Academia e Investigación</option>
-                    <option value="other">Otro / General</option>
-                  </select>
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs text-gray-300 font-semibold">Tu Rol o Cargo</label>
-                  <input
-                    type="text"
-                    value={onboardingRole}
-                    onChange={(e) => setOnboardingRole(e.target.value)}
-                    placeholder="Ej: Consultor Ambiental, Ingeniero, Administrador"
-                    className="input input-sm bg-[#111318] border-white/10 text-white rounded-lg text-xs"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs text-gray-300 font-semibold">Ubicación Territorial de Interés Principal</label>
-                  <input
-                    type="text"
-                    value={onboardingLocation}
-                    onChange={(e) => setOnboardingLocation(e.target.value)}
-                    placeholder="Ej: Copiapó, Región Metropolitana, Valparaíso"
-                    className="input input-sm bg-[#111318] border-white/10 text-white rounded-lg text-xs"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Step 2: Layer selections */}
-            {onboardingStep === 2 && (
-              <div className="flex flex-col gap-4 max-h-[300px] overflow-y-auto pr-1 custom-scroll">
-                <div>
-                  <div className="text-xs text-teal-400 font-bold mb-2 uppercase tracking-wide">APIs de Base (Recomendadas)</div>
-                  <div className="flex flex-col gap-2.5">
-                    <label className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/5 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={onboardingLayers.ndvi}
-                        onChange={(e) => setOnboardingLayers({ ...onboardingLayers, ndvi: e.target.checked })}
-                        className="checkbox checkbox-sm checkbox-primary mt-0.5"
-                      />
-                      <div>
-                        <div className="text-xs font-bold text-white">NDVI (Índice de Vegetación)</div>
-                        <div className="text-[10px] text-gray-500">Mide la salud y densidad de la cubierta vegetal.</div>
-                      </div>
-                    </label>
-                    <label className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/5 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={onboardingLayers.ndwi}
-                        onChange={(e) => setOnboardingLayers({ ...onboardingLayers, ndwi: e.target.checked })}
-                        className="checkbox checkbox-sm checkbox-primary mt-0.5"
-                      />
-                      <div>
-                        <div className="text-xs font-bold text-white">NDWI (Índice de Inundación y Agua)</div>
-                        <div className="text-[10px] text-gray-500">Detecta acumulación de agua y cuerpos hídricos superficiales.</div>
-                      </div>
-                    </label>
-                    <label className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/5 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={onboardingLayers.ndmi}
-                        onChange={(e) => setOnboardingLayers({ ...onboardingLayers, ndmi: e.target.checked })}
-                        className="checkbox checkbox-sm checkbox-primary mt-0.5"
-                      />
-                      <div>
-                        <div className="text-xs font-bold text-white">NDMI (Índice de Humedad del Suelo)</div>
-                        <div className="text-[10px] text-gray-500">Evalúa el estrés hídrico de la vegetación y humedad en suelo.</div>
-                      </div>
-                    </label>
-                    <label className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/5 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={onboardingLayers.elevation}
-                        onChange={(e) => setOnboardingLayers({ ...onboardingLayers, elevation: e.target.checked })}
-                        className="checkbox checkbox-sm checkbox-primary mt-0.5"
-                      />
-                      <div>
-                        <div className="text-xs font-bold text-white">Elevación (Modelo Digital DEM)</div>
-                        <div className="text-[10px] text-gray-500">Determina la altitud del terreno en metros respecto al nivel del mar.</div>
-                      </div>
-                    </label>
-                    <label className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/5 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={onboardingLayers.slope}
-                        onChange={(e) => setOnboardingLayers({ ...onboardingLayers, slope: e.target.checked })}
-                        className="checkbox checkbox-sm checkbox-primary mt-0.5"
-                      />
-                      <div>
-                        <div className="text-xs font-bold text-white">Pendiente (Inclinación del Relieve)</div>
-                        <div className="text-[10px] text-gray-500">Mide los grados de pendiente física de la ladera analizada.</div>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-
-                <div className="border-t border-white/5 pt-3">
-                  <div className="text-xs text-gray-400 font-bold mb-2 uppercase tracking-wide">Capas de Información Adicional (Opcionales)</div>
-                  <div className="flex flex-col gap-2.5">
-                    <label className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/5 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={onboardingLayers.lst}
-                        onChange={(e) => setOnboardingLayers({ ...onboardingLayers, lst: e.target.checked })}
-                        className="checkbox checkbox-sm checkbox-primary mt-0.5"
-                      />
-                      <div>
-                        <div className="text-xs font-bold text-white">Temperatura Superficial del Suelo (LST)</div>
-                        <div className="text-[10px] text-gray-500">Mapea variaciones térmicas superficiales en la zona de interés.</div>
-                      </div>
-                    </label>
-                    <label className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/5 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={onboardingLayers.aqi}
-                        onChange={(e) => setOnboardingLayers({ ...onboardingLayers, aqi: e.target.checked })}
-                        className="checkbox checkbox-sm checkbox-primary mt-0.5"
-                      />
-                      <div>
-                        <div className="text-xs font-bold text-white">Calidad del Aire (Aerosoles Sentinel-5P)</div>
-                        <div className="text-[10px] text-gray-500">Visualiza niveles estimados de monóxido y aerosoles atmosféricos.</div>
-                      </div>
-                    </label>
-                    <label className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/5 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={onboardingLayers.solar}
-                        onChange={(e) => setOnboardingLayers({ ...onboardingLayers, solar: e.target.checked })}
-                        className="checkbox checkbox-sm checkbox-primary mt-0.5"
-                      />
-                      <div>
-                        <div className="text-xs font-bold text-white">Radiación Solar Incidente</div>
-                        <div className="text-[10px] text-gray-500">Calcula la radiación solar media de onda corta en el suelo.</div>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Footer / Buttons */}
-            <div className="flex justify-between items-center gap-3 border-t border-white/5 pt-4 mt-1">
-              <button
-                type="button"
-                onClick={() => handleSaveOnboarding(true)}
-                disabled={isSavingOnboarding}
-                className="text-xs text-gray-500 hover:text-gray-400 font-semibold"
-              >
-                Saltar onboarding
-              </button>
-
-              <div className="flex items-center gap-2">
-                {onboardingStep === 2 && (
-                  <button
-                    type="button"
-                    onClick={() => setOnboardingStep(1)}
-                    className="btn btn-sm btn-ghost text-gray-300 font-bold text-xs"
-                  >
-                    Atrás
-                  </button>
-                )}
-
-                {onboardingStep === 1 ? (
-                  <button
-                    type="button"
-                    onClick={() => setOnboardingStep(2)}
-                    className="btn btn-sm btn-primary bg-teal-500 hover:bg-teal-600 text-[#111318] border-none font-bold text-xs rounded-lg px-4"
-                  >
-                    Siguiente
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => handleSaveOnboarding(false)}
-                    disabled={isSavingOnboarding}
-                    className="btn btn-sm btn-primary bg-gradient-to-r from-teal-500 to-emerald-600 text-[#111318] border-none font-bold text-xs rounded-lg px-4"
-                  >
-                    {isSavingOnboarding ? 'Guardando...' : 'Comenzar'}
-                  </button>
-                )}
-              </div>
-            </div>
-
-          </div>
-        </div>
-      )}
+      <OnboardingModal
+        showOnboarding={showOnboarding}
+        onboardingStep={onboardingStep}
+        setOnboardingStep={setOnboardingStep}
+        onboardingSector={onboardingSector}
+        setOnboardingSector={setOnboardingSector}
+        onboardingRole={onboardingRole}
+        setOnboardingRole={setOnboardingRole}
+        onboardingLocation={onboardingLocation}
+        setOnboardingLocation={setOnboardingLocation}
+        onboardingLayers={onboardingLayers}
+        setOnboardingLayers={setOnboardingLayers}
+        handleSaveOnboarding={handleSaveOnboarding}
+        isSavingOnboarding={isSavingOnboarding}
+      />
     </section>
   )
 }
 
-const LoaderIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    {...props}
-  >
-    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-  </svg>
-)
+export default DemoSection
