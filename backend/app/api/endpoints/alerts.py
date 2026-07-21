@@ -21,6 +21,7 @@ class AlertCreate(BaseModel):
     approach: str = Field(..., max_length=100)
     trigger_type: str = Field(default="ndvi_below", max_length=50) # ndvi_below, ndwi_above, ndmi_below, ndvi_drop_pct
     trigger_value: float = Field(default=0.3)
+    frequency: str = Field(default="daily", max_length=20)
 
 class AlertResponse(BaseModel):
     id: int
@@ -32,6 +33,7 @@ class AlertResponse(BaseModel):
     trigger_type: str
     trigger_value: float
     is_active: bool
+    frequency: str
     last_index_value: Optional[float] = None
 
     class Config:
@@ -73,6 +75,13 @@ def create_alert(
             detail=f"Tipo de disparador inválido. Opciones válidas: {', '.join(valid_triggers)}"
         )
 
+    # Validar frequency
+    if alert_in.frequency not in ["daily", "weekly"]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Frecuencia inválida. Opciones válidas: daily, weekly"
+        )
+
     alert = UserAlert(
         user_id=user.id,
         location_name=alert_in.location_name,
@@ -83,6 +92,7 @@ def create_alert(
         coordinates=WKTElement(f"POINT({alert_in.lng} {alert_in.lat})", srid=4326),
         trigger_type=alert_in.trigger_type,
         trigger_value=alert_in.trigger_value,
+        frequency=alert_in.frequency,
         is_active=True
     )
     

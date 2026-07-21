@@ -126,6 +126,7 @@ class UserAlert(SQLModel, table=True):
         sa_column_kwargs={"server_default": text("CURRENT_TIMESTAMP")}
     )
     is_active: bool = Field(default=True)
+    frequency: str = Field(max_length=20, default="daily")
     
     # Alertas personalizables:
     # ndvi_below, ndwi_above, ndmi_below, ndvi_drop_pct

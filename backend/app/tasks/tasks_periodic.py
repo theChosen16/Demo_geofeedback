@@ -32,6 +32,13 @@ def check_active_alerts():
         logger.info(f"Se encontraron {len(alerts)} alertas activas para procesar.")
         
         for alert in alerts:
+            # Si es semanal, saltar si ya se revisó en los últimos 6 días
+            if alert.frequency == "weekly" and alert.last_checked_at:
+                days_since_check = (datetime.datetime.utcnow() - alert.last_checked_at).days
+                if days_since_check < 6:
+                    logger.info(f"Saltando alerta semanal {alert.id} ({alert.location_name}) - revisada hace {days_since_check} días.")
+                    continue
+
             # Obtener el usuario
             user = session.get(User, alert.user_id)
             if not user or not user.email:
