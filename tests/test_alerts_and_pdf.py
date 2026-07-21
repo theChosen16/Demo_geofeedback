@@ -240,7 +240,7 @@ class AlertsAndPdfTests(unittest.TestCase):
             trigger_value=0.4,
             is_active=True,
             frequency="weekly",
-            last_checked_at=datetime.datetime.utcnow() - datetime.timedelta(days=2)
+            last_checked_at=datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=2)
         )
         
         # Mocks de base de datos

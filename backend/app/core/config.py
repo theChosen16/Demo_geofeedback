@@ -3,7 +3,7 @@ import socket
 import logging
 from typing import List, Dict, Any, Optional
 from urllib.parse import urlparse
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field, field_validator
 
 logger = logging.getLogger(__name__)
@@ -148,9 +148,10 @@ class Settings(BaseSettings):
         db_name = os.getenv("DB_NAME", "geofeedback_papudo")
         return f"postgresql://{db_user}:{db_pass}@{db_host}:{db_port}/{db_name}?sslmode=disable"
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        extra = "ignore"
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore"
+    )
 
 settings = Settings()

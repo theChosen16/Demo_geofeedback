@@ -2,17 +2,15 @@ import sys
 import time
 from datetime import datetime
 
-try:
-    from playwright.sync_api import sync_playwright
-except ImportError:
-    print("Playwright not installed. Please install with: pip install playwright && playwright install chromium")
-    print("Falling back to simple request check...")
-    import requests
-    sys.exit(1)
-
 URL = "https://demogeofeedback-production.up.railway.app"
 
 def run():
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        print("Playwright not installed. Please install with: pip install playwright && playwright install chromium")
+        print("Falling back to simple request check...")
+        sys.exit(1)
     with sync_playwright() as p:
         print(f"[{datetime.now()}] Launching browser...")
         browser = p.chromium.launch(headless=True)
