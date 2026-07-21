@@ -218,3 +218,39 @@ class AlertsAndPdfTests(unittest.TestCase):
         # Verificar que se actualizó el último valor en el registro de alerta
         self.assertEqual(my_alert.last_index_value, 0.35)
         self.assertIsNotNone(my_alert.last_checked_at)
+
+    @patch("app.tasks.tasks_periodic.ee")
+    @patch("app.tasks.tasks_periodic.init_gee")
+    @patch("app.tasks.tasks_periodic.get_sentinel2_image")
+    @patch("app.tasks.tasks_periodic.calculate_indices")
+    @patch("app.tasks.tasks_periodic.get_info_with_timeout")
+    @patch("app.tasks.tasks_periodic.send_alert_email")
+    def test_periodic_alerts_skips_recent_weekly_alert(self, mock_send_email, mock_get_info, mock_calc_indices, mock_get_s2, mock_init_gee, mock_ee):
+        import datetime
+        # Configurar una alerta semanal que ya se revisó hace 2 días
+        my_alert = UserAlert(
+            id=4,
+            user_id=self.fake_user.id,
+            location_name="Monitoreo Semanal Reciente",
+            lat=-33.5,
+            lng=-70.5,
+            radius=1000,
+            approach="agriculture",
+            trigger_type="ndvi_below",
+            trigger_value=0.4,
+            is_active=True,
+            frequency="weekly",
+            last_checked_at=datetime.datetime.utcnow() - datetime.timedelta(days=2)
+        )
+        
+        # Mocks de base de datos
+        self.mock_session.exec.return_value.all.return_value = [my_alert]
+        self.mock_session.get.return_value = self.fake_user
+        
+        # Ejecutar la tarea periódica
+        with patch("app.tasks.tasks_periodic.Session", return_value=self.mock_session):
+            check_active_alerts()
+            
+        # Verificar que NO se envió ningún correo ni se llamó a GEE
+        mock_send_email.assert_not_called()
+        mock_get_s2.assert_not_called()

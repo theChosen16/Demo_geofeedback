@@ -118,6 +118,7 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
   const [isSettingAlert, setIsSettingAlert] = useState(false)
   const [alertTriggerType, setAlertTriggerType] = useState('ndvi_below')
   const [alertTriggerValue, setAlertTriggerValue] = useState(0.3)
+  const [alertFrequency, setAlertFrequency] = useState('daily')
   const [isSavingAlert, setIsSavingAlert] = useState(false)
 
   const fetchUserAlerts = async () => {
@@ -151,7 +152,8 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
           radius: selectedRadius,
           approach: selectedApproach,
           trigger_type: alertTriggerType,
-          trigger_value: Number(alertTriggerValue)
+          trigger_value: Number(alertTriggerValue),
+          frequency: alertFrequency
         })
       })
       if (res.ok) {
@@ -1080,6 +1082,9 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
                           <div>
                             Disparador: <span className="text-teal-400 font-bold">{alertItem.trigger_type.toUpperCase().replace('_', ' ')} = {alertItem.trigger_value}</span>
                           </div>
+                          <div>
+                            Frecuencia: <span className="text-gray-300 font-bold">{alertItem.frequency === 'weekly' ? 'Semanal' : 'Diaria'}</span>
+                          </div>
                           {alertItem.last_index_value !== null && (
                             <div>
                               Último Valor: <span className="text-gray-300 font-mono">{alertItem.last_index_value.toFixed(4)}</span>
@@ -1117,6 +1122,18 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
                           <option value="ndwi_above">NDWI (Inundación/Agua) mayor que</option>
                           <option value="ndmi_below">NDMI (Humedad Suelo) menor que</option>
                           <option value="ndvi_drop_pct">Caída de NDVI (%) mayor o igual a</option>
+                        </select>
+                      </div>
+
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[9px] text-gray-400 font-semibold">Frecuencia de Monitoreo</span>
+                        <select
+                          value={alertFrequency}
+                          onChange={(e) => setAlertFrequency(e.target.value)}
+                          className="select select-xs bg-[#16171d] border-white/10 text-white rounded text-[10px] w-full"
+                        >
+                          <option value="daily">Monitoreo Diario</option>
+                          <option value="weekly">Monitoreo Semanal</option>
                         </select>
                       </div>
 
