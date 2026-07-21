@@ -254,3 +254,34 @@ class AlertsAndPdfTests(unittest.TestCase):
         # Verificar que NO se envió ningún correo ni se llamó a GEE
         mock_send_email.assert_not_called()
         mock_get_s2.assert_not_called()
+
+    def test_update_preferences_success(self):
+        # Configurar mock de base de datos
+        def mock_commit():
+            pass
+        self.mock_session.commit = mock_commit
+        self.mock_session.refresh = lambda x: None
+
+        payload = {
+            "preferences": {
+                "sector": "agriculture",
+                "role": "agronomist",
+                "location": "Santiago",
+                "layers": {
+                    "ndvi": True,
+                    "ndwi": False
+                }
+            },
+            "onboarding_completed": True
+        }
+        
+        # Petición PUT
+        response = self.client.put("/api/v1/auth/me/preferences", json=payload)
+        
+        self.assertEqual(response.status_code, 200)
+        json_data = response.json()
+        self.assertEqual(json_data["status"], "success")
+        self.assertTrue(json_data["user"]["onboarding_completed"])
+        self.assertEqual(json_data["user"]["preferences"]["sector"], "agriculture")
+        self.assertEqual(self.fake_user.preferences["sector"], "agriculture")
+        self.assertTrue(self.fake_user.onboarding_completed)

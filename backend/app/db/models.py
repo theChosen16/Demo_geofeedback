@@ -64,6 +64,8 @@ class User(SQLModel, table=True):
         default_factory=datetime.datetime.now,
         sa_column_kwargs={"server_default": text("CURRENT_TIMESTAMP")}
     )
+    onboarding_completed: bool = Field(default=False)
+    preferences: Optional[dict] = Field(default=None, sa_column=Column(JSONB, nullable=True))
 
 
 class UserAnalysis(SQLModel, table=True):

@@ -81,6 +81,7 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
 
   const {
     user,
+    setUser,
     selectedLocation,
     setSelectedLocation,
     selectedApproach,
@@ -120,6 +121,80 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
   const [alertTriggerValue, setAlertTriggerValue] = useState(0.3)
   const [alertFrequency, setAlertFrequency] = useState('daily')
   const [isSavingAlert, setIsSavingAlert] = useState(false)
+
+  // Estados de Onboarding / Personalización
+  const [showOnboarding, setShowOnboarding] = useState(false)
+  const [onboardingStep, setOnboardingStep] = useState(1)
+  const [onboardingSector, setOnboardingSector] = useState('')
+  const [onboardingRole, setOnboardingRole] = useState('')
+  const [onboardingLocation, setOnboardingLocation] = useState('')
+  const [onboardingLayers, setOnboardingLayers] = useState({
+    ndvi: true,
+    ndwi: true,
+    ndmi: true,
+    elevation: true,
+    slope: true,
+    lst: false,
+    aqi: false,
+    solar: false
+  })
+  const [isSavingOnboarding, setIsSavingOnboarding] = useState(false)
+
+  useEffect(() => {
+    if (user && user.onboarding_completed === false) {
+      setShowOnboarding(true)
+      setOnboardingStep(1)
+    } else {
+      setShowOnboarding(false)
+    }
+  }, [user])
+
+  const handleSaveOnboarding = async (skip = false) => {
+    setIsSavingOnboarding(true)
+    const preferences = skip ? {
+      sector: '',
+      role: '',
+      location: '',
+      layers: {
+        ndvi: true,
+        ndwi: true,
+        ndmi: true,
+        elevation: true,
+        slope: true,
+        lst: false,
+        aqi: false,
+        solar: false
+      }
+    } : {
+      sector: onboardingSector,
+      role: onboardingRole,
+      location: onboardingLocation,
+      layers: onboardingLayers
+    }
+
+    try {
+      const res = await fetch('/api/v1/auth/me/preferences', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          preferences,
+          onboarding_completed: true
+        })
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setUser(data.user)
+        setShowOnboarding(false)
+      } else {
+        alert('Error al guardar preferencias de personalización.')
+      }
+    } catch (err) {
+      console.error('Error saving onboarding preferences:', err)
+      alert('Error de red al guardar la configuración.')
+    } finally {
+      setIsSavingOnboarding(false)
+    }
+  }
 
   const fetchUserAlerts = async () => {
     if (!user) return
@@ -879,19 +954,27 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
                   <div className="grid grid-cols-2 gap-3 text-xs">
                     <div className="flex flex-col gap-1">
                       <span className="text-gray-500 font-semibold text-[10px]">{t('demo.elevation')}</span>
-                      <span className="text-white font-bold">{liveMetrics.elevation}</span>
+                      <span className={`font-bold ${(!user || user.preferences?.layers?.elevation !== false) ? 'text-white' : 'text-gray-600'}`}>
+                        {(!user || user.preferences?.layers?.elevation !== false) ? liveMetrics.elevation : 'Desactivado'}
+                      </span>
                     </div>
                     <div className="flex flex-col gap-1">
                       <span className="text-gray-500 font-semibold text-[10px]">{t('demo.aqi')}</span>
-                      <span className="text-white font-bold">{liveMetrics.aqi}</span>
+                      <span className={`font-bold ${(!user || user.preferences?.layers?.aqi !== false) ? 'text-white' : 'text-gray-600'}`}>
+                        {(!user || user.preferences?.layers?.aqi !== false) ? liveMetrics.aqi : 'Desactivado'}
+                      </span>
                     </div>
                     <div className="flex flex-col gap-1">
                       <span className="text-gray-500 font-semibold text-[10px]">{t('demo.solar')}</span>
-                      <span className="text-white font-bold">{liveMetrics.solar}</span>
+                      <span className={`font-bold ${(!user || user.preferences?.layers?.solar !== false) ? 'text-white' : 'text-gray-600'}`}>
+                        {(!user || user.preferences?.layers?.solar !== false) ? liveMetrics.solar : 'Desactivado'}
+                      </span>
                     </div>
                     <div className="flex flex-col gap-1">
                       <span className="text-gray-500 font-semibold text-[10px]">{t('demo.slope')}</span>
-                      <span className="text-white font-bold">{liveMetrics.slope}</span>
+                      <span className={`font-bold ${(!user || user.preferences?.layers?.slope !== false) ? 'text-white' : 'text-gray-600'}`}>
+                        {(!user || user.preferences?.layers?.slope !== false) ? liveMetrics.slope : 'Desactivado'}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -929,12 +1012,22 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
                 <div className="mt-2 text-left flex flex-col gap-3">
                   <div className="text-gray-400 text-xs font-semibold">{t('demo.indicesAndData')}</div>
                   <div className="flex flex-col gap-2">
-                    {Object.entries(activeAnalysis.indices || {}).map(([key, val]) => (
-                      <div key={key} className="flex justify-between items-center text-xs py-1.5 border-b border-white/5">
-                        <span className="text-gray-400 font-semibold">{key}</span>
-                        <span className="text-white font-bold font-mono">{typeof val === 'number' ? val.toFixed(4) : val}</span>
-                      </div>
-                    ))}
+                    {Object.entries(activeAnalysis.indices || {})
+                      .filter(([key]) => {
+                        const lowKey = key.toLowerCase();
+                        if (user && user.preferences?.layers) {
+                          if (lowKey === 'ndvi' && user.preferences.layers.ndvi === false) return false;
+                          if (lowKey === 'ndwi' && user.preferences.layers.ndwi === false) return false;
+                          if (lowKey === 'ndmi' && user.preferences.layers.ndmi === false) return false;
+                        }
+                        return true;
+                      })
+                      .map(([key, val]) => (
+                        <div key={key} className="flex justify-between items-center text-xs py-1.5 border-b border-white/5">
+                          <span className="text-gray-400 font-semibold">{key}</span>
+                          <span className="text-white font-bold font-mono">{typeof val === 'number' ? val.toFixed(4) : val}</span>
+                        </div>
+                      ))}
                   </div>
 
                   {/* Exportar Reporte PDF (Premium) */}
@@ -1208,6 +1301,233 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
           </div>
         </div>
       </div>
+
+      {/* Onboarding Modal Overlay */}
+      {showOnboarding && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+          <div className="relative w-full max-w-lg bg-[#16171d] border border-white/10 p-6 rounded-2xl shadow-2xl text-left flex flex-col gap-5 overflow-hidden">
+            
+            {/* Ambient Background Gradient for WOW effect */}
+            <div className="absolute top-0 right-0 w-48 h-48 bg-teal-500/10 rounded-full blur-3xl -z-10 pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl -z-10 pointer-events-none" />
+
+            {/* Title / Header */}
+            <div>
+              <div className="text-[10px] text-teal-400 font-bold uppercase tracking-wider mb-1">
+                Paso {onboardingStep} de 2 • Personalización
+              </div>
+              <h3 className="text-lg font-bold text-white font-outfit">
+                Personaliza tu experiencia territorial
+              </h3>
+              <p className="text-xs text-gray-400 mt-1">
+                Esta información opcional nos ayuda a adaptar los indicadores y mapas a tus intereses.
+              </p>
+            </div>
+
+            {/* Step 1: Metadata Questions */}
+            {onboardingStep === 1 && (
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs text-gray-300 font-semibold">Sector o Industria de Interés</label>
+                  <select
+                    value={onboardingSector}
+                    onChange={(e) => setOnboardingSector(e.target.value)}
+                    className="select select-sm bg-[#111318] border-white/10 text-white rounded-lg text-xs"
+                  >
+                    <option value="">Selecciona una opción...</option>
+                    <option value="agriculture">Agricultura y Forestal</option>
+                    <option value="mining">Minería y Recursos Naturales</option>
+                    <option value="energy">Energía y Renovables</option>
+                    <option value="real-estate">Inmobiliaria y Construcción</option>
+                    <option value="environmental">Medio Ambiente y Conservación</option>
+                    <option value="academia">Academia e Investigación</option>
+                    <option value="other">Otro / General</option>
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs text-gray-300 font-semibold">Tu Rol o Cargo</label>
+                  <input
+                    type="text"
+                    value={onboardingRole}
+                    onChange={(e) => setOnboardingRole(e.target.value)}
+                    placeholder="Ej: Consultor Ambiental, Ingeniero, Administrador"
+                    className="input input-sm bg-[#111318] border-white/10 text-white rounded-lg text-xs"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs text-gray-300 font-semibold">Ubicación Territorial de Interés Principal</label>
+                  <input
+                    type="text"
+                    value={onboardingLocation}
+                    onChange={(e) => setOnboardingLocation(e.target.value)}
+                    placeholder="Ej: Copiapó, Región Metropolitana, Valparaíso"
+                    className="input input-sm bg-[#111318] border-white/10 text-white rounded-lg text-xs"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Step 2: Layer selections */}
+            {onboardingStep === 2 && (
+              <div className="flex flex-col gap-4 max-h-[300px] overflow-y-auto pr-1 custom-scroll">
+                <div>
+                  <div className="text-xs text-teal-400 font-bold mb-2 uppercase tracking-wide">APIs de Base (Recomendadas)</div>
+                  <div className="flex flex-col gap-2.5">
+                    <label className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={onboardingLayers.ndvi}
+                        onChange={(e) => setOnboardingLayers({ ...onboardingLayers, ndvi: e.target.checked })}
+                        className="checkbox checkbox-sm checkbox-primary mt-0.5"
+                      />
+                      <div>
+                        <div className="text-xs font-bold text-white">NDVI (Índice de Vegetación)</div>
+                        <div className="text-[10px] text-gray-500">Mide la salud y densidad de la cubierta vegetal.</div>
+                      </div>
+                    </label>
+                    <label className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={onboardingLayers.ndwi}
+                        onChange={(e) => setOnboardingLayers({ ...onboardingLayers, ndwi: e.target.checked })}
+                        className="checkbox checkbox-sm checkbox-primary mt-0.5"
+                      />
+                      <div>
+                        <div className="text-xs font-bold text-white">NDWI (Índice de Inundación y Agua)</div>
+                        <div className="text-[10px] text-gray-500">Detecta acumulación de agua y cuerpos hídricos superficiales.</div>
+                      </div>
+                    </label>
+                    <label className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={onboardingLayers.ndmi}
+                        onChange={(e) => setOnboardingLayers({ ...onboardingLayers, ndmi: e.target.checked })}
+                        className="checkbox checkbox-sm checkbox-primary mt-0.5"
+                      />
+                      <div>
+                        <div className="text-xs font-bold text-white">NDMI (Índice de Humedad del Suelo)</div>
+                        <div className="text-[10px] text-gray-500">Evalúa el estrés hídrico de la vegetación y humedad en suelo.</div>
+                      </div>
+                    </label>
+                    <label className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={onboardingLayers.elevation}
+                        onChange={(e) => setOnboardingLayers({ ...onboardingLayers, elevation: e.target.checked })}
+                        className="checkbox checkbox-sm checkbox-primary mt-0.5"
+                      />
+                      <div>
+                        <div className="text-xs font-bold text-white">Elevación (Modelo Digital DEM)</div>
+                        <div className="text-[10px] text-gray-500">Determina la altitud del terreno en metros respecto al nivel del mar.</div>
+                      </div>
+                    </label>
+                    <label className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={onboardingLayers.slope}
+                        onChange={(e) => setOnboardingLayers({ ...onboardingLayers, slope: e.target.checked })}
+                        className="checkbox checkbox-sm checkbox-primary mt-0.5"
+                      />
+                      <div>
+                        <div className="text-xs font-bold text-white">Pendiente (Inclinación del Relieve)</div>
+                        <div className="text-[10px] text-gray-500">Mide los grados de pendiente física de la ladera analizada.</div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="border-t border-white/5 pt-3">
+                  <div className="text-xs text-gray-400 font-bold mb-2 uppercase tracking-wide">Capas de Información Adicional (Opcionales)</div>
+                  <div className="flex flex-col gap-2.5">
+                    <label className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={onboardingLayers.lst}
+                        onChange={(e) => setOnboardingLayers({ ...onboardingLayers, lst: e.target.checked })}
+                        className="checkbox checkbox-sm checkbox-primary mt-0.5"
+                      />
+                      <div>
+                        <div className="text-xs font-bold text-white">Temperatura Superficial del Suelo (LST)</div>
+                        <div className="text-[10px] text-gray-500">Mapea variaciones térmicas superficiales en la zona de interés.</div>
+                      </div>
+                    </label>
+                    <label className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={onboardingLayers.aqi}
+                        onChange={(e) => setOnboardingLayers({ ...onboardingLayers, aqi: e.target.checked })}
+                        className="checkbox checkbox-sm checkbox-primary mt-0.5"
+                      />
+                      <div>
+                        <div className="text-xs font-bold text-white">Calidad del Aire (Aerosoles Sentinel-5P)</div>
+                        <div className="text-[10px] text-gray-500">Visualiza niveles estimados de monóxido y aerosoles atmosféricos.</div>
+                      </div>
+                    </label>
+                    <label className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={onboardingLayers.solar}
+                        onChange={(e) => setOnboardingLayers({ ...onboardingLayers, solar: e.target.checked })}
+                        className="checkbox checkbox-sm checkbox-primary mt-0.5"
+                      />
+                      <div>
+                        <div className="text-xs font-bold text-white">Radiación Solar Incidente</div>
+                        <div className="text-[10px] text-gray-500">Calcula la radiación solar media de onda corta en el suelo.</div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Footer / Buttons */}
+            <div className="flex justify-between items-center gap-3 border-t border-white/5 pt-4 mt-1">
+              <button
+                type="button"
+                onClick={() => handleSaveOnboarding(true)}
+                disabled={isSavingOnboarding}
+                className="text-xs text-gray-500 hover:text-gray-400 font-semibold"
+              >
+                Saltar onboarding
+              </button>
+
+              <div className="flex items-center gap-2">
+                {onboardingStep === 2 && (
+                  <button
+                    type="button"
+                    onClick={() => setOnboardingStep(1)}
+                    className="btn btn-sm btn-ghost text-gray-300 font-bold text-xs"
+                  >
+                    Atrás
+                  </button>
+                )}
+
+                {onboardingStep === 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => setOnboardingStep(2)}
+                    className="btn btn-sm btn-primary bg-teal-500 hover:bg-teal-600 text-[#111318] border-none font-bold text-xs rounded-lg px-4"
+                  >
+                    Siguiente
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleSaveOnboarding(false)}
+                    disabled={isSavingOnboarding}
+                    className="btn btn-sm btn-primary bg-gradient-to-r from-teal-500 to-emerald-600 text-[#111318] border-none font-bold text-xs rounded-lg px-4"
+                  >
+                    {isSavingOnboarding ? 'Guardando...' : 'Comenzar'}
+                  </button>
+                )}
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
     </section>
   )
 }
