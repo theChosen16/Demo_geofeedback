@@ -343,77 +343,88 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
     }
   }, [map, activeAnalysis])
 
-  // Fetch public Google Maps APIs metadata (Elevation, AQI, Solar)
+  // Fetch public Google Maps APIs metadata (Elevation, AQI, Solar) in parallel
   const fetchLocalApiMetrics = async (lat: number, lng: number) => {
-    try {
-      const elevator = new google.maps.ElevationService()
-      const offset = 0.001
-      const locations = [
-        { lat, lng },
-        { lat: lat + offset, lng },
-        { lat: lat - offset, lng },
-        { lat, lng: lng + offset },
-        { lat, lng: lng - offset },
-      ]
+    const elevationPromise = new Promise<{ elevation: string; slope: string }>((resolve) => {
+      try {
+        const elevator = new google.maps.ElevationService()
+        const offset = 0.001
+        const locations = [
+          { lat, lng },
+          { lat: lat + offset, lng },
+          { lat: lat - offset, lng },
+          { lat, lng: lng + offset },
+          { lat, lng: lng - offset },
+        ]
 
-      elevator.getElevationForLocations({ locations }, (results: any[], status: string) => {
-        if (status === 'OK' && results && results[0]) {
-          const centerElev = results[0].elevation
-          const maxDiff = results.slice(1).reduce((max: number, r: any) => Math.max(max, Math.abs(r.elevation - centerElev)), 0)
-          const slopePercent = (maxDiff / 111) * 100
-          const slopeClass = slopePercent < 5 ? 'Plano' : slopePercent < 15 ? 'Suave' : slopePercent < 30 ? 'Moderado' : 'Pronunciado'
-
-          setLiveMetrics({
-            elevation: `${Math.round(centerElev)} m`,
-            slope: `${Math.round(slopePercent)}% (${slopeClass})`
-          })
-        } else {
-          setLiveMetrics({ elevation: 'N/D', slope: 'N/D' })
-        }
-      })
-    } catch {
-      setLiveMetrics({ elevation: 'Error', slope: 'Error' })
-    }
-
-    try {
-      const url = `https://airquality.googleapis.com/v1/currentConditions:lookup?key=${mapsKey}`
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ location: { latitude: lat, longitude: lng } }),
-      })
-      if (res.ok) {
-        const data = await res.json()
-        if (data.indexes && data.indexes[0]) {
-          const idx = data.indexes[0]
-          setLiveMetrics({ aqi: `${idx.aqi} (${idx.category})` })
-        } else {
-          setLiveMetrics({ aqi: 'N/D' })
-        }
-      } else {
-        setLiveMetrics({ aqi: 'N/D' })
+        elevator.getElevationForLocations({ locations }, (results: any[], status: string) => {
+          if (status === 'OK' && results && results[0]) {
+            const centerElev = results[0].elevation
+            const maxDiff = results.slice(1).reduce((max: number, r: any) => Math.max(max, Math.abs(r.elevation - centerElev)), 0)
+            const slopePercent = (maxDiff / 111) * 100
+            const slopeClass = slopePercent < 5 ? 'Plano' : slopePercent < 15 ? 'Suave' : slopePercent < 30 ? 'Moderado' : 'Pronunciado'
+            resolve({
+              elevation: `${Math.round(centerElev)} m`,
+              slope: `${Math.round(slopePercent)}% (${slopeClass})`
+            })
+          } else {
+            resolve({ elevation: 'N/D', slope: 'N/D' })
+          }
+        })
+      } catch {
+        resolve({ elevation: 'Error', slope: 'Error' })
       }
-    } catch {
-      setLiveMetrics({ aqi: 'N/D' })
+    })
+
+    const aqiPromise = (async () => {
+      try {
+        const url = `https://airquality.googleapis.com/v1/currentConditions:lookup?key=${mapsKey}`
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ location: { latitude: lat, longitude: lng } }),
+        })
+        if (res.ok) {
+          const data = await res.json()
+          if (data.indexes && data.indexes[0]) {
+            const idx = data.indexes[0]
+            return { aqi: `${idx.aqi} (${idx.category})` }
+          }
+        }
+        return { aqi: 'N/D' }
+      } catch {
+        return { aqi: 'N/D' }
+      }
+    })()
+
+    const solarPromise = (async () => {
+      try {
+        const url = `https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${lat}&location.longitude=${lng}&requiredQuality=LOW&key=${mapsKey}`
+        const res = await fetch(url)
+        if (res.ok) {
+          const data = await res.json()
+          if (data.solarPotential) {
+            const hours = Math.round(data.solarPotential.maxSunshineHoursPerYear || 0)
+            return { solar: `${hours} hrs/yr` }
+          }
+          return { solar: 'Sin edificio' }
+        }
+        return { solar: 'N/D' }
+      } catch {
+        return { solar: 'N/D' }
+      }
+    })()
+
+    const [elevRes, aqiRes, solarRes] = await Promise.allSettled([elevationPromise, aqiPromise, solarPromise])
+
+    const mergedMetrics = {
+      elevation: elevRes.status === 'fulfilled' ? elevRes.value.elevation : 'N/D',
+      slope: elevRes.status === 'fulfilled' ? elevRes.value.slope : 'N/D',
+      aqi: aqiRes.status === 'fulfilled' ? aqiRes.value.aqi : 'N/D',
+      solar: solarRes.status === 'fulfilled' ? solarRes.value.solar : 'N/D',
     }
 
-    try {
-      const url = `https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${lat}&location.longitude=${lng}&requiredQuality=LOW&key=${mapsKey}`
-      const res = await fetch(url)
-      if (res.ok) {
-        const data = await res.json()
-        if (data.solarPotential) {
-          const hours = Math.round(data.solarPotential.maxSunshineHoursPerYear || 0)
-          setLiveMetrics({ solar: `${hours} hrs/yr` })
-        } else {
-          setLiveMetrics({ solar: 'Sin edificio' })
-        }
-      } else {
-        setLiveMetrics({ solar: 'N/D' })
-      }
-    } catch {
-      setLiveMetrics({ solar: 'N/D' })
-    }
+    setLiveMetrics(mergedMetrics)
   }
 
   const getAutocompleteService = () => {
