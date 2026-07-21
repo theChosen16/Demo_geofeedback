@@ -110,6 +110,82 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
   const [pollingStatus, setPollingStatus] = useState<string | null>(null)
   const [isPulseLoading, setIsPulseLoading] = useState(false)
 
+  const [useCustomDates, setUseCustomDates] = useState(false)
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+
+  const [userAlerts, setUserAlerts] = useState<any[]>([])
+  const [isSettingAlert, setIsSettingAlert] = useState(false)
+  const [alertTriggerType, setAlertTriggerType] = useState('ndvi_below')
+  const [alertTriggerValue, setAlertTriggerValue] = useState(0.3)
+  const [isSavingAlert, setIsSavingAlert] = useState(false)
+
+  const fetchUserAlerts = async () => {
+    if (!user) return
+    try {
+      const res = await fetch('/api/v1/alerts')
+      if (res.ok) {
+        const data = await res.json()
+        setUserAlerts(data)
+      }
+    } catch (err) {
+      console.error('Error fetching alerts:', err)
+    }
+  }
+
+  useEffect(() => {
+    fetchUserAlerts()
+  }, [user])
+
+  const handleCreateAlert = async () => {
+    if (!selectedLocation || !selectedApproach) return
+    setIsSavingAlert(true)
+    try {
+      const res = await fetch('/api/v1/alerts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          location_name: selectedLocation.name,
+          lat: selectedLocation.lat,
+          lng: selectedLocation.lng,
+          radius: selectedRadius,
+          approach: selectedApproach,
+          trigger_type: alertTriggerType,
+          trigger_value: Number(alertTriggerValue)
+        })
+      })
+      if (res.ok) {
+        alert('¡Alerta de monitoreo activo creada con éxito!')
+        setIsSettingAlert(false)
+        fetchUserAlerts()
+      } else {
+        const err = await res.json()
+        alert(err.detail || 'Error al crear la alerta.')
+      }
+    } catch {
+      alert('Error de red al configurar la alerta.')
+    } finally {
+      setIsSavingAlert(false)
+    }
+  }
+
+  const handleDeleteAlert = async (alertId: number) => {
+    if (!confirm('¿Seguro que deseas eliminar esta alerta de monitoreo?')) return
+    try {
+      const res = await fetch(`/api/v1/alerts/${alertId}`, {
+        method: 'DELETE'
+      })
+      if (res.ok) {
+        alert('Alerta eliminada.')
+        fetchUserAlerts()
+      } else {
+        alert('Error al eliminar la alerta.')
+      }
+    } catch {
+      alert('Error de red al eliminar la alerta.')
+    }
+  }
+
   const circleRef = useRef<any>(null)
   const geeLayerRef = useRef<any>(null)
   // task_id del análisis actualmente activo: fetchInterpretation lo compara antes de escribir
@@ -396,6 +472,7 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
         radius: selectedRadius,
         approach: selectedApproach,
         location: selectedLocation.name,
+        ...(useCustomDates && startDate && endDate ? { start_date: startDate, end_date: endDate } : {})
       }
 
       const res = await fetch('/api/v1/analyze', {
@@ -847,8 +924,8 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
               </select>
 
               {selectedApproach && activeAnalysis && activeAnalysis.approach === selectedApproach && (
-                <div className="mt-2 text-left">
-                  <div className="text-gray-400 text-xs font-semibold mb-2">{t('demo.indicesAndData')}</div>
+                <div className="mt-2 text-left flex flex-col gap-3">
+                  <div className="text-gray-400 text-xs font-semibold">{t('demo.indicesAndData')}</div>
                   <div className="flex flex-col gap-2">
                     {Object.entries(activeAnalysis.indices || {}).map(([key, val]) => (
                       <div key={key} className="flex justify-between items-center text-xs py-1.5 border-b border-white/5">
@@ -857,6 +934,16 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
                       </div>
                     ))}
                   </div>
+
+                  {/* Exportar Reporte PDF (Premium) */}
+                  <button
+                    type="button"
+                    onClick={() => window.open(`/api/v1/analyze/export/${activeAnalysis.task_id}`, '_blank')}
+                    className="btn btn-xs bg-[#16171d] hover:bg-[#1e2028] border border-white/10 text-teal-400 rounded-lg flex items-center justify-center gap-1.5 w-full mt-1 font-semibold"
+                  >
+                    <i className="fas fa-file-pdf text-[11px]"></i>
+                    <span>Exportar Reporte Ejecutivo PDF</span>
+                  </button>
                 </div>
               )}
             </div>
@@ -878,6 +965,56 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
               </select>
               <div className="text-[10px] text-gray-500 leading-normal text-left">
                 <i className="fas fa-info-circle"></i> {t('demo.radiusDesc')}
+              </div>
+
+              {/* Rango de Fechas Histórico (Premium) */}
+              <div className="border-t border-white/5 pt-3 mt-1 flex flex-col gap-2 text-left">
+                <label className="flex items-center gap-2 text-xs font-semibold text-gray-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={useCustomDates && !!user}
+                    disabled={!user}
+                    onChange={(e) => setUseCustomDates(e.target.checked)}
+                    className="checkbox checkbox-xs checkbox-primary"
+                  />
+                  {user ? (
+                    <span>📅 Rango Histórico (Premium)</span>
+                  ) : (
+                    <span className="text-gray-500 flex items-center gap-1">
+                      <i className="fas fa-lock text-[10px]"></i>
+                      📅 Rango Histórico (Premium)
+                    </span>
+                  )}
+                </label>
+                
+                {!user && (
+                  <p className="text-[9px] text-gray-500 leading-snug">
+                    Inicia sesión para comparar imágenes históricas de los últimos 3 años.
+                  </p>
+                )}
+
+                {useCustomDates && user && (
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[9px] text-gray-400">Fecha Inicio</span>
+                      <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="input input-xs bg-[#111318] border-white/10 text-white rounded text-[10px]"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[9px] text-gray-400">Fecha Fin</span>
+                      <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="input input-xs bg-[#111318] border-white/10 text-white rounded text-[10px]"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -909,6 +1046,117 @@ const DemoSectionContent: React.FC<{ mapsKey: string }> = ({ mapsKey }) => {
                 <div className="text-gray-400 text-xs mt-1 animate-pulse italic flex items-center justify-center gap-1.5">
                   <LoaderIcon className="h-3.5 w-3.5 animate-spin text-teal-400" />
                   <span>{pollingStatus}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Monitoreo Satelital Activo (Alertas) */}
+            <div className="glass-panel p-6 rounded-xl flex flex-col gap-4 text-left">
+              <h4 className="flex items-center gap-2 text-white font-bold text-sm font-outfit">
+                <i className="fas fa-bell text-teal-400 text-sm"></i>
+                Monitoreo Satelital y Alertas
+              </h4>
+              
+              {user ? (
+                <div className="flex flex-col gap-3">
+                  {userAlerts.length > 0 ? (
+                    userAlerts.map((alertItem: any) => (
+                      <div key={alertItem.id} className="bg-[#111318]/60 border border-white/5 p-3.5 rounded-xl flex flex-col gap-2">
+                        <div className="flex justify-between items-start gap-2">
+                          <span className="font-bold text-white text-xs truncate max-w-[170px]" title={alertItem.location_name}>
+                            📍 {alertItem.location_name}
+                          </span>
+                          <button
+                            onClick={() => handleDeleteAlert(alertItem.id)}
+                            className="text-red-400 hover:text-red-300 font-semibold text-[10px] uppercase tracking-wider"
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                        <div className="text-[10px] text-gray-400 leading-normal flex flex-col gap-1 font-semibold">
+                          <div>
+                            Enfoque: <span className="text-gray-300 font-bold">{(isEn ? approachesConfig[alertItem.approach]?.enName : approachesConfig[alertItem.approach]?.name) || alertItem.approach}</span>
+                          </div>
+                          <div>
+                            Disparador: <span className="text-teal-400 font-bold">{alertItem.trigger_type.toUpperCase().replace('_', ' ')} = {alertItem.trigger_value}</span>
+                          </div>
+                          {alertItem.last_index_value !== null && (
+                            <div>
+                              Último Valor: <span className="text-gray-300 font-mono">{alertItem.last_index_value.toFixed(4)}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-2">
+                      <p className="text-xs text-gray-500 mb-3 font-semibold">No tienes alertas configuradas.</p>
+                      {selectedLocation && selectedApproach && !isSettingAlert && (
+                        <button
+                          onClick={() => setIsSettingAlert(true)}
+                          className="btn btn-xs btn-outline btn-primary text-teal-400 hover:bg-teal-500/10 hover:text-teal-300 rounded-lg w-full font-bold"
+                        >
+                          🔔 Activar Monitoreo en esta Zona
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {isSettingAlert && selectedLocation && selectedApproach && (
+                    <div className="bg-[#111318] border border-teal-500/20 p-4 rounded-xl flex flex-col gap-3">
+                      <div className="text-xs font-bold text-white">Configurar Alerta</div>
+                      
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[9px] text-gray-400 font-semibold">Condición Disparadora</span>
+                        <select
+                          value={alertTriggerType}
+                          onChange={(e) => setAlertTriggerType(e.target.value)}
+                          className="select select-xs bg-[#16171d] border-white/10 text-white rounded text-[10px] w-full"
+                        >
+                          <option value="ndvi_below">NDVI (Vegetación) menor que</option>
+                          <option value="ndwi_above">NDWI (Inundación/Agua) mayor que</option>
+                          <option value="ndmi_below">NDMI (Humedad Suelo) menor que</option>
+                          <option value="ndvi_drop_pct">Caída de NDVI (%) mayor o igual a</option>
+                        </select>
+                      </div>
+
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[9px] text-gray-400 font-semibold">Valor de Umbral</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={alertTriggerValue}
+                          onChange={(e) => setAlertTriggerValue(Number(e.target.value))}
+                          className="input input-xs bg-[#16171d] border-white/10 text-white rounded text-[10px]"
+                        />
+                      </div>
+
+                      <div className="flex gap-2 mt-1">
+                        <button
+                          onClick={handleCreateAlert}
+                          disabled={isSavingAlert}
+                          className="btn btn-xs btn-primary flex-1 rounded-lg font-bold"
+                        >
+                          {isSavingAlert ? 'Guardando...' : 'Crear Alerta'}
+                        </button>
+                        <button
+                          onClick={() => setIsSettingAlert(false)}
+                          className="btn btn-xs btn-ghost text-gray-400 flex-1 rounded-lg font-bold"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2 bg-[#111318]/40 border border-white/5 p-4 rounded-xl text-xs">
+                  <div className="text-gray-400 font-semibold leading-relaxed">
+                    💡 <span className="text-white font-bold">Monitoreo Semanal Satelital (Premium):</span> Guarda un punto de interés para vigilar variaciones críticas de sequía o vegetación y recibir alertas automáticas por email.
+                  </div>
+                  <div className="text-gray-500 font-semibold text-[10px] mt-1">
+                    Inicia sesión con Google para acceder a esta prueba gratuita del plan premium.
+                  </div>
                 </div>
               )}
             </div>

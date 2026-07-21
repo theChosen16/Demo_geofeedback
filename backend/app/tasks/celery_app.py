@@ -20,7 +20,7 @@ celery_app = Celery(
     "geofeedback_tasks",
     broker=redis_url,
     backend=redis_url,
-    include=["app.tasks.worker"]  # Importar el módulo del worker para registrar las tareas
+    include=["app.tasks.worker", "app.tasks.tasks_periodic"]  # Importar módulos para registrar las tareas
 )
 
 # Configuraciones adicionales
@@ -33,4 +33,10 @@ celery_app.conf.update(
     task_track_started=True,          # Permite al frontend saber si la tarea inició
     task_time_limit=300,             # Límite de tiempo estricto: 5 minutos
     task_soft_time_limit=240,        # Límite suave: 4 minutos (emite excepción)
+    beat_schedule={
+        "check-active-alerts-daily": {
+            "task": "app.tasks.tasks_periodic.check_active_alerts",
+            "schedule": 86400.0,       # Ejecutar una vez al día (en segundos)
+        }
+    }
 )

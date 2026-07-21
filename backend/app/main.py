@@ -19,6 +19,7 @@ from app.api.endpoints.stats import router as stats_router
 from app.api.endpoints.observability import router as observability_router
 from app.api.endpoints.contact import router as contact_router
 from app.api.endpoints.auth import router as auth_router
+from app.api.endpoints.alerts import router as alerts_router
 
 logger = logging.getLogger(__name__)
 
@@ -186,6 +187,7 @@ app.include_router(stats_router, prefix=settings.API_PREFIX, tags=["Estadística
 app.include_router(observability_router, prefix=settings.API_PREFIX, tags=["Observabilidad"])
 app.include_router(contact_router, prefix=settings.API_PREFIX, tags=["Formulario Contacto"])
 app.include_router(auth_router, prefix=settings.API_PREFIX, tags=["Autenticación"])
+app.include_router(alerts_router, prefix=settings.API_PREFIX, tags=["Alertas Territoriales"])
 
 
 # ============================================================================

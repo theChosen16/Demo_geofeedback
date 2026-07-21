@@ -99,3 +99,38 @@ class UserAnalysis(SQLModel, table=True):
     map_layer_url: Optional[str] = Field(default=None, max_length=2048)
     image_date: Optional[str] = Field(default=None, max_length=30)
     interpretation: Optional[str] = Field(default=None)
+
+
+class UserAlert(SQLModel, table=True):
+    __tablename__ = "user_alerts"
+    __table_args__ = {"schema": "metadata"}
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="metadata.users.id", index=True)
+    location_name: str = Field(max_length=255)
+    lat: float
+    lng: float
+    radius: int
+    approach: str = Field(max_length=100)
+    
+    # Campo geométrico compatible con PostGIS
+    coordinates: Any = Field(
+        sa_column=Column(
+            Geometry(geometry_type="POINT", srid=4326, spatial_index=True),
+            nullable=True
+        )
+    )
+
+    created_at: datetime.datetime = Field(
+        default_factory=datetime.datetime.now,
+        sa_column_kwargs={"server_default": text("CURRENT_TIMESTAMP")}
+    )
+    is_active: bool = Field(default=True)
+    
+    # Alertas personalizables:
+    # ndvi_below, ndwi_above, ndmi_below, ndvi_drop_pct
+    trigger_type: str = Field(max_length=50, default="ndvi_below")
+    trigger_value: float = Field(default=0.3)
+    
+    last_checked_at: Optional[datetime.datetime] = Field(default=None)
+    last_index_value: Optional[float] = Field(default=None)
