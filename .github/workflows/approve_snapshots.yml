@@ -32,6 +32,11 @@ jobs:
           cd frontend
           npm ci || npm install
 
+      - name: Instalar navegadores de Playwright
+        run: |
+          cd frontend
+          npx playwright install chromium --with-deps
+
       - name: Actualizar capturas de referencia (Snapshots)
         run: |
           cd frontend

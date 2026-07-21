@@ -56,6 +56,11 @@ jobs:
           cd frontend
           npm ci || npm install
 
+      - name: Instalar navegadores de Playwright
+        run: |
+          cd frontend
+          npx playwright install chromium --with-deps
+
       - name: Compilar y ejecutar pruebas E2E (Visual + A11y)
         run: |
           cd frontend
