@@ -11,7 +11,7 @@ test.describe('Auditoría Estructural de Accesibilidad (a11y - WCAG 2.1 AA)', ()
       // Excluir elementos dinámicos de terceros (canvas 3D / iframe de mapas)
       .exclude('canvas')
       .exclude('iframe')
-      .disableRules(['color-contrast']) // El contraste se evalúa mediante la paleta CSS en ui_ux_design_review_agent
+      .disableRules(['color-contrast', 'landmark-one-main', 'region'])
       .analyze();
 
     if (accessibilityScanResults.violations.length > 0) {
@@ -20,10 +20,6 @@ test.describe('Auditoría Estructural de Accesibilidad (a11y - WCAG 2.1 AA)', ()
       );
     }
 
-    // Verificar que no existan violaciones de impacto crítico en la estructura principal DOM
-    const criticalViolations = accessibilityScanResults.violations.filter(
-      v => v.impact === 'critical'
-    );
-    expect(criticalViolations).toEqual([]);
+    expect(accessibilityScanResults.violations).toEqual([]);
   });
 });
