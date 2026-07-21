@@ -114,10 +114,23 @@ def configure_gee_workers(*args, **kwargs):
         logger.error("Falla crítica: No se pudo conectar a GEE en el worker.")
 
 
-def get_sentinel2_image(roi):
+def get_sentinel2_image(roi, start_date_str=None, end_date_str=None):
     """Obtiene la imagen Sentinel-2 más reciente y libre de nubes para la ROI."""
-    end_date = datetime.datetime.now()
-    start_date = end_date - datetime.timedelta(days=180) # 6 meses
+    if end_date_str:
+        try:
+            end_date = datetime.datetime.strptime(end_date_str, "%Y-%m-%d")
+        except ValueError:
+            end_date = datetime.datetime.now()
+    else:
+        end_date = datetime.datetime.now()
+        
+    if start_date_str:
+        try:
+            start_date = datetime.datetime.strptime(start_date_str, "%Y-%m-%d")
+        except ValueError:
+            start_date = end_date - datetime.timedelta(days=180)
+    else:
+        start_date = end_date - datetime.timedelta(days=180) # 6 meses
     
     col = (ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
             .filterBounds(roi)
@@ -145,7 +158,10 @@ def calculate_indices(image):
 
 
 @celery_app.task(name="app.tasks.worker.process_gee_analysis", bind=True)
-def process_gee_analysis(self, lat: float, lng: float, radius: int, approach: str, location_name: str, cache_key: str = None, user_id: int = None):
+def process_gee_analysis(
+    self, lat: float, lng: float, radius: int, approach: str, location_name: str,
+    cache_key: str = None, user_id: int = None, start_date: str = None, end_date: str = None
+):
     """
     Tarea asíncrona de Celery para realizar análisis territorial usando Google Earth Engine.
     Guarda los logs en la base de datos de PostGIS e informa el estado.
@@ -177,7 +193,7 @@ def process_gee_analysis(self, lat: float, lng: float, radius: int, approach: st
         slope = ee.Terrain.slope(elevation)
 
         t_check = time.monotonic()
-        s2_image = get_sentinel2_image(roi)
+        s2_image = get_sentinel2_image(roi, start_date_str=start_date, end_date_str=end_date)
         timings['collection_check_s'] = round(time.monotonic() - t_check, 2)
         if not s2_image:
             # Guardar log de advertencia en la base de datos

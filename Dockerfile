@@ -64,6 +64,8 @@ HEALTHCHECK --interval=30s --timeout=15s --start-period=60s --retries=3 \
 # concurrencia según los CPUs visibles del contenedor, que en Railway puede ser 1-2.
 CMD ["sh", "-c", "if [ \"$SERVICE_TYPE\" = \"worker\" ]; then \
     python -m celery -A app.tasks.celery_app worker --loglevel=info --concurrency=${WORKER_CONCURRENCY:-4}; \
+    elif [ \"$SERVICE_TYPE\" = \"beat\" ]; then \
+    python -m celery -A app.tasks.celery_app beat --loglevel=info; \
     else \
     gunicorn \
         --bind 0.0.0.0:${PORT:-5000} \
