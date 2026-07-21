@@ -36,7 +36,7 @@ export const Footer: React.FC = () => {
             href="https://agenticworkflow.cl/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-teal-400 hover:underline"
+            className="text-teal-400 underline hover:text-teal-300"
           >
             Agentic Workflow
           </a>.
