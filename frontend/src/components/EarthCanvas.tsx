@@ -331,13 +331,33 @@ export const EarthCanvas: React.FC = () => {
     const resizeObserver = new ResizeObserver(handleResize)
     resizeObserver.observe(container)
 
-    // 12. Animation Loop
+    // 12. Animation Loop with IntersectionObserver & Visibility API to pause rendering when off-screen
     let lastTime = 0
-    let reqId: number
+    let reqId: number | null = null
+    let isIntersecting = true
     let satelliteAngle = 0
     let satelliteAngle2 = Math.PI // start opposite to avoid overlap
 
+    const startLoop = () => {
+      if (reqId === null && isIntersecting && document.visibilityState === 'visible') {
+        lastTime = performance.now()
+        reqId = requestAnimationFrame(animate)
+      }
+    }
+
+    const stopLoop = () => {
+      if (reqId !== null) {
+        cancelAnimationFrame(reqId)
+        reqId = null
+      }
+    }
+
     const animate = (time: number) => {
+      if (!isIntersecting || document.visibilityState !== 'visible') {
+        stopLoop()
+        return
+      }
+
       const delta = time - lastTime
       lastTime = time
 
@@ -367,12 +387,39 @@ export const EarthCanvas: React.FC = () => {
       reqId = requestAnimationFrame(animate)
     }
 
-    reqId = requestAnimationFrame(animate)
+    // IntersectionObserver to pause rendering when scrolled out of view
+    const intersectionObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          isIntersecting = entry.isIntersecting
+          if (isIntersecting) {
+            startLoop()
+          } else {
+            stopLoop()
+          }
+        })
+      },
+      { threshold: 0.05 }
+    )
+    intersectionObserver.observe(container)
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        startLoop()
+      } else {
+        stopLoop()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    startLoop()
 
     // Cleanup
     return () => {
-      cancelAnimationFrame(reqId)
+      stopLoop()
+      intersectionObserver.disconnect()
       resizeObserver.disconnect()
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
       renderer.dispose()
       
       // Geometry disposals

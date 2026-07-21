@@ -138,14 +138,6 @@ def get_sentinel2_image(roi, start_date_str=None, end_date_str=None):
             .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 30))
             .sort('system:time_start', False))
             
-    try:
-        # Check size of collection safely
-        if get_info_with_timeout(col.size(), timeout=15) == 0:
-            return None
-    except Exception as e:
-        logger.error(f"Error checking GEE collection size: {e}")
-        return None
-        
     return col.first()
 
 
@@ -173,7 +165,6 @@ def process_gee_analysis(
     logger.info(f"Iniciando tarea {self.request.id}: {approach} en ({lat}, {lng}), radio={radius}m")
     
     # Asegurar que Earth Engine esté inicializado
-    # (Por lo general ya lo está gracias a worker_process_init, pero proveemos fallback)
     try:
         ee.Initialize()
     except Exception:
@@ -192,28 +183,7 @@ def process_gee_analysis(
         elevation = glo30_col.select('DEM').mosaic().setDefaultProjection(glo30_col.first().projection()).rename('elevation')
         slope = ee.Terrain.slope(elevation)
 
-        t_check = time.monotonic()
         s2_image = get_sentinel2_image(roi, start_date_str=start_date, end_date_str=end_date)
-        timings['collection_check_s'] = round(time.monotonic() - t_check, 2)
-        if not s2_image:
-            # Guardar log de advertencia en la base de datos
-            with Session(engine) as session:
-                log = ApiUsageLog(
-                    endpoint="/api/v1/analyze",
-                    location_name=location_name[:255],
-                    coordinates=WKTElement(f"POINT({lng} {lat})", srid=4326),
-                    approach=approach,
-                    status="warning_no_images"
-                )
-                session.add(log)
-                session.commit()
-
-            return {
-                "status": "warning", 
-                "message": "No se encontraron imágenes satelitales libres de nubes en los últimos 6 meses para esta ubicación. Intenta con otra zona o espera a mejores condiciones climáticas.",
-                "retry": False
-            }
-            
         s2_indices = calculate_indices(s2_image)
         mean_reducer = ee.Reducer.mean()
         results = {}
@@ -251,8 +221,6 @@ def process_gee_analysis(
             scale = 20
 
         # Determinar la imagen y parámetros de Visualización (Map ID) según el enfoque - Recortado a la ROI
-        # (Se construye aquí, antes de la reducción, porque no depende de sus resultados y así puede
-        # lanzarse a GEE en paralelo con reduceRegion/fecha en vez de esperar a que ambos terminen.)
         vis_params = {}
         vis_image = None
 
@@ -277,46 +245,53 @@ def process_gee_analysis(
             vis_image = s2_indices.select('NDVI').clip(roi)
             vis_params = {'min': 0, 'max': 1, 'palette': ['white', 'green']}
 
-        # Stats primero, en solitario: si reduceRegion falla, la excepción debe propagarse
-        # (comportamiento sin cambios) porque sin estos datos el análisis no tiene ningún valor.
-        # Se resuelve ANTES de someter fecha/mapa a propósito: si se sometieran los 3 a la vez y
-        # stats fallara, las otras 2 llamadas a GEE ya habrían salido igual (gastando cuota/latencia
-        # y ocupando hilos del _GEE_EXECUTOR) para un resultado que de todas formas se descarta.
-        t_sub = time.monotonic()
-        if stats_image is not None:
-            stats = resolve_with_timeout(
-                submit_gee_getinfo(stats_image.reduceRegion(
+        # Encolar las 3 operaciones de GEE en paralelo
+        t_parallel = time.monotonic()
+
+        stats_future = (
+            submit_gee_getinfo(
+                stats_image.reduceRegion(
                     reducer=mean_reducer,
                     geometry=roi,
                     scale=scale,
                     maxPixels=1e9
-                )),
-                timeout=30, op_name="reduceRegion"
+                )
             )
-        else:
-            stats = {}
-        timings['gee_stats_s'] = round(time.monotonic() - t_sub, 2)
+            if stats_image is not None
+            else None
+        )
 
-        # Una vez que sabemos que stats tuvo éxito, fecha y capa de mapa sí se lanzan juntas en
-        # paralelo (ninguna depende de la otra, y ambas son mucho más rápidas que reduceRegion).
-        t_parallel = time.monotonic()
         date_future = submit_gee_getinfo(ee.Date(s2_image.get('system:time_start')).format('YYYY-MM-dd'))
         map_future = _GEE_EXECUTOR.submit(vis_image.getMapId, vis_params)
 
-        # Fecha: si falla, se usa la fecha de hoy como fallback (comportamiento sin cambios); no
-        # invalida el análisis porque el dato principal (stats) ya se obtuvo.
+        # Resolver estadísticas de reducción espectral
+        if stats_future is not None:
+            try:
+                stats = resolve_with_timeout(stats_future, timeout=30, op_name="reduceRegion")
+            except Exception as e:
+                if "empty" in str(e).lower() or "collection" in str(e).lower():
+                    logger.warning(f"No hay imágenes Sentinel-2 disponibles para la ROI: {e}")
+                    return {
+                        "status": "warning",
+                        "message": "No se encontraron imágenes satelitales libres de nubes en los últimos 6 meses para esta ubicación.",
+                        "retry": False
+                    }
+                raise e
+        else:
+            stats = {}
+        timings['gee_stats_s'] = round(time.monotonic() - t_parallel, 2)
+
+        # Resolver fecha de la imagen
         try:
             image_date = resolve_with_timeout(date_future, timeout=15, op_name="image date")
         except Exception as e:
             logger.error(f"Error getting image date from GEE: {e}")
             image_date = datetime.datetime.now().strftime("%Y-%m-%d")
-        timings['gee_date_s'] = round(time.monotonic() - t_parallel, 2)
 
-        # Capa de mapa: si falla se propaga (comportamiento sin cambios), el frontend necesita la capa.
-        t_sub = time.monotonic()
+        # Resolver capa de mapa
         map_id_dict = resolve_with_timeout(map_future, timeout=30, op_name="getMapId")
         tile_url = map_id_dict['tile_fetcher'].url_format
-        timings['gee_mapid_s'] = round(time.monotonic() - t_sub, 2)
+        timings['gee_total_parallel_s'] = round(time.monotonic() - t_parallel, 2)
 
         timings['gee_parallel_wall_s'] = round(time.monotonic() - t_parallel, 2)
 

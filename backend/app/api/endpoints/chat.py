@@ -1,12 +1,13 @@
 import os
 import json
 import logging
+import hashlib
 import asyncio
 from typing import Dict, Any, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
-from app.core.security import verify_rate_limit, analysis_limiter
+from app.core.security import verify_rate_limit, analysis_limiter, redis_client
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -67,6 +68,7 @@ def run_gemini_call(prompt: str) -> Optional[str]:
 async def interpret_analysis(data: InterpretRequest):
     """
     Genera interpretación estructurada con IA (Gemini) sobre los resultados de análisis satelital.
+    Utiliza cache en Redis para responder instantáneamente si el mismo análisis fue interpretado recientemente.
     """
     if not gemini_available:
         raise HTTPException(status_code=503, detail="Gemini AI no disponible")
@@ -77,6 +79,24 @@ async def interpret_analysis(data: InterpretRequest):
     approach_trimmed = data.approach[:50]
     location_trimmed = data.location[:200]
     meta_date_trimmed = data.meta_date[:30]
+
+    # Comprobar cache en Redis
+    results_json = json.dumps(data.results, sort_keys=True)
+    raw_key = f"interpretation:{approach_trimmed}:{location_trimmed}:{meta_date_trimmed}:{results_json}"
+    cache_key = f"interpret:{hashlib.sha256(raw_key.encode('utf-8')).hexdigest()}"
+
+    if redis_client:
+        try:
+            cached = redis_client.get(cache_key)
+            if cached:
+                cached_text = cached.decode('utf-8') if isinstance(cached, bytes) else cached
+                return {
+                    "status": "success",
+                    "interpretation": cached_text,
+                    "model": f"{gemini_model_name} (cached)"
+                }
+        except Exception as e:
+            logger.warning(f"Error leyendo cache de interpretación ({cache_key}): {e}")
 
     # Map raw layer keys → human-readable names for context injection
     layer_names = {
@@ -142,6 +162,13 @@ Genera una interpretación profesional de estos datos siguiendo la estructura in
         
         if not response_text:
             raise HTTPException(status_code=503, detail="No se pudo obtener la interpretación de Gemini")
+
+        # Guardar en Redis cache por 24 horas
+        if redis_client and response_text:
+            try:
+                redis_client.setex(cache_key, 24 * 60 * 60, response_text)
+            except Exception as e:
+                logger.warning(f"Error escribiendo cache de interpretación: {e}")
             
         return {
             "status": "success",
