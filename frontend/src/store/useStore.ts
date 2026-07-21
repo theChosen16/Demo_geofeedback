@@ -53,6 +53,8 @@ export interface AuthUser {
   email: string
   name?: string | null
   picture_url?: string | null
+  onboarding_completed?: boolean
+  preferences?: any
 }
 
 interface AppState {

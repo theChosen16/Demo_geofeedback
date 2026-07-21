@@ -29,10 +29,18 @@ class UserOut(BaseModel):
     email: str
     name: Optional[str] = None
     picture_url: Optional[str] = None
+    onboarding_completed: bool = False
+    preferences: Optional[dict] = None
 
 
 def _user_out(user: User) -> UserOut:
-    return UserOut(email=user.email, name=user.name, picture_url=user.picture_url)
+    return UserOut(
+        email=user.email,
+        name=user.name,
+        picture_url=user.picture_url,
+        onboarding_completed=user.onboarding_completed,
+        preferences=user.preferences
+    )
 
 
 @router.post("/auth/google", dependencies=[Depends(verify_rate_limit(auth_limiter))])
@@ -88,6 +96,28 @@ def logout(response: Response):
 @router.get("/auth/me")
 def get_me(user: User = Depends(get_current_user)):
     return {"user": _user_out(user)}
+
+
+class UserPreferencesUpdate(BaseModel):
+    preferences: dict
+    onboarding_completed: bool = True
+
+
+@router.put("/auth/me/preferences")
+def update_preferences(
+    data: UserPreferencesUpdate,
+    user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """
+    Actualiza las preferencias de visualización y el estado del Onboarding del usuario.
+    """
+    user.preferences = data.preferences
+    user.onboarding_completed = data.onboarding_completed
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return {"status": "success", "user": _user_out(user)}
 
 
 class AnalysisHistoryItem(BaseModel):
