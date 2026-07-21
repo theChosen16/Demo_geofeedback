@@ -1,7 +1,7 @@
 import logging
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from sqlmodel import Session, select
 from geoalchemy2.elements import WKTElement
 
@@ -36,8 +36,7 @@ class AlertResponse(BaseModel):
     frequency: str
     last_index_value: Optional[float] = None
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 @router.post("/alerts", response_model=AlertResponse, status_code=status.HTTP_201_CREATED)
 def create_alert(

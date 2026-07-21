@@ -51,13 +51,19 @@ def get_client_ip(request: Request) -> str:
 
 
 # HMAC SHA-256 IP Anonymization
-_IP_HASH_KEY = (settings.IP_HASH_SALT or settings.SECRET_KEY or "").encode()
+_raw_salt = settings.IP_HASH_SALT or settings.SECRET_KEY
+if not _raw_salt:
+    logger.warning("IP_HASH_SALT y SECRET_KEY desconfigurados: usando salt por defecto en tiempo de ejecución para anonimización de IP.")
+    _raw_salt = "geofeedback_default_ip_anonymization_salt_2026"
+
+_IP_HASH_KEY = _raw_salt.encode()
 
 def hash_ip(ip: str) -> str:
     """Anonimiza la IP con un HMAC-SHA256 usando salt secreto."""
     if not ip:
         return ""
     return hmac.new(_IP_HASH_KEY, ip.encode(), hashlib.sha256).hexdigest()
+
 
 
 class RateLimiter:
