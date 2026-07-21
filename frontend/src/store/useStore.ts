@@ -73,6 +73,10 @@ interface AppState {
   setSelectedApproach: (appr: string) => void
   selectedRadius: number
   setSelectedRadius: (rad: number) => void
+  // Layer picker — set of active GEE layer keys chosen before the demo
+  selectedLayers: Set<string>
+  setSelectedLayers: (layers: Set<string>) => void
+  toggleLayer: (key: string) => void
 
   // Live sidebar metrics (partial updates merge over the current values)
   liveMetrics: LiveMetrics | null
@@ -128,6 +132,20 @@ export const useStore = create<AppState>((set) => ({
 
   selectedApproach: '',
   setSelectedApproach: (appr) => set({ selectedApproach: appr }),
+
+  // Default layers active: all three satellite indices + elevation
+  selectedLayers: new Set(['ndvi', 'ndwi', 'ndmi', 'elevation']),
+  setSelectedLayers: (layers) => set({ selectedLayers: layers }),
+  toggleLayer: (key) =>
+    set((state) => {
+      const next = new Set(state.selectedLayers)
+      if (next.has(key)) {
+        next.delete(key)
+      } else {
+        next.add(key)
+      }
+      return { selectedLayers: next }
+    }),
 
   selectedRadius: 2000,
   setSelectedRadius: (rad) => set({ selectedRadius: rad }),

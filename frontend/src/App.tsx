@@ -2,9 +2,7 @@ import { useEffect } from 'react'
 import { useStore } from './store/useStore'
 import { Navbar } from './components/Navbar'
 import { Hero } from './components/Hero'
-import { Problem } from './components/Problem'
-import { Solution } from './components/Solution'
-import { Indices } from './components/Indices'
+import { LayerSelector } from './components/LayerSelector'
 import { DemoSection } from './components/DemoSection'
 import { Services } from './components/Services'
 import { Team } from './components/Team'
@@ -61,14 +59,8 @@ function App() {
         {/* Hero Landing */}
         <Hero />
 
-        {/* Problem and Regulatory context */}
-        <Problem />
-
-        {/* Technical Solution */}
-        <Solution />
-
-        {/* Satellite Indices Definitions */}
-        <Indices />
+        {/* Layer picker — choose GEE data layers before the interactive demo */}
+        <LayerSelector />
 
         {/* Visor Demo Map */}
         <DemoSection />
