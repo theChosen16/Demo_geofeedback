@@ -4,7 +4,7 @@ test.describe('Regresión Visual Determinista', () => {
   test.beforeEach(async ({ page }) => {
     // Ir a la página principal de GeoFeedback Demo
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
   });
 
   test('Captura visual de la vista principal (Hero & Navbar)', async ({ page }) => {

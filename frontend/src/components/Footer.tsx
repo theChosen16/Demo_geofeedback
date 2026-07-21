@@ -23,6 +23,7 @@ export const Footer: React.FC = () => {
             href="https://github.com/theChosen16/Demo_geofeedback"
             target="_blank"
             rel="noopener noreferrer"
+            aria-label="GitHub Repository"
             className="bg-white/5 hover:bg-white/10 text-white p-3 rounded-full border border-white/10 transition-colors duration-200 flex items-center justify-center w-11 h-11"
           >
             <i className="fab fa-github text-lg"></i>
