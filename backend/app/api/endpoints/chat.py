@@ -78,15 +78,24 @@ async def interpret_analysis(data: InterpretRequest):
     location_trimmed = data.location[:200]
     meta_date_trimmed = data.meta_date[:30]
 
-    approach_names = {
-        'mining': 'Minería Sostenible',
-        'agriculture': 'Agroindustria Inteligente',
-        'energy': 'Energías Renovables',
-        'real-estate': 'Desarrollo Inmobiliario',
-        'flood-risk': 'Riesgo de Inundación',
-        'water-management': 'Gestión Hídrica',
-        'environmental': 'Calidad Ambiental',
-        'land-planning': 'Planificación Territorial'
+    # Map raw layer keys → human-readable names for context injection
+    layer_names = {
+        'ndvi':      'Índice de Vegetación (NDVI)',
+        'ndwi':      'Agua Superficial (NDWI)',
+        'ndmi':      'Humedad / Riesgo de Incendio (NDMI)',
+        'elevation': 'Elevación y Pendiente topográfica',
+        'aqi':       'Calidad del Aire (AQI)',
+        'solar':     'Potencial Solar fotovoltaico',
+        'lst':       'Temperatura Superficial (LST)',
+        # legacy approach keys kept for backward-compat
+        'mining':          'Minería Sostenible',
+        'agriculture':     'Agroindustria Inteligente',
+        'energy':          'Energías Renovables',
+        'real-estate':     'Desarrollo Inmobiliario',
+        'flood-risk':      'Riesgo de Inundación',
+        'water-management':'Gestión Hídrica',
+        'environmental':   'Calidad Ambiental',
+        'land-planning':   'Planificación Territorial',
     }
 
     system_prompt = f"""PERSONALIDAD Y ROL:
@@ -118,7 +127,7 @@ Organiza tu respuesta en estas secciones claramente separadas:
     prompt = f"""{system_prompt}
 
 DATOS A INTERPRETAR:
-Tipo de análisis: {approach_names.get(approach_trimmed, approach_trimmed)}
+Capas activas seleccionadas: {layer_names.get(approach_trimmed, approach_trimmed)}
 Ubicación: {location_trimmed}
 Fecha de la imagen satelital analizada: {meta_date_trimmed}
 
@@ -173,9 +182,15 @@ REGLAS:
 - Sé conciso (máximo 100 palabras para respuestas simples)
 - Usa emojis moderadamente para hacer el contenido más visual
 - NO uses formato markdown como ### o ** porque no se renderiza
-- Si no tienes datos de análisis, indica que el usuario debe primero realizar un análisis
+- Si no tienes datos de análisis, indica que el usuario debe primero seleccionar capas y realizar un análisis
 
-CONTEXTO CLAVE:
+CONTEXTO CLAVE SOBRE LA PLATAFORMA:
+- La UI ahora permite al usuario elegir CAPAS DE DATOS directamente antes del análisis:
+  * NDVI (vegetación), NDWI (agua superficial), NDMI (humedad/incendio): calculados por GEE sobre imágenes Sentinel-2
+  * Elevación y Pendiente: Google Elevation API
+  * AQI: Google Air Quality API en tiempo real
+  * Potencial Solar: Google Solar API
+  * LST: temperatura superficial de la tierra (Landsat)
 - Esta es una DEMO. Usa imágenes Sentinel-2 del catálogo histórico (frecuencia física orbital de paso de 5 días).
 - OBLIGATORIO: Si hablas de la fecha de la imagen del análisis, debes usar obligatoriamente la fecha real provista en el contexto: {meta_date}. NO inventes, simules ni alucines ninguna otra fecha bajo ninguna circunstancia.
 - Para asegurar resultados libres de nubes, el sistema analiza la mejor imagen dentro de un rango de hasta 6 meses.
