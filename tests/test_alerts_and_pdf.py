@@ -167,12 +167,13 @@ class AlertsAndPdfTests(unittest.TestCase):
         self.assertIn("NDVI", response.text)
         self.assertIn("El suelo está estable.", response.text)
 
+    @patch("app.tasks.tasks_periodic.ee")
     @patch("app.tasks.tasks_periodic.init_gee")
     @patch("app.tasks.tasks_periodic.get_sentinel2_image")
     @patch("app.tasks.tasks_periodic.calculate_indices")
     @patch("app.tasks.tasks_periodic.get_info_with_timeout")
     @patch("app.tasks.tasks_periodic.send_alert_email")
-    def test_periodic_alerts_task_execution(self, mock_send_email, mock_get_info, mock_calc_indices, mock_get_s2, mock_init_gee):
+    def test_periodic_alerts_task_execution(self, mock_send_email, mock_get_info, mock_calc_indices, mock_get_s2, mock_init_gee, mock_ee):
         # Configurar datos de simulación
         my_alert = UserAlert(
             id=3,
@@ -192,6 +193,9 @@ class AlertsAndPdfTests(unittest.TestCase):
         self.mock_session.get.return_value = self.fake_user
         
         # Mock de Earth Engine
+        mock_ee.Geometry.Point.return_value = MagicMock()
+        mock_ee.Reducer.mean.return_value = MagicMock()
+        
         mock_get_s2.return_value = MagicMock()
         mock_calc_indices.return_value.select.return_value.reduceRegion.return_value = MagicMock()
         
