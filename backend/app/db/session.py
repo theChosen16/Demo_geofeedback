@@ -26,7 +26,27 @@ def init_db():
         # Nota: En producción, Alembic debería manejar esto,
         # pero mantenemos el bootstrap nativo por compatibilidad y facilidad de despliegue.
         SQLModel.metadata.create_all(engine)
-        logger.info("Base de datos inicializada (Tablas creadas/verificadas).")
+        
+        # Ejecutar migraciones ad-hoc seguras para columnas añadidas recientemente
+        from sqlalchemy import text
+        with Session(engine) as session:
+            # 1. Columnas de Onboarding en la tabla users
+            session.execute(text("""
+                ALTER TABLE metadata.users 
+                ADD COLUMN IF NOT EXISTS onboarding_completed BOOLEAN DEFAULT FALSE;
+            """))
+            session.execute(text("""
+                ALTER TABLE metadata.users 
+                ADD COLUMN IF NOT EXISTS preferences JSONB;
+            """))
+            # 2. Columna de frecuencia en la tabla user_alerts
+            session.execute(text("""
+                ALTER TABLE metadata.user_alerts 
+                ADD COLUMN IF NOT EXISTS frequency VARCHAR(20) DEFAULT 'daily';
+            """))
+            session.commit()
+            
+        logger.info("Base de datos inicializada (Tablas creadas/verificadas y migraciones ejecutadas).")
         return True
     except Exception as e:
         logger.error(f"Error inicializando base de datos: {e}")
