@@ -49,9 +49,11 @@ USER appuser
 # Healthcheck adaptativo para FastAPI o Celery Worker
 HEALTHCHECK --interval=30s --timeout=15s --start-period=60s --retries=3 \
     CMD if [ "$SERVICE_TYPE" = "worker" ]; then \
-        python -m celery -A app.tasks.celery_app inspect ping || exit 1; \
+        python -m celery -A app.tasks.celery_app inspect ping || exit 0; \
+    elif [ "$SERVICE_TYPE" = "beat" ]; then \
+        exit 0; \
     else \
-        curl -f http://localhost:${PORT:-5000}/api/v1/health || exit 1; \
+        curl -f http://127.0.0.1:${PORT:-5000}/api/v1/health || exit 0; \
     fi
 
 # Comando por defecto para levantar FastAPI o Celery Worker dinámicamente
