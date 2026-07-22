@@ -1,0 +1,49 @@
+name: Actualización Automatizada de Capturas Visuales
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  approve_snapshots:
+    name: Actualizar Snapshots de Playwright vía ChatOps
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/approve-snapshots')
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.50.0-noble
+
+    steps:
+      - name: Obtener rama del Pull Request
+        uses: xt0rted/pull-request-comment-branch@v2
+        id: comment_branch
+
+      - name: Descargar código de la rama del PR
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.comment_branch.outputs.head_ref }}
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar dependencias del frontend
+        run: |
+          cd frontend
+          npm ci || npm install
+
+      - name: Instalar navegadores de Playwright
+        run: |
+          cd frontend
+          npx playwright install chromium --with-deps
+
+      - name: Actualizar capturas de referencia (Snapshots)
+        run: |
+          cd frontend
+          npx playwright test --update-snapshots
+
+      - name: Commit y Push de las capturas actualizadas
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'chore(qa): update baseline visual snapshots via /approve-snapshots'
+          file_pattern: 'frontend/tests/e2e/__snapshots__/**'
