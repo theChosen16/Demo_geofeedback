@@ -120,6 +120,18 @@ interface AppState {
   setActiveTab: (tab: 'inicio' | 'demo' | 'servicios' | 'contacto') => void
 }
 
+export const APPROACH_LAYERS_MAP: Record<string, string[]> = {
+  agriculture: ['ndvi', 'ndmi', 'savi', 'ndre', 'bsi'],
+  mining: ['ndvi', 'ndwi', 'bsi', 'ndbi', 'elevation'],
+  energy: ['solar', 'elevation', 'aspect', 'ndbi'],
+  'real-estate': ['ndbi', 'elevation', 'lst', 'mndwi'],
+  'fire-risk': ['nbr', 'ndmi', 'ndvi', 'elevation', 'lst'],
+  'flood-risk': ['mndwi', 'ndwi', 'elevation', 'ndbi'],
+  'water-management': ['ndwi', 'mndwi', 'ndmi', 'ndvi'],
+  environmental: ['evi', 'ndvi', 'ndmi', 'aqi', 'bsi'],
+  'land-planning': ['elevation', 'ndbi', 'bsi', 'ndvi'],
+}
+
 export const useStore = create<AppState>((set) => ({
   language: 'es',
   setLanguage: (lang) => set({ language: lang }),
@@ -130,11 +142,18 @@ export const useStore = create<AppState>((set) => ({
   selectedLocation: null,
   setSelectedLocation: (loc) => set({ selectedLocation: loc }),
 
-  selectedApproach: '',
-  setSelectedApproach: (appr) => set({ selectedApproach: appr }),
+  selectedApproach: 'agriculture',
+  setSelectedApproach: (appr) =>
+    set(() => {
+      const autoLayers = APPROACH_LAYERS_MAP[appr] || ['ndvi']
+      return {
+        selectedApproach: appr,
+        selectedLayers: new Set(autoLayers),
+      }
+    }),
 
-  // Default layers active: all three satellite indices + elevation
-  selectedLayers: new Set(['ndvi', 'ndwi', 'ndmi', 'elevation']),
+  // Default layers active: automatically mapped to initial approach
+  selectedLayers: new Set(APPROACH_LAYERS_MAP['agriculture']),
   setSelectedLayers: (layers) => set({ selectedLayers: layers }),
   toggleLayer: (key) =>
     set((state) => {

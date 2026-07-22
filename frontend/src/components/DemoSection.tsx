@@ -15,15 +15,15 @@ declare const google: any
 
 // Define the approaches configuration
 const approachesConfig: Record<string, { name: string; enName: string; indices: string[] }> = {
-  mining: { name: 'Minería Sostenible', enName: 'Sustainable Mining', indices: ['NDVI', 'NDWI', 'NDMI'] },
-  agriculture: { name: 'Agroindustria Inteligente', enName: 'Smart Agribusiness', indices: ['NDVI', 'NDMI'] },
-  energy: { name: 'Energías Renovables', enName: 'Renewable Energy', indices: ['NDVI', 'NDMI'] },
-  'real-estate': { name: 'Desarrollo Inmobiliario', enName: 'Real Estate Development', indices: ['NDVI', 'NDWI'] },
-  'fire-risk': { name: 'Riesgo de Incendio Forestal', enName: 'Forest Fire Risk', indices: ['NDVI', 'NDMI'] },
-  'flood-risk': { name: 'Riesgo de Inundación', enName: 'Flood Risk', indices: ['NDWI'] },
-  'water-management': { name: 'Gestión Hídrica', enName: 'Water Management', indices: ['NDWI', 'NDMI'] },
-  environmental: { name: 'Calidad Ambiental', enName: 'Environmental Quality', indices: ['NDVI', 'NDWI', 'NDMI'] },
-  'land-planning': { name: 'Planificación Territorial', enName: 'Territorial Planning', indices: ['NDVI', 'NDWI'] }
+  agriculture: { name: 'Agroindustria Inteligente', enName: 'Smart Agribusiness', indices: ['NDVI', 'NDMI', 'SAVI', 'NDRE', 'BSI'] },
+  mining: { name: 'Minería Sostenible', enName: 'Sustainable Mining', indices: ['NDVI', 'NDWI', 'BSI', 'NDBI', 'Pendiente'] },
+  energy: { name: 'Energías Renovables', enName: 'Renewable Energy', indices: ['Potencial Solar', 'Elevación', 'Aspect', 'NDBI'] },
+  'real-estate': { name: 'Desarrollo Inmobiliario', enName: 'Real Estate Development', indices: ['NDBI', 'Pendiente', 'Elevación', 'MNDWI'] },
+  'fire-risk': { name: 'Riesgo de Incendio Forestal', enName: 'Forest Fire Risk', indices: ['NBR', 'NDMI', 'NDVI', 'Pendiente'] },
+  'flood-risk': { name: 'Riesgo de Inundación', enName: 'Flood Risk', indices: ['MNDWI', 'NDWI', 'NDBI', 'Elevación'] },
+  'water-management': { name: 'Gestión Hídrica', enName: 'Water Management', indices: ['NDWI', 'MNDWI', 'NDMI', 'NDVI'] },
+  environmental: { name: 'Calidad Ambiental', enName: 'Environmental Quality', indices: ['EVI', 'NDVI', 'NDMI', 'AQI', 'BSI'] },
+  'land-planning': { name: 'Planificación Territorial', enName: 'Territorial Planning', indices: ['Pendiente', 'NDBI', 'BSI', 'NDVI', 'Elevación'] }
 }
 
 export const DemoSection: React.FC = () => {
