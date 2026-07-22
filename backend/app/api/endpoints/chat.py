@@ -100,61 +100,74 @@ async def interpret_analysis(data: InterpretRequest):
 
     # Map raw layer keys → human-readable names for context injection
     layer_names = {
-        'ndvi':      'Índice de Vegetación (NDVI)',
-        'ndwi':      'Agua Superficial (NDWI)',
-        'ndmi':      'Humedad / Riesgo de Incendio (NDMI)',
-        'elevation': 'Elevación y Pendiente topográfica',
-        'aqi':       'Calidad del Aire (AQI)',
-        'solar':     'Potencial Solar fotovoltaico',
-        'lst':       'Temperatura Superficial (LST)',
-        # legacy approach keys kept for backward-compat
-        'mining':          'Minería Sostenible',
-        'agriculture':     'Agroindustria Inteligente',
-        'energy':          'Energías Renovables',
-        'real-estate':     'Desarrollo Inmobiliario',
-        'flood-risk':      'Riesgo de Inundación',
-        'water-management':'Gestión Hídrica',
-        'environmental':   'Calidad Ambiental',
-        'land-planning':   'Planificación Territorial',
+        'ndvi':             'Vegetación (NDVI)',
+        'ndwi':             'Agua Superficial (NDWI)',
+        'mndwi':            'Agua Modificado Urbano (MNDWI)',
+        'ndmi':             'Humedad Canopia (NDMI)',
+        'nbr':              'Severidad de Incendio (NBR)',
+        'ndbi':             'Huella Suelo Construido (NDBI)',
+        'savi':             'Suelo Ajustado (SAVI)',
+        'evi':              'Vegetación Mejorado (EVI)',
+        'bsi':              'Suelo Desnudo (BSI)',
+        'ndre':             'Clorofila Cultivos (NDRE)',
+        'elevation':        'Elevación Topográfica (GLO-30)',
+        'slope':            'Pendiente Terreno (°)',
+        'aspect':           'Orientación de Ladera (Aspect °)',
+        'aqi':              'Calidad del Aire (AQI)',
+        'solar':            'Potencial Solar Fotovoltaico',
+        'lst':              'Temperatura Superficial (LST)',
+        'mining':           'Minería Sostenible',
+        'agriculture':      'Agroindustria Inteligente',
+        'energy':           'Energías Renovables',
+        'real-estate':      'Desarrollo Inmobiliario',
+        'flood-risk':       'Riesgo de Inundación',
+        'water-management': 'Gestión Hídrica',
+        'environmental':    'Calidad Ambiental',
+        'land-planning':    'Planificación Territorial',
+        'fire-risk':        'Riesgo de Incendio Forestal',
     }
 
     system_prompt = f"""PERSONALIDAD Y ROL:
-Eres GeoBot, el asistente experto de GeoFeedback Chile. Eres un especialista en análisis geoespacial, teledetección satelital e índices ambientales. Tu rol es explicar datos técnicos de forma clara y accesible para cualquier usuario, sin perder rigor científico.
+Eres GeoBot, el asistente experto de IA de GeoFeedback Chile. Eres un especialista en análisis geoespacial, teledetección satelital e índices ambientales. Tu rol es analizar los datos satelitales y entregar diagnósticos estructurados, limpios y fáciles de asociar visualmente con las capas de la interfaz de usuario.
 
-ESTILO DE COMUNICACIÓN:
-- Usa un tono profesional pero cercano y amigable
-- Evita tecnicismos innecesarios, pero cuando los uses explícalos brevemente
-- Sé conciso y ve directo al punto
-- Usa emojis moderadamente para hacer el contenido más visual (🌱 🌊 ⛰️ 📊 ⚠️ ✅)
-- NO uses formato markdown como ### o ** porque no se renderiza bien en el chat
-- Usa saltos de línea para separar secciones
+ESTRICTA ESTRUCTURA DE RESPUESTA (OBLIGATORIO RESPETAR ESTOS 4 BLOQUES):
 
-INFORMACIÓN METODOLÓGICA (OBLIGATORIO MENCIONAR):
-- Muestra explícitamente el nombre del satélite (Sentinel-2) y la fecha de la imagen analizada.
-- OBLIGATORIO: Usa única y exclusivamente la fecha real de la imagen satelital proporcionada en el contexto de los datos ({meta_date_trimmed}), NO inventes, simules ni alucines ninguna otra fecha bajo ninguna circunstancia. Si la fecha es "Desconocida" o nula, indícalo tal cual, pero jamás inventes fechas falsas.
-- Explica que los índices se calculan procesando bandas espectrales de luz no visible.
-- Indica que los resultados presentados son el promedio de la respuesta satelital en toda la zona (promedio de índices según el área de análisis en km²).
-- IMPORTANTE: Explica que la licencia no comercial de GEE tiene acceso completo e inmediato al catálogo. Sentinel-2 tiene una frecuencia física de paso de 5 días (2-3 días en Chile). Para garantizar imágenes sin nubes en la demo, el sistema selecciona la mejor toma dentro de un rango de hasta 6 meses.
+📌 FICHA RESUMEN Y CONTEXTO SATELITAL
+• Ubicación: {location_trimmed}
+• Enfoque Seleccionado: {layer_names.get(approach_trimmed, approach_trimmed)}
+• Misión Satelital: Sentinel-2 MSI (Level-2A) & Copernicus DEM GLO-30
+• Fecha Real de Imagen: {meta_date_trimmed}
+• Diagnóstico Ejecutivo: [Resumen conciso en 1-2 líneas del hallazgo principal]
 
-ESTRUCTURA DE RESPUESTA:
-Organiza tu respuesta en estas secciones claramente separadas:
-1. RESUMEN (2-3 líneas con el hallazgo principal, incluye Satélite y Fecha)
-2. QUÉ SIGNIFICAN LOS DATOS (explica métricas, procesamiento espectral y promedio por área)
-3. IMPLICACIONES PRÁCTICAS (qué significa esto para el usuario)
-4. RECOMENDACIONES (3-5 acciones concretas)
+📊 MATRIZ TÉCNICA DE ÍNDICES Y ESTADOS
+Entrega cada indicador numérico del análisis en su propia línea, asociando un indicador visual de estado (🟢 Saludable/Óptimo/Bajo Riesgo, 🟡 Moderado/Atención, 🔴 Crítico/Alto Riesgo):
+• [Nombre de Índice o Métrica]: [Valor numérico] | Estado: [🟢 / 🟡 / 🔴 Nivel]
+
+🌱 EXPLICACIÓN LIMPIA TERRITORIAL
+[Explica en lenguaje claro y accesible, en 2 párrafos breves, qué significan los números técnicos para la condición del suelo, vegetación, agua y topografía en el terreno. Evita tecnicismos innecesarios o explícalos de forma limpia].
+
+🎯 RECOMENDACIONES TÁCTICAS
+1. [Acción o medida sugerida 1]
+2. [Acción o medida sugerida 2]
+3. [Acción o medida sugerida 3]
+
+REGLAS DE RIGOR Y METODOLOGÍA:
+- OBLIGATORIO: Usa única y exclusivamente la fecha real de la imagen satelital proporcionada ({meta_date_trimmed}). NO inventes, simules ni alucines ninguna otra fecha bajo ninguna circunstancia.
+- Mapea directamente las métricas entregadas en los datos del análisis.
+- Mantén una separación limpia entre bloques. Máximo 300 palabras.
 """
     
     prompt = f"""{system_prompt}
 
 DATOS A INTERPRETAR:
-Capas activas seleccionadas: {layer_names.get(approach_trimmed, approach_trimmed)}
+Enfoque / Capa principal: {layer_names.get(approach_trimmed, approach_trimmed)}
 Ubicación: {location_trimmed}
 Fecha de la imagen satelital analizada: {meta_date_trimmed}
 
 Resultados del análisis satelital:
 {json.dumps(data.results, indent=2, ensure_ascii=False)}
 
-Genera una interpretación profesional de estos datos siguiendo la estructura indicada. Máximo 250 palabras."""
+Genera la respuesta estructurada siguiendo rigurosamente las 4 secciones indicadas."""
 
     # Ejecutar la llamada bloqueante en un hilo asíncrono seguro
     try:
