@@ -123,7 +123,11 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             <div>
               <div className="text-xs text-teal-400 font-bold mb-2 uppercase tracking-wide">APIs de Base (Recomendadas)</div>
               <div className="flex flex-col gap-2.5">
-                <label className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/5 cursor-pointer">
+                <label className={`flex items-start gap-3 p-2.5 rounded-lg border transition-all cursor-pointer ${
+                  onboardingLayers.ndvi 
+                    ? 'bg-teal-500/10 border-teal-500/30 opacity-100' 
+                    : 'bg-white/5 border-white/10 opacity-40 hover:opacity-80 hover:bg-white/10'
+                }`}>
                   <input
                     type="checkbox"
                     checked={onboardingLayers.ndvi}
@@ -132,10 +136,14 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   />
                   <div>
                     <div className="text-xs font-bold text-white">NDVI (Índice de Vegetación)</div>
-                    <div className="text-[10px] text-gray-500">Mide la salud y densidad de la cubierta vegetal.</div>
+                    <div className="text-[10px] text-gray-400">Mide la salud y densidad de la cubierta vegetal.</div>
                   </div>
                 </label>
-                <label className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/5 cursor-pointer">
+                <label className={`flex items-start gap-3 p-2.5 rounded-lg border transition-all cursor-pointer ${
+                  onboardingLayers.ndwi 
+                    ? 'bg-teal-500/10 border-teal-500/30 opacity-100' 
+                    : 'bg-white/5 border-white/10 opacity-40 hover:opacity-80 hover:bg-white/10'
+                }`}>
                   <input
                     type="checkbox"
                     checked={onboardingLayers.ndwi}
@@ -144,10 +152,14 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   />
                   <div>
                     <div className="text-xs font-bold text-white">NDWI (Índice de Inundación y Agua)</div>
-                    <div className="text-[10px] text-gray-500">Detecta acumulación de agua y cuerpos hídricos superficiales.</div>
+                    <div className="text-[10px] text-gray-400">Detecta acumulación de agua y cuerpos hídricos superficiales.</div>
                   </div>
                 </label>
-                <label className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/5 cursor-pointer">
+                <label className={`flex items-start gap-3 p-2.5 rounded-lg border transition-all cursor-pointer ${
+                  onboardingLayers.ndmi 
+                    ? 'bg-teal-500/10 border-teal-500/30 opacity-100' 
+                    : 'bg-white/5 border-white/10 opacity-40 hover:opacity-80 hover:bg-white/10'
+                }`}>
                   <input
                     type="checkbox"
                     checked={onboardingLayers.ndmi}
@@ -156,10 +168,14 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   />
                   <div>
                     <div className="text-xs font-bold text-white">NDMI (Índice de Humedad del Suelo)</div>
-                    <div className="text-[10px] text-gray-500">Evalúa el estrés hídrico de la vegetación y humedad en suelo.</div>
+                    <div className="text-[10px] text-gray-400">Evalúa el estrés hídrico de la vegetación y humedad en suelo.</div>
                   </div>
                 </label>
-                <label className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/5 cursor-pointer">
+                <label className={`flex items-start gap-3 p-2.5 rounded-lg border transition-all cursor-pointer ${
+                  onboardingLayers.elevation 
+                    ? 'bg-teal-500/10 border-teal-500/30 opacity-100' 
+                    : 'bg-white/5 border-white/10 opacity-40 hover:opacity-80 hover:bg-white/10'
+                }`}>
                   <input
                     type="checkbox"
                     checked={onboardingLayers.elevation}
@@ -168,10 +184,14 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   />
                   <div>
                     <div className="text-xs font-bold text-white">Elevación (Modelo Digital DEM)</div>
-                    <div className="text-[10px] text-gray-500">Determina la altitud del terreno en metros respecto al nivel del mar.</div>
+                    <div className="text-[10px] text-gray-400">Determina la altitud del terreno en metros respecto al nivel del mar.</div>
                   </div>
                 </label>
-                <label className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/5 cursor-pointer">
+                <label className={`flex items-start gap-3 p-2.5 rounded-lg border transition-all cursor-pointer ${
+                  onboardingLayers.slope 
+                    ? 'bg-teal-500/10 border-teal-500/30 opacity-100' 
+                    : 'bg-white/5 border-white/10 opacity-40 hover:opacity-80 hover:bg-white/10'
+                }`}>
                   <input
                     type="checkbox"
                     checked={onboardingLayers.slope}
@@ -180,7 +200,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   />
                   <div>
                     <div className="text-xs font-bold text-white">Pendiente (Inclinación del Relieve)</div>
-                    <div className="text-[10px] text-gray-500">Mide los grados de pendiente física de la ladera analizada.</div>
+                    <div className="text-[10px] text-gray-400">Mide los grados de pendiente física de la ladera analizada.</div>
                   </div>
                 </label>
               </div>
@@ -189,7 +209,11 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             <div className="border-t border-white/5 pt-3">
               <div className="text-xs text-gray-400 font-bold mb-2 uppercase tracking-wide">Capas de Información Adicional (Opcionales)</div>
               <div className="flex flex-col gap-2.5">
-                <label className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/5 cursor-pointer">
+                <label className={`flex items-start gap-3 p-2.5 rounded-lg border transition-all cursor-pointer ${
+                  onboardingLayers.lst 
+                    ? 'bg-teal-500/10 border-teal-500/30 opacity-100' 
+                    : 'bg-white/5 border-white/10 opacity-40 hover:opacity-80 hover:bg-white/10'
+                }`}>
                   <input
                     type="checkbox"
                     checked={onboardingLayers.lst}
@@ -198,10 +222,14 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   />
                   <div>
                     <div className="text-xs font-bold text-white">Temperatura Superficial (LST)</div>
-                    <div className="text-[10px] text-gray-500">Temperatura térmica de la superficie terrestre.</div>
+                    <div className="text-[10px] text-gray-400">Temperatura térmica de la superficie terrestre.</div>
                   </div>
                 </label>
-                <label className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/5 cursor-pointer">
+                <label className={`flex items-start gap-3 p-2.5 rounded-lg border transition-all cursor-pointer ${
+                  onboardingLayers.aqi 
+                    ? 'bg-teal-500/10 border-teal-500/30 opacity-100' 
+                    : 'bg-white/5 border-white/10 opacity-40 hover:opacity-80 hover:bg-white/10'
+                }`}>
                   <input
                     type="checkbox"
                     checked={onboardingLayers.aqi}
@@ -210,10 +238,14 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   />
                   <div>
                     <div className="text-xs font-bold text-white">Calidad del Aire (AQI)</div>
-                    <div className="text-[10px] text-gray-500">Índice de contaminación atmosférica en tiempo real.</div>
+                    <div className="text-[10px] text-gray-400">Índice de contaminación atmosférica en tiempo real.</div>
                   </div>
                 </label>
-                <label className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-white/5 cursor-pointer">
+                <label className={`flex items-start gap-3 p-2.5 rounded-lg border transition-all cursor-pointer ${
+                  onboardingLayers.solar 
+                    ? 'bg-teal-500/10 border-teal-500/30 opacity-100' 
+                    : 'bg-white/5 border-white/10 opacity-40 hover:opacity-80 hover:bg-white/10'
+                }`}>
                   <input
                     type="checkbox"
                     checked={onboardingLayers.solar}
@@ -222,7 +254,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   />
                   <div>
                     <div className="text-xs font-bold text-white">Potencial Solar Fotovoltaico</div>
-                    <div className="text-[10px] text-gray-500">Estimación de radiación y viabilidad solar.</div>
+                    <div className="text-[10px] text-gray-400">Estimación de radiación y viabilidad solar.</div>
                   </div>
                 </label>
               </div>
