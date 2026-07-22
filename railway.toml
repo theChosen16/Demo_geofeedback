@@ -3,6 +3,5 @@ builder = "dockerfile"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-service = "Demo_geofeedback"
 restartPolicyType = "on_failure"
 numReplicas = 1
