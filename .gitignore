@@ -53,16 +53,9 @@ backup_full_*.bundle
 *.bundle
 
 
-#Ignore vscode AI rules
-.github\instructions\codacy.instructions.md
-
-# Sync conflict duplicate files (e.g. Google Drive, OneDrive)
-* (1).*
-*(1)
-*(1).*
-* - Copy.*
-* - Copia.*
-* (Conflict)*
+# PDF files & generated reports
+*.pdf
+.agents/ui_reports/
 
 # IDE-specific AI directories
 .windsurf/
