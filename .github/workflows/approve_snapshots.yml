@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ steps.comment_branch.outputs.head_owner }}/${{ steps.comment_branch.outputs.head_repo }}
-          ref: ${{ steps.comment_branch.outputs.head_ref }}
+          ref: ${{ steps.comment_branch.outputs.head_sha }}
           persist-credentials: false
 
       - name: Configurar Node.js
