@@ -53,6 +53,7 @@ Ver [DOCS.md](./DOCS.md) para documentación técnica completa:
 - Operación del contador público y analytics
 - Endpoint de observability y monitor operativo
 - Pipeline CI (`.github/workflows/ci.yml`) y pruebas de regresión
+- Mantenimiento del workspace, reglas de `.gitignore` y gestión de caché en Railway
 
 ---
 

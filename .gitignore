@@ -1,18 +1,42 @@
-# Python
+# Python Caches & Compiled Files
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+coverage.xml
+.coverage.*
+
+# Virtual Environments
 venv/
+.venv/
+.venv_win/
 env/
 ENV/
 
-# IDEs
+# Node & Frontend Build Artifacts
+node_modules/
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/dist/
+frontend/.turbo/
+.turbo/
+.npm/
+
+# IDEs, Editors & AI tools
 .vscode/
 .idea/
 .claude/
 .windsurfrules
+.windsurf/
+.agents/ui_reports/
+.gemini/
 
 # Data files (large rasters and raw data)
 data/raw/*.tif
@@ -33,18 +57,18 @@ data/processed/*.tif
 !data/processed/*.pdf
 !data/infrastructure/
 
-# OS
+# OS Junk
 .DS_Store
 Thumbs.db
 
-# Logs
+# Logs & Temporary Files
 *.log
+*.tmp
+*.temp
 
-# Environment
+# Credentials & Secrets
 .env
 .env.local
-
-# Credentials
 service-account-key.json
 api/service-account-key.json
 
@@ -52,11 +76,5 @@ api/service-account-key.json
 backup_full_*.bundle
 *.bundle
 
-
-# PDF files & generated reports
+# Generated reports & PDF exports
 *.pdf
-.agents/ui_reports/
-
-# IDE-specific AI directories
-.windsurf/
-
