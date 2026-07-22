@@ -44,6 +44,7 @@ class Settings(BaseSettings):
     # Google Services
     GOOGLE_MAPS_API_KEY: str = Field(default="")
     GEMINI_API_KEY: str = Field(default="")
+    GEMINI_MODEL_NAME: str = Field(default="gemini-2.5-flash-lite")
     GOOGLE_APPLICATION_CREDENTIALS_JSON: Optional[str] = Field(default=None)
     GOOGLE_OAUTH_CLIENT_ID: str = Field(default="")
 

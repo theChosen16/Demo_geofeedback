@@ -15,14 +15,14 @@ logger = logging.getLogger(__name__)
 # Intentar inicializar cliente de Gemini
 gemini_client = None
 gemini_available = False
-gemini_model_name = 'gemini-3.5-flash'
+gemini_model_name = getattr(settings, 'GEMINI_MODEL_NAME', 'gemini-2.5-flash-lite')
 
 try:
     from google import genai
     if settings.GEMINI_API_KEY:
         gemini_client = genai.Client(api_key=settings.GEMINI_API_KEY)
         gemini_available = True
-        logger.info("Gemini AI (gemini-3.5-flash) inicializado correctamente en FastAPI.")
+        logger.info(f"Gemini AI ({gemini_model_name}) inicializado correctamente en FastAPI.")
     else:
         logger.warning("GEMINI_API_KEY no configurada en FastAPI.")
 except ImportError:
