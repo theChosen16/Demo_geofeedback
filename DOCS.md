@@ -17,6 +17,7 @@
 8. [Servicios y Licenciamiento](#servicios-y-licenciamiento)
 9. [Operación Analytics y Contador Público](#operación-analytics-y-contador-público)
 10. [CI/CD y Validación](#cicd-y-validación)
+11. [Mantenimiento del Workspace y Gestión de Caché](#mantenimiento-del-workspace-y-gestión-de-caché)
 
 ---
 
@@ -392,6 +393,39 @@ Google Earth Engine requiere licencias Enterprise para uso comercial. GeoFeedbac
 - Redirects de UX (`/api/` y `/contact`)
 - `GET /robots.txt` sin `404`
 - Presencia del fix de render en cero y del bootstrap analytics
+
+---
+
+## Mantenimiento del Workspace y Gestión de Caché
+
+### Reglas de `.gitignore`
+
+El proyecto mantiene una política estricta de exclusión para evitar la fuga de credenciales, artefactos de build y archivos basura:
+
+- **Python Caches & Virtualenvs**: `__pycache__/`, `.pytest_cache/`, `.ruff_cache/`, `.mypy_cache/`, `.coverage`, `venv/`, `.venv/`, `.venv_win/`.
+- **Frontend & Node**: `node_modules/`, `frontend/.next/`, `frontend/dist/`, `.turbo/`, `.npm/`.
+- **IDEs & Agentes IA**: `.vscode/`, `.idea/`, `.claude/`, `.windsurf/`, `.agents/ui_reports/`, `.gemini/`.
+- **Datos Sensibles & Bundles**: `.env`, `service-account-key.json`, `backup_full_*.bundle`, `*.pdf`.
+
+### Protocolo de Limpieza Local
+
+Para realizar un mantenimiento limpio del entorno de desarrollo sin afectar archivos rastreados:
+
+```powershell
+# Limpieza de bytecode y caches de Python
+Get-ChildItem -Path . -Include "__pycache__",".pytest_cache",".ruff_cache",".mypy_cache",".coverage" -Recurse -Force | Remove-Item -Recurse -Force
+
+# Limpieza de caches de build en frontend
+Remove-Item -Path "frontend/.next", "frontend/node_modules/.cache" -Recurse -Force -ErrorAction SilentlyContinue
+```
+
+### Gestión de Caché en Railway
+
+- **CDN Caching**: Se gestiona mediante `railway cdn` CLI. Si está deshabilitado, las solicitudes pasan directamente al contenedor sin almacenamiento en borde.
+- **Redespliegue sin Caché de Build**: Para forzar una reconstrucción limpia de la imagen Docker en Railway desde la fuente:
+  ```bash
+  railway redeploy --from-source --service Demo_geofeedback
+  ```
 
 ---
 
