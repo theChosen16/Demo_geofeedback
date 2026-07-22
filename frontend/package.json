@@ -43,6 +43,15 @@
   "overrides": {
     "tmp": "^0.2.6",
     "uuid": "^11.1.1",
-    "cookie": "^0.7.0"
+    "cookie": "^0.7.0",
+    "external-editor": {
+      "tmp": "^0.2.6"
+    },
+    "@sentry/node": {
+      "cookie": "^0.7.0"
+    },
+    "@lhci/cli": {
+      "uuid": "^11.1.1"
+    }
   }
 }
