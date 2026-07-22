@@ -140,7 +140,9 @@ export const useStore = create<AppState>((set) => ({
     set((state) => {
       const next = new Set(state.selectedLayers)
       if (next.has(key)) {
-        next.delete(key)
+        if (next.size > 1) {
+          next.delete(key)
+        }
       } else {
         next.add(key)
       }
