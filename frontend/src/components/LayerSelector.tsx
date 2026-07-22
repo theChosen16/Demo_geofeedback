@@ -129,7 +129,7 @@ export const LayerSelector: React.FC = () => {
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            entry.target.classList.add('opacity-100', 'translate-y-0')
+            entry.target.classList.add('translate-y-0')
             entry.target.classList.remove('opacity-0', 'translate-y-6')
           }
         })
@@ -219,20 +219,21 @@ export const LayerSelector: React.FC = () => {
                 style={{ transitionDelay: `${i * 40}ms` }}
                 className={[
                   'group relative flex flex-col gap-3 p-4 rounded-xl border text-left',
-                  'transition-all duration-300 cursor-pointer',
-                  'opacity-0 translate-y-6', // animated in via IntersectionObserver
+                  'transition-all duration-300 cursor-pointer opacity-0 translate-y-6',
                   isActive
-                    ? `${c.border} ${c.bg} ring-1 ${c.ring} shadow-lg`
-                    : 'border-white/8 bg-white/2 hover:border-white/20 hover:bg-white/5',
+                    ? `${c.border} ${c.bg} ring-1 ${c.ring} shadow-lg shadow-teal-950/20 opacity-100 scale-100`
+                    : 'border-white/10 bg-white/5 backdrop-blur-md opacity-40 hover:opacity-85 hover:border-white/25 hover:bg-white/10 scale-[0.98] hover:scale-100',
                 ].join(' ')}
               >
                 {/* badge */}
                 <div className="absolute top-3 right-3">
                   <span
-                    className={`text-[10px] font-bold tracking-wider uppercase px-1.5 py-0.5 rounded-full border ${
-                      layer.badge === 'satellite'
-                        ? 'text-purple-400 border-purple-500/30 bg-purple-500/10'
-                        : 'text-sky-400 border-sky-500/30 bg-sky-500/10'
+                    className={`text-[10px] font-bold tracking-wider uppercase px-1.5 py-0.5 rounded-full border transition-all ${
+                      isActive
+                        ? layer.badge === 'satellite'
+                          ? 'text-purple-400 border-purple-500/30 bg-purple-500/10'
+                          : 'text-sky-400 border-sky-500/30 bg-sky-500/10'
+                        : 'text-gray-500 border-white/10 bg-white/5 opacity-60'
                     }`}
                   >
                     {layer.badge === 'satellite' ? 'SAT' : 'API'}
@@ -241,21 +242,25 @@ export const LayerSelector: React.FC = () => {
 
                 {/* icon */}
                 <div
-                  className={`w-10 h-10 rounded-xl flex items-center justify-center border ${c.bg} ${c.border} ${c.text} transition-transform duration-200 group-hover:scale-105`}
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all duration-200 group-hover:scale-105 ${
+                    isActive
+                      ? `${c.bg} ${c.border} ${c.text}`
+                      : 'bg-white/5 border-white/10 text-gray-500 group-hover:text-gray-300 group-hover:border-white/20'
+                  }`}
                 >
                   {layer.icon}
                 </div>
 
                 {/* text */}
                 <div className="pr-8">
-                  <p className={`text-sm font-bold mb-0.5 ${isActive ? 'text-white' : 'text-gray-300'}`}>
+                  <p className={`text-sm font-bold mb-0.5 transition-colors ${isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-200'}`}>
                     {layer.label}
                   </p>
-                  <p className="text-xs text-gray-500 leading-relaxed">
+                  <p className={`text-xs leading-relaxed transition-colors ${isActive ? 'text-gray-400' : 'text-gray-500/80 group-hover:text-gray-400'}`}>
                     {layer.description}
                   </p>
                   {layer.formula && (
-                    <p className="mt-1.5 text-[10px] font-mono text-gray-600">
+                    <p className={`mt-1.5 text-[10px] font-mono transition-colors ${isActive ? 'text-gray-500' : 'text-gray-600/70'}`}>
                       {layer.formula}
                     </p>
                   )}
@@ -264,7 +269,9 @@ export const LayerSelector: React.FC = () => {
                 {/* active indicator */}
                 <div
                   className={`absolute bottom-3 right-3 w-2 h-2 rounded-full transition-all duration-200 ${
-                    isActive ? `${c.text.replace('text-', 'bg-')} scale-100` : 'bg-gray-700 scale-75'
+                    isActive
+                      ? `${c.text.replace('text-', 'bg-')} scale-100 shadow-[0_0_8px_rgba(45,212,191,0.6)]`
+                      : 'bg-white/10 border border-white/20 scale-75 opacity-40'
                   }`}
                 />
               </button>
