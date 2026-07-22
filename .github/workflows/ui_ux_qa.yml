@@ -38,6 +38,10 @@ jobs:
         run: |
           python scripts/qa/gemini_qa_observer.py
 
+      - name: Ejecutar Puente CI/CD Agéntico de Railway
+        run: |
+          python scripts/qa/railway_agentic_ci.py --check-status --run-tests
+
       - name: Guardar Reportes de UI/UX como Artefacto
         uses: actions/upload-artifact@v4
         with:
