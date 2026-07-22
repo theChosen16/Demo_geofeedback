@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useStore } from '../store/useStore'
 import { Send, X, Bot, RefreshCw, Loader2 } from 'lucide-react'
+import { GeoBotResponseViewer } from './demo/GeoBotResponseViewer'
 
 export const Chatbot: React.FC = () => {
   const { t } = useTranslation()
@@ -137,7 +138,7 @@ export const Chatbot: React.FC = () => {
               <div 
                 className={`chat-bubble text-sm leading-relaxed rounded-2xl max-w-[85%] ${msg.role === 'user' ? 'bg-teal-500 text-[#111318] font-medium' : 'bg-[#1e2028] text-gray-200 border border-white/5'}`}
               >
-                {msg.text}
+                {msg.role === 'user' ? msg.text : <GeoBotResponseViewer text={msg.text} />}
               </div>
             </div>
           ))}
