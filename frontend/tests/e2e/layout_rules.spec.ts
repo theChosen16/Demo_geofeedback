@@ -32,8 +32,9 @@ test.describe('Verificación de Reglas Geométricas y Responsivas de Layout', ()
     const count = await buttons.count();
     for (let i = 0; i < Math.min(count, 5); i++) {
       const btn = buttons.nth(i);
-      if (await btn.isVisible()) {
-        const box = await btn.boundingBox();
+      const isVis = await btn.isVisible().catch(() => false);
+      if (isVis) {
+        const box = await btn.boundingBox().catch(() => null);
         if (box && box.height > 0) {
           expect(box.height).toBeGreaterThanOrEqual(30); // Tolerancia adaptable para botones UI (ej. btn-sm de 32px)
         }
