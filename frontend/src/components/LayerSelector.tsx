@@ -107,13 +107,13 @@ export const ALL_LAYERS: LayerDef[] = [
 ]
 
 const COLOR_MAP: Record<string, { bg: string; border: string; text: string; ring: string }> = {
-  emerald: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-400', ring: 'ring-emerald-500/40' },
-  blue:    { bg: 'bg-blue-500/10',    border: 'border-blue-500/30',    text: 'text-blue-400',    ring: 'ring-blue-500/40'    },
-  orange:  { bg: 'bg-orange-500/10',  border: 'border-orange-500/30',  text: 'text-orange-400',  ring: 'ring-orange-500/40'  },
-  slate:   { bg: 'bg-slate-500/10',   border: 'border-slate-500/30',   text: 'text-slate-300',   ring: 'ring-slate-500/40'   },
-  sky:     { bg: 'bg-sky-500/10',     border: 'border-sky-500/30',     text: 'text-sky-400',     ring: 'ring-sky-500/40'     },
-  yellow:  { bg: 'bg-yellow-500/10',  border: 'border-yellow-500/30',  text: 'text-yellow-400',  ring: 'ring-yellow-500/40'  },
-  red:     { bg: 'bg-red-500/10',     border: 'border-red-500/30',     text: 'text-red-400',     ring: 'ring-red-500/40'     },
+  emerald: { bg: 'bg-emerald-500/15', border: 'border-emerald-500/40', text: 'text-emerald-400', ring: 'ring-emerald-500/50' },
+  blue:    { bg: 'bg-blue-500/15',    border: 'border-blue-500/40',    text: 'text-blue-400',    ring: 'ring-blue-500/50'    },
+  orange:  { bg: 'bg-orange-500/15',  border: 'border-orange-500/40',  text: 'text-orange-400',  ring: 'ring-orange-500/50'  },
+  slate:   { bg: 'bg-indigo-500/15',  border: 'border-indigo-500/40',  text: 'text-indigo-300',  ring: 'ring-indigo-500/50'  },
+  sky:     { bg: 'bg-sky-500/15',     border: 'border-sky-500/40',     text: 'text-sky-400',     ring: 'ring-sky-500/50'     },
+  yellow:  { bg: 'bg-amber-500/15',   border: 'border-amber-500/40',   text: 'text-amber-400',   ring: 'ring-amber-500/50'   },
+  red:     { bg: 'bg-rose-500/15',    border: 'border-rose-500/40',    text: 'text-rose-400',    ring: 'ring-rose-500/50'    },
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -207,7 +207,7 @@ export const LayerSelector: React.FC = () => {
           ref={containerRef}
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"
         >
-          {ALL_LAYERS.map((layer, i) => {
+          {ALL_LAYERS.map((layer) => {
             const c = COLOR_MAP[layer.color] ?? COLOR_MAP['slate']
             const isActive = selectedLayers.has(layer.key)
 
@@ -215,37 +215,37 @@ export const LayerSelector: React.FC = () => {
               <button
                 key={layer.key}
                 data-layer-card
+                type="button"
                 onClick={() => toggleLayer(layer.key)}
-                style={{ transitionDelay: `${i * 40}ms` }}
                 className={[
                   'group relative flex flex-col gap-3 p-4 rounded-xl border text-left',
-                  'transition-all duration-300 cursor-pointer opacity-0 translate-y-6',
+                  'transition-all duration-150 cursor-pointer opacity-0 translate-y-6',
                   isActive
-                    ? `${c.border} ${c.bg} ring-1 ${c.ring} shadow-lg shadow-teal-950/20 opacity-100 scale-100`
-                    : 'border-white/10 bg-white/5 backdrop-blur-md opacity-40 hover:opacity-85 hover:border-white/25 hover:bg-white/10 scale-[0.98] hover:scale-100',
+                    ? `${c.border} ${c.bg} ring-2 ${c.ring} shadow-xl shadow-teal-950/20 opacity-100 scale-100 backdrop-blur-md`
+                    : 'border-white/10 bg-white/[0.04] backdrop-blur-md opacity-60 hover:opacity-95 hover:border-white/25 hover:bg-white/[0.08] scale-[0.99] hover:scale-100',
                 ].join(' ')}
               >
                 {/* badge */}
                 <div className="absolute top-3 right-3">
                   <span
-                    className={`text-[10px] font-bold tracking-wider uppercase px-1.5 py-0.5 rounded-full border transition-all ${
+                    className={`text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full border transition-all ${
                       isActive
                         ? layer.badge === 'satellite'
-                          ? 'text-purple-400 border-purple-500/30 bg-purple-500/10'
-                          : 'text-sky-400 border-sky-500/30 bg-sky-500/10'
-                        : 'text-gray-500 border-white/10 bg-white/5 opacity-60'
+                          ? 'text-purple-300 border-purple-500/40 bg-purple-500/20'
+                          : 'text-sky-300 border-sky-500/40 bg-sky-500/20'
+                        : 'text-gray-400 border-white/10 bg-white/5 opacity-80'
                     }`}
                   >
                     {layer.badge === 'satellite' ? 'SAT' : 'API'}
                   </span>
                 </div>
 
-                {/* icon */}
+                {/* icon - vibrant and clear in both selected and unselected states */}
                 <div
-                  className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all duration-200 group-hover:scale-105 ${
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all duration-150 group-hover:scale-105 ${
                     isActive
-                      ? `${c.bg} ${c.border} ${c.text}`
-                      : 'bg-white/5 border-white/10 text-gray-500 group-hover:text-gray-300 group-hover:border-white/20'
+                      ? `${c.bg} ${c.border} ${c.text} shadow-sm`
+                      : `${c.bg} ${c.border} ${c.text} opacity-70 group-hover:opacity-100`
                   }`}
                 >
                   {layer.icon}
@@ -253,14 +253,14 @@ export const LayerSelector: React.FC = () => {
 
                 {/* text */}
                 <div className="pr-8">
-                  <p className={`text-sm font-bold mb-0.5 transition-colors ${isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-200'}`}>
+                  <p className={`text-sm font-bold mb-0.5 transition-colors ${isActive ? 'text-white' : 'text-gray-300 group-hover:text-white'}`}>
                     {layer.label}
                   </p>
-                  <p className={`text-xs leading-relaxed transition-colors ${isActive ? 'text-gray-400' : 'text-gray-500/80 group-hover:text-gray-400'}`}>
+                  <p className={`text-xs leading-relaxed transition-colors ${isActive ? 'text-gray-300' : 'text-gray-400 group-hover:text-gray-300'}`}>
                     {layer.description}
                   </p>
                   {layer.formula && (
-                    <p className={`mt-1.5 text-[10px] font-mono transition-colors ${isActive ? 'text-gray-500' : 'text-gray-600/70'}`}>
+                    <p className={`mt-1.5 text-[10px] font-mono transition-colors ${isActive ? 'text-teal-400/80' : 'text-gray-500 group-hover:text-gray-400'}`}>
                       {layer.formula}
                     </p>
                   )}
@@ -268,10 +268,10 @@ export const LayerSelector: React.FC = () => {
 
                 {/* active indicator */}
                 <div
-                  className={`absolute bottom-3 right-3 w-2 h-2 rounded-full transition-all duration-200 ${
+                  className={`absolute bottom-3 right-3 w-2.5 h-2.5 rounded-full transition-all duration-150 ${
                     isActive
-                      ? `${c.text.replace('text-', 'bg-')} scale-100 shadow-[0_0_8px_rgba(45,212,191,0.6)]`
-                      : 'bg-white/10 border border-white/20 scale-75 opacity-40'
+                      ? `${c.text.replace('text-', 'bg-')} scale-100 shadow-[0_0_10px_rgba(45,212,191,0.8)]`
+                      : 'bg-white/20 border border-white/30 scale-75 opacity-50'
                   }`}
                 />
               </button>
