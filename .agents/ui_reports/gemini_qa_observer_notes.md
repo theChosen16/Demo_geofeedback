@@ -1,6 +1,6 @@
 # 👁️ Bitácora del Agente Observador QA (Google Gemini)
 
-**Modelo Objetivo**: `gemini-2.5-flash-lite`
+**Modelo Objetivo**: `gemini-3.6-flash`
 **Estado de API**: Modo de Observación Heurística Local (Clave API no provista o ejecutor sin acceso público).
 
 ## Resumen del Observador
