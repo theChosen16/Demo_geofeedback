@@ -1,3 +1,4 @@
+import html
 import json
 import logging
 import uuid
@@ -246,14 +247,21 @@ def export_analysis_pdf(task_id: str, session: Session = Depends(get_session)):
     }
     approach_title = approach_titles.get(analysis.approach, analysis.approach.capitalize())
 
+    # Sanitizar variables dinámicas para evitar XSS
+    safe_location_name = html.escape(str(analysis.location_name or ""))
+    safe_task_id = html.escape(str(analysis.task_id or ""))
+    safe_approach_title = html.escape(str(approach_title or ""))
+    safe_image_date = html.escape(str(analysis.image_date or "Fecha de captura desconocida"))
+
     # Formatear los índices para presentación
     indices_rows = ""
     if analysis.indices:
         for key, val in analysis.indices.items():
             if isinstance(val, (int, float)):
+                safe_key = html.escape(str(key))
                 indices_rows += f"""
                 <tr>
-                    <td style="padding: 12px; border: 1px solid #e2e8f0; font-weight: bold; color: #334155;">{key}</td>
+                    <td style="padding: 12px; border: 1px solid #e2e8f0; font-weight: bold; color: #334155;">{safe_key}</td>
                     <td style="padding: 12px; border: 1px solid #e2e8f0; font-family: monospace; font-size: 15px;">{val:.4f}</td>
                 </tr>
                 """
@@ -262,9 +270,10 @@ def export_analysis_pdf(task_id: str, session: Session = Depends(get_session)):
     if analysis.chart_data:
         chart_rows = ""
         for pt in analysis.chart_data:
+            safe_pt_date = html.escape(str(pt.get('date', '')))
             chart_rows += f"""
             <tr>
-                <td style="padding: 8px; border: 1px solid #e2e8f0;">{pt.get('date')}</td>
+                <td style="padding: 8px; border: 1px solid #e2e8f0;">{safe_pt_date}</td>
                 <td style="padding: 8px; border: 1px solid #e2e8f0; font-family: monospace;">{pt.get('ndvi', 0):.4f}</td>
                 <td style="padding: 8px; border: 1px solid #e2e8f0; font-family: monospace;">{pt.get('ndwi', 0):.4f}</td>
                 <td style="padding: 8px; border: 1px solid #e2e8f0; font-family: monospace;">{pt.get('ndmi', 0):.4f}</td>
@@ -289,10 +298,11 @@ def export_analysis_pdf(task_id: str, session: Session = Depends(get_session)):
 
     interpretation_html = ""
     if analysis.interpretation:
+        safe_interp = html.escape(str(analysis.interpretation)).replace('\n', '<br>')
         interpretation_html = f"""
         <div class="section-title">Interpretación de GeoBot</div>
         <div class="geobot-text">
-            {analysis.interpretation.replace(chr(10), '<br>')}
+            {safe_interp}
         </div>
         """
 
@@ -301,8 +311,8 @@ def export_analysis_pdf(task_id: str, session: Session = Depends(get_session)):
         map_html = f"""
         <div class="section-title">Capa Satelital</div>
         <p style="font-size: 14px; margin-top: 10px;">
-            Sentinel-2 GEE MSI (Level-2A) del <strong>{analysis.image_date or 'Fecha de captura desconocida'}</strong>.<br>
-            <span style="font-size: 12px; color: #64748b;">ID de la Tarea: {analysis.task_id}</span>
+            Sentinel-2 GEE MSI (Level-2A) del <strong>{safe_image_date}</strong>.<br>
+            <span style="font-size: 12px; color: #64748b;">ID de la Tarea: {safe_task_id}</span>
         </p>
         """
 
@@ -431,7 +441,7 @@ def export_analysis_pdf(task_id: str, session: Session = Depends(get_session)):
             <table class="meta-table">
                 <tr>
                     <td class="meta-label">Ubicación</td>
-                    <td>{analysis.location_name}</td>
+                    <td>{safe_location_name}</td>
                 </tr>
                 <tr>
                     <td class="meta-label">Coordenadas</td>
@@ -443,7 +453,7 @@ def export_analysis_pdf(task_id: str, session: Session = Depends(get_session)):
                 </tr>
                 <tr>
                     <td class="meta-label">Enfoque Metodológico</td>
-                    <td>{approach_title}</td>
+                    <td>{safe_approach_title}</td>
                 </tr>
             </table>
 

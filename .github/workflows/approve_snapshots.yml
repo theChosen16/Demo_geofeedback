@@ -4,10 +4,17 @@ on:
   issue_comment:
     types: [created]
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   approve_snapshots:
     name: Actualizar Snapshots de Playwright vía ChatOps
-    if: github.event.issue.pull_request && contains(github.event.comment.body, '/approve-snapshots')
+    if: |
+      github.event.issue.pull_request &&
+      contains(github.event.comment.body, '/approve-snapshots') &&
+      contains(fromJSON('["MEMBER", "OWNER", "COLLABORATOR"]'), github.event.comment.author_association)
     runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.50.0-noble
@@ -20,7 +27,9 @@ jobs:
       - name: Descargar código de la rama del PR
         uses: actions/checkout@v4
         with:
+          repository: ${{ steps.comment_branch.outputs.head_owner }}/${{ steps.comment_branch.outputs.head_repo }}
           ref: ${{ steps.comment_branch.outputs.head_ref }}
+          persist-credentials: false
 
       - name: Configurar Node.js
         uses: actions/setup-node@v4
@@ -47,3 +56,4 @@ jobs:
         with:
           commit_message: 'chore(qa): update baseline visual snapshots via /approve-snapshots'
           file_pattern: 'frontend/tests/e2e/__snapshots__/**'
+
