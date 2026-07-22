@@ -31,9 +31,9 @@ try:
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
     if GEMINI_API_KEY:
         gemini_client = genai.Client(api_key=GEMINI_API_KEY)
-        gemini_model_name = 'gemini-3.5-flash'  # Gemini 3.5 Flash - google.dev
+        gemini_model_name = os.environ.get('GEMINI_MODEL_NAME', 'gemini-2.5-flash-lite')
         gemini_available = True
-        print("Gemini AI (gemini-3.5-flash) inicializado correctamente.")
+        print(f"Gemini AI ({gemini_model_name}) inicializado correctamente.")
     else:
         gemini_available = False
         print("WARNING: GEMINI_API_KEY no configurada.")
