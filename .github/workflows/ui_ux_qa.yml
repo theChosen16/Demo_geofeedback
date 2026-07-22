@@ -52,7 +52,7 @@ jobs:
     name: Regresión Visual Determinista & Accesibilidad (Playwright Container)
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.50.0-noble
+      image: mcr.microsoft.com/playwright:v1.56.0-noble
     steps:
       - name: Checkout del código
         uses: actions/checkout@v4
