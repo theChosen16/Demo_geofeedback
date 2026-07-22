@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Agente Observador de IA con Google Gemini (gemini-2.5-flash-lite)
+Agente Observador de IA con Google Gemini (gemini-3.6-flash)
 Analiza y toma notas continuas de los resultados del sistema QA de 4 niveles
 (Auditoría Heurística, Regresión Visual, Accesibilidad Axe-core y Rendimiento Lighthouse).
 """
@@ -13,7 +13,7 @@ from pathlib import Path
 
 REPORTS_DIR = Path(".agents/ui_reports")
 OBSERVER_OUTPUT = REPORTS_DIR / "gemini_qa_observer_notes.md"
-MODEL_NAME = os.environ.get("GEMINI_MODEL_NAME", "gemini-2.5-flash-lite")
+MODEL_NAME = os.environ.get("GEMINI_MODEL_NAME", "gemini-3.6-flash")
 
 def collect_qa_telemetry() -> str:
     """Recopila la telemetría de todos los niveles del sistema QA."""
