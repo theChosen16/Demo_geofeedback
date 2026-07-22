@@ -12,6 +12,8 @@ COPY frontend/package*.json ./
 RUN npm ci
 
 # Compilar SPA
+ARG BUILD_CACHE_DATE=20260721_v2
+RUN echo "Cache buster: ${BUILD_CACHE_DATE}"
 COPY frontend/ ./
 RUN npm run build
 
