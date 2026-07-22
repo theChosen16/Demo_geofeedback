@@ -74,7 +74,6 @@ CMD ["sh", "-c", "if [ \"$SERVICE_TYPE\" = \"worker\" ]; then \
         --workers 2 \
         --worker-class uvicorn.workers.UvicornWorker \
         --timeout 120 \
-        --preload \
         --access-logfile /dev/stdout \
         --error-logfile /dev/stdout \
         --log-level info \
