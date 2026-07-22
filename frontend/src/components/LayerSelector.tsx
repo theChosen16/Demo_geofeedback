@@ -27,7 +27,7 @@ export interface LayerDef {
   formula?: string
 }
 
-export const ALL_LAYERS: LayerDef[] = [
+const ALL_LAYERS: LayerDef[] = [
   // ── Satellite indices (GEE) ────────────────────────────────────────────────
   {
     key: 'ndvi',
@@ -38,39 +38,126 @@ export const ALL_LAYERS: LayerDef[] = [
     icon: <Leaf className="h-5 w-5" />,
     color: 'emerald',
     badge: 'satellite',
-    formula: '(NIR−Red)/(NIR+Red)',
+    formula: '(B8 - B4) / (B8 + B4)',
   },
   {
     key: 'ndwi',
     label: 'Agua Superficial (NDWI)',
     enLabel: 'Surface Water (NDWI)',
-    description: 'Detección de cuerpos de agua, ríos y zonas de inundación.',
-    enDescription: 'Detection of water bodies, rivers and flood zones.',
+    description: 'Detección de cuerpos de agua, ríos y reservorios.',
+    enDescription: 'Detection of water bodies, rivers and reservoirs.',
     icon: <Droplet className="h-5 w-5" />,
     color: 'blue',
     badge: 'satellite',
-    formula: '(Green−NIR)/(Green+NIR)',
+    formula: '(B3 - B8) / (B3 + B8)',
+  },
+  {
+    key: 'mndwi',
+    label: 'Agua Urbano (MNDWI)',
+    enLabel: 'Modified Water (MNDWI)',
+    description: 'Detección hídrica avanzada con supresión de construcciones.',
+    enDescription: 'Advanced water detection suppressing built-up noise.',
+    icon: <Droplet className="h-5 w-5" />,
+    color: 'sky',
+    badge: 'satellite',
+    formula: '(B3 - B11) / (B3 + B11)',
   },
   {
     key: 'ndmi',
-    label: 'Humedad (NDMI)',
+    label: 'Humedad Canopia (NDMI)',
     enLabel: 'Moisture (NDMI)',
-    description: 'Estrés hídrico en vegetación y riesgo de incendio forestal.',
-    enDescription: 'Vegetation water stress and wildfire risk assessment.',
+    description: 'Estrés hídrico en vegetación y contenido de humedad foliar.',
+    enDescription: 'Vegetation water stress and canopy moisture content.',
     icon: <Flame className="h-5 w-5" />,
     color: 'orange',
     badge: 'satellite',
-    formula: '(NIR−SWIR)/(NIR+SWIR)',
+    formula: '(B8 - B11) / (B8 + B11)',
   },
-  // ── Google APIs ────────────────────────────────────────────────────────────
+  {
+    key: 'nbr',
+    label: 'Severidad Incendio (NBR)',
+    enLabel: 'Burn Ratio (NBR)',
+    description: 'Riesgo de incendios y severidad de zonas quemadas.',
+    enDescription: 'Wildfire risk assessment and burn severity.',
+    icon: <Flame className="h-5 w-5" />,
+    color: 'red',
+    badge: 'satellite',
+    formula: '(B8 - B12) / (B8 + B12)',
+  },
+  {
+    key: 'ndbi',
+    label: 'Huella Construida (NDBI)',
+    enLabel: 'Built-up Index (NDBI)',
+    description: 'Identificación de construcciones, asfalto y suelo urbano.',
+    enDescription: 'Urban built-up footprint, concrete and asphalt.',
+    icon: <Mountain className="h-5 w-5" />,
+    color: 'slate',
+    badge: 'satellite',
+    formula: '(B11 - B8) / (B11 + B8)',
+  },
+  {
+    key: 'savi',
+    label: 'Suelo Ajustado (SAVI)',
+    enLabel: 'Soil Adjusted (SAVI)',
+    description: 'Vigor vegetal optimizado para zonas áridas o de escasa vegetación.',
+    enDescription: 'Vegetation vigor optimized for arid and semi-arid soil.',
+    icon: <Leaf className="h-5 w-5" />,
+    color: 'emerald',
+    badge: 'satellite',
+    formula: '((B8 - B4)/(B8 + B4 + 0.5))*1.5',
+  },
+  {
+    key: 'evi',
+    label: 'Vegetación Mejorado (EVI)',
+    enLabel: 'Enhanced Veg (EVI)',
+    description: 'Sensibilidad en doseles densos sin saturación foliar.',
+    enDescription: 'Canopy structure sensitivity without saturation.',
+    icon: <Leaf className="h-5 w-5" />,
+    color: 'emerald',
+    badge: 'satellite',
+    formula: '2.5*((B8-B4)/(B8 + 6*B4 - 7.5*B2 + 1))',
+  },
+  {
+    key: 'bsi',
+    label: 'Suelo Desnudo (BSI)',
+    enLabel: 'Bare Soil (BSI)',
+    description: 'Exposición de suelo desnudo, erosión y faenas mineras/agrícolas.',
+    enDescription: 'Bare soil exposure, erosion and mining operations.',
+    icon: <Mountain className="h-5 w-5" />,
+    color: 'orange',
+    badge: 'satellite',
+    formula: '((B11+B4)-(B8+B2))/((B11+B4)+(B8+B2))',
+  },
+  {
+    key: 'ndre',
+    label: 'Clorofila / Borde Rojo (NDRE)',
+    enLabel: 'Red Edge (NDRE)',
+    description: 'Contenido de nitrógeno y clorofila en cultivos de precisión.',
+    enDescription: 'Nitrogen and chlorophyll content in precision crops.',
+    icon: <Leaf className="h-5 w-5" />,
+    color: 'emerald',
+    badge: 'satellite',
+    formula: '(B8 - B5) / (B8 + B5)',
+  },
+  // ── DEM & Spatial / Google APIs ────────────────────────────────────────────
   {
     key: 'elevation',
     label: 'Elevación y Pendiente',
     enLabel: 'Elevation & Slope',
-    description: 'Altitud topográfica y gradiente de pendiente del terreno.',
-    enDescription: 'Topographic altitude and terrain slope gradient.',
+    description: 'Altitud topográfica y gradiente de pendiente del terreno (GLO-30).',
+    enDescription: 'Topographic altitude and slope gradient (GLO-30).',
     icon: <Mountain className="h-5 w-5" />,
     color: 'slate',
+    badge: 'api',
+  },
+  {
+    key: 'aspect',
+    label: 'Orientación de Ladera',
+    enLabel: 'Aspect Orientation',
+    description: 'Orientación topográfica respecto al sol para factibilidad solar.',
+    enDescription: 'Sun orientation gradient for solar suitability.',
+    icon: <Sun className="h-5 w-5" />,
+    color: 'yellow',
     badge: 'api',
   },
   {
@@ -120,7 +207,7 @@ const COLOR_MAP: Record<string, { bg: string; border: string; text: string; ring
 // Component
 // ─────────────────────────────────────────────────────────────────────────────
 export const LayerSelector: React.FC = () => {
-  const { selectedLayers, toggleLayer, setSelectedLayers } = useStore()
+  const { selectedLayers, selectedApproach } = useStore()
   const containerRef = useRef<HTMLDivElement>(null)
 
   // Scroll-driven entrance animation
@@ -143,9 +230,6 @@ export const LayerSelector: React.FC = () => {
 
   const activeCount = selectedLayers.size
 
-  const selectAll = () => setSelectedLayers(new Set(ALL_LAYERS.map((l) => l.key)))
-  const clearAll  = () => setSelectedLayers(new Set(['ndvi'])) // keep at least one
-
   return (
     <section
       id="capas"
@@ -163,42 +247,29 @@ export const LayerSelector: React.FC = () => {
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-teal-500/10 border border-teal-500/20 mb-4">
             <Satellite className="h-4 w-4 text-teal-400" />
             <span className="text-xs font-semibold text-teal-400 tracking-wider uppercase">
-              Configura tu análisis
+              Matriz Científica de Datos
             </span>
           </div>
           <h2 className="text-3xl lg:text-4xl font-extrabold text-white font-outfit mb-3 tracking-tight">
-            Elige las capas de datos
+            Capas de Información y Sensores GEE
           </h2>
           <p className="text-base text-[#94a3b8] max-w-2xl mx-auto">
-            Selecciona qué información satelital y ambiental quieres visualizar en la demo interactiva.
-            Puedes cambiarlas en cualquier momento antes de lanzar el análisis.
+            Cada Enfoque de Análisis configura automáticamente las capas satelitales e índices ambientales requeridos para el objetivo seleccionado.
           </p>
         </div>
 
-        {/* Toolbar */}
+        {/* Toolbar status */}
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div className="flex items-center gap-2 text-sm text-gray-400">
             <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-teal-500 text-[#111318] text-xs font-bold">
               {activeCount}
             </span>
-            <span>
-              {activeCount === 1 ? 'capa activa' : 'capas activas'}
+            <span className="text-white font-semibold">
+              capas activadas automáticamente para el enfoque actual
             </span>
-            <span className="text-gray-600">de {ALL_LAYERS.length}</span>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={selectAll}
-              className="text-xs px-3 py-1.5 rounded-lg border border-white/10 text-gray-400 hover:text-white hover:border-white/25 transition-colors"
-            >
-              Seleccionar todas
-            </button>
-            <button
-              onClick={clearAll}
-              className="text-xs px-3 py-1.5 rounded-lg border border-white/10 text-gray-400 hover:text-red-400 hover:border-red-500/30 transition-colors"
-            >
-              Limpiar
-            </button>
+            <span className="text-teal-400 font-bold uppercase tracking-wider text-xs">
+              ({selectedApproach || 'General'})
+            </span>
           </div>
         </div>
 
@@ -212,21 +283,24 @@ export const LayerSelector: React.FC = () => {
             const isActive = selectedLayers.has(layer.key)
 
             return (
-              <button
+              <div
                 key={layer.key}
                 data-layer-card
-                type="button"
-                onClick={() => toggleLayer(layer.key)}
                 className={[
                   'group relative flex flex-col gap-3 p-4 rounded-xl border text-left',
-                  'transition-all duration-150 cursor-pointer opacity-0 translate-y-6',
+                  'transition-all duration-150 opacity-0 translate-y-6',
                   isActive
                     ? `${c.border} ${c.bg} ring-2 ${c.ring} shadow-xl shadow-teal-950/20 opacity-100 scale-100 backdrop-blur-md`
-                    : 'border-white/10 bg-white/[0.04] backdrop-blur-md opacity-60 hover:opacity-95 hover:border-white/25 hover:bg-white/[0.08] scale-[0.99] hover:scale-100',
+                    : 'border-white/10 bg-white/[0.04] backdrop-blur-md opacity-40 scale-[0.99]',
                 ].join(' ')}
               >
                 {/* badge */}
-                <div className="absolute top-3 right-3">
+                <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                  {isActive && (
+                    <span className="text-[9px] font-bold text-teal-400 bg-teal-500/20 border border-teal-500/40 px-2 py-0.5 rounded-full uppercase">
+                      ON
+                    </span>
+                  )}
                   <span
                     className={`text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full border transition-all ${
                       isActive
@@ -240,12 +314,12 @@ export const LayerSelector: React.FC = () => {
                   </span>
                 </div>
 
-                {/* icon - vibrant and clear in both selected and unselected states */}
+                {/* icon */}
                 <div
-                  className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all duration-150 group-hover:scale-105 ${
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all duration-150 ${
                     isActive
                       ? `${c.bg} ${c.border} ${c.text} shadow-sm`
-                      : `${c.bg} ${c.border} ${c.text} opacity-70 group-hover:opacity-100`
+                      : `${c.bg} ${c.border} ${c.text} opacity-50`
                   }`}
                 >
                   {layer.icon}
@@ -253,14 +327,14 @@ export const LayerSelector: React.FC = () => {
 
                 {/* text */}
                 <div className="pr-8">
-                  <p className={`text-sm font-bold mb-0.5 transition-colors ${isActive ? 'text-white' : 'text-gray-300 group-hover:text-white'}`}>
+                  <p className={`text-sm font-bold mb-0.5 transition-colors ${isActive ? 'text-white' : 'text-gray-400'}`}>
                     {layer.label}
                   </p>
-                  <p className={`text-xs leading-relaxed transition-colors ${isActive ? 'text-gray-300' : 'text-gray-400 group-hover:text-gray-300'}`}>
+                  <p className={`text-xs leading-relaxed transition-colors ${isActive ? 'text-gray-300' : 'text-gray-500'}`}>
                     {layer.description}
                   </p>
                   {layer.formula && (
-                    <p className={`mt-1.5 text-[10px] font-mono transition-colors ${isActive ? 'text-teal-400/80' : 'text-gray-500 group-hover:text-gray-400'}`}>
+                    <p className={`mt-1.5 text-[10px] font-mono transition-colors ${isActive ? 'text-teal-400/90' : 'text-gray-600'}`}>
                       {layer.formula}
                     </p>
                   )}
@@ -271,10 +345,10 @@ export const LayerSelector: React.FC = () => {
                   className={`absolute bottom-3 right-3 w-2.5 h-2.5 rounded-full transition-all duration-150 ${
                     isActive
                       ? `${c.text.replace('text-', 'bg-')} scale-100 shadow-[0_0_10px_rgba(45,212,191,0.8)]`
-                      : 'bg-white/20 border border-white/30 scale-75 opacity-50'
+                      : 'bg-white/10 border border-white/20 scale-75 opacity-30'
                   }`}
                 />
-              </button>
+              </div>
             )
           })}
         </div>
@@ -285,7 +359,7 @@ export const LayerSelector: React.FC = () => {
             href="#demo"
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-500 text-[#111318] font-bold text-sm hover:opacity-90 transition-opacity shadow-lg"
           >
-            Ir a la demo interactiva
+            Probar Enfoques en la Demo
             <ChevronRight className="h-4 w-4" />
           </a>
         </div>

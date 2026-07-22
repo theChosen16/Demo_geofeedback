@@ -22,17 +22,15 @@ _GEE_EXECUTOR = concurrent.futures.ThreadPoolExecutor(max_workers=10)
 
 # TTL de la cache de resultados de análisis: Sentinel-2 revisita cada ~5 días,
 # así que un resultado sigue siendo representativo durante medio día.
-ANALYSIS_CACHE_TTL_SECONDS = 12 * 60 * 60
-
-# Incluida en la cache key (ver build_analysis_cache_key en analyze.py). Incrementar esta
+ANALYSIS_CACHE_TTL_SECONDS = 12 * 60 * 60# Incluida en la cache key (ver build_analysis_cache_key en analyze.py). Incrementar esta
 # versión cuando cambie la lógica de negocio que produce el resultado cacheado (fórmulas,
 # umbrales, paleta de cada enfoque más abajo) para invalidar de inmediato lo ya cacheado en
 # vez de esperar hasta 12h a que expire por TTL y quedar sirviendo resultados con lógica vieja.
-ANALYSIS_LOGIC_VERSION = "v1"
+ANALYSIS_LOGIC_VERSION = "v2"
 
 # Misma idea que ANALYSIS_LOGIC_VERSION pero para la cache de process_timeseries (ver
 # build_timeseries_cache_key en analyze.py).
-TIMESERIES_LOGIC_VERSION = "v1"
+TIMESERIES_LOGIC_VERSION = "v2"
 
 
 def cache_analysis_result(cache_key: str, result: dict) -> None:
@@ -142,11 +140,41 @@ def get_sentinel2_image(roi, start_date_str=None, end_date_str=None):
 
 
 def calculate_indices(image):
-    """Calcula índices espectrales comunes."""
+    """Calcula índices espectrales avanzados para análisis territoriales."""
     ndvi = image.normalizedDifference(['B8', 'B4']).rename('NDVI')
     ndwi = image.normalizedDifference(['B3', 'B8']).rename('NDWI') # McFeeters
+    mndwi = image.normalizedDifference(['B3', 'B11']).rename('MNDWI') # Xu Modified NDWI
     ndmi = image.normalizedDifference(['B8', 'B11']).rename('NDMI')
-    return image.addBands([ndvi, ndwi, ndmi])
+    nbr = image.normalizedDifference(['B8', 'B12']).rename('NBR') # Normalized Burn Ratio
+    ndbi = image.normalizedDifference(['B11', 'B8']).rename('NDBI') # Normalized Difference Built-up Index
+    
+    # SAVI: Soil Adjusted Vegetation Index (L = 0.5)
+    savi = image.expression(
+        '((NIR - RED) / (NIR + RED + 0.5)) * 1.5',
+        {'NIR': image.select('B8'), 'RED': image.select('B4')}
+    ).rename('SAVI')
+    
+    # EVI: Enhanced Vegetation Index
+    evi = image.expression(
+        '2.5 * ((NIR - RED) / (NIR + 6.0 * RED - 7.5 * BLUE + 1.0))',
+        {'NIR': image.select('B8'), 'RED': image.select('B4'), 'BLUE': image.select('B2')}
+    ).rename('EVI')
+    
+    # BSI: Bare Soil Index
+    bsi = image.expression(
+        '((SWIR1 + RED) - (NIR + BLUE)) / ((SWIR1 + RED) + (NIR + BLUE))',
+        {
+            'SWIR1': image.select('B11'),
+            'RED': image.select('B4'),
+            'NIR': image.select('B8'),
+            'BLUE': image.select('B2')
+        }
+    ).rename('BSI')
+    
+    # NDRE: Normalized Difference Red Edge
+    ndre = image.normalizedDifference(['B8', 'B5']).rename('NDRE')
+
+    return image.addBands([ndvi, ndwi, mndwi, ndmi, nbr, ndbi, savi, evi, bsi, ndre])
 
 
 @celery_app.task(name="app.tasks.worker.process_gee_analysis", bind=True)
@@ -178,10 +206,11 @@ def process_gee_analysis(
         point = ee.Geometry.Point([lng, lat])
         roi = point.buffer(radius)
 
-        # Datos Base
+        # Datos Base (Demografía / Topografía DEM GLO-30)
         glo30_col = ee.ImageCollection('COPERNICUS/DEM/GLO30_2024_1')
         elevation = glo30_col.select('DEM').mosaic().setDefaultProjection(glo30_col.first().projection()).rename('elevation')
-        slope = ee.Terrain.slope(elevation)
+        slope = ee.Terrain.slope(elevation).rename('slope')
+        aspect = ee.Terrain.aspect(elevation).rename('aspect')
 
         s2_image = get_sentinel2_image(roi, start_date_str=start_date, end_date_str=end_date)
         s2_indices = calculate_indices(s2_image)
@@ -193,54 +222,64 @@ def process_gee_analysis(
         scale = 20
 
         if approach == 'mining':
-            stats_image = s2_indices.select(['NDVI', 'NDWI']).addBands(slope)
+            stats_image = s2_indices.select(['NDVI', 'NDWI', 'BSI', 'NDBI']).addBands([slope])
             scale = 20
         elif approach == 'agriculture':
-            stats_image = s2_indices.select(['NDVI', 'NDMI'])
+            stats_image = s2_indices.select(['NDVI', 'NDMI', 'SAVI', 'NDRE', 'BSI'])
             scale = 20
         elif approach == 'energy':
-            stats_image = elevation.addBands(slope)
+            stats_image = elevation.addBands([slope, aspect]).addBands(s2_indices.select(['NDBI']))
             scale = 30
         elif approach == 'real-estate':
-            stats_image = s2_indices.select(['NDWI']).addBands(slope)
+            stats_image = s2_indices.select(['NDBI', 'MNDWI']).addBands([elevation, slope])
             scale = 20
         elif approach == 'flood-risk':
-            stats_image = s2_indices.select(['NDWI']).addBands(elevation)
+            stats_image = s2_indices.select(['MNDWI', 'NDWI', 'NDBI']).addBands([elevation, slope])
             scale = 30
         elif approach == 'water-management':
-            stats_image = s2_indices.select(['NDWI', 'NDMI'])
+            stats_image = s2_indices.select(['NDWI', 'MNDWI', 'NDMI', 'NDVI'])
             scale = 20
         elif approach == 'environmental':
-            stats_image = s2_indices.select(['NDVI'])
+            stats_image = s2_indices.select(['EVI', 'NDVI', 'NDMI', 'BSI'])
             scale = 20
         elif approach == 'land-planning':
-            stats_image = slope
+            stats_image = s2_indices.select(['NDBI', 'BSI', 'NDVI']).addBands([elevation, slope])
             scale = 30
         elif approach == 'fire-risk':
-            stats_image = s2_indices.select(['NDVI', 'NDMI']).addBands(slope)
+            stats_image = s2_indices.select(['NBR', 'NDMI', 'NDVI']).addBands([slope])
             scale = 20
 
         # Determinar la imagen y parámetros de Visualización (Map ID) según el enfoque - Recortado a la ROI
         vis_params = {}
         vis_image = None
 
-        if approach in ['mining', 'agriculture', 'environmental', 'water-management']:
+        if approach == 'mining':
+            vis_image = s2_indices.select('BSI').clip(roi)
+            vis_params = {'min': -0.3, 'max': 0.5, 'palette': ['#16a34a', '#eab308', '#d97706', '#dc2626']}
+        elif approach == 'agriculture':
             vis_image = s2_indices.select('NDVI').clip(roi)
-            vis_params = {'min': -0.2, 'max': 0.8, 'palette': ['red', 'yellow', 'green']}
-            if approach == 'water-management' or approach == 'flood-risk':
-                 vis_image = s2_indices.select('NDWI').clip(roi)
-                 vis_params = {'min': -0.5, 'max': 0.5, 'palette': ['white', 'blue']}
-        elif approach in ['energy', 'real-estate', 'land-planning']:
+            vis_params = {'min': -0.2, 'max': 0.8, 'palette': ['#dc2626', '#eab308', '#22c55e', '#15803d']}
+        elif approach == 'energy':
             vis_image = slope.clip(roi)
-            vis_params = {'min': 0, 'max': 45, 'palette': ['green', 'yellow', 'red']}
+            vis_params = {'min': 0, 'max': 45, 'palette': ['#22c55e', '#eab308', '#dc2626']}
+        elif approach == 'real-estate':
+            vis_image = s2_indices.select('NDBI').clip(roi)
+            vis_params = {'min': -0.5, 'max': 0.5, 'palette': ['#3b82f6', '#f8fafc', '#f97316', '#dc2626']}
         elif approach == 'fire-risk':
-            ndvi_risk = s2_indices.select('NDVI').multiply(-1).add(0.6)
-            ndmi_risk = s2_indices.select('NDMI').multiply(-1).add(0.4)
-            slope_norm = slope.divide(45)
-
-            risk_composite = ndvi_risk.add(ndmi_risk).add(slope_norm).divide(3).clip(roi)
-            vis_image = risk_composite
-            vis_params = {'min': 0, 'max': 1, 'palette': ['#22c55e', '#84cc16', '#eab308', '#f97316', '#dc2626']}
+            vis_image = s2_indices.select('NBR').clip(roi)
+            vis_params = {'min': -0.5, 'max': 0.8, 'palette': ['#dc2626', '#ea580c', '#eab308', '#22c55e']}
+        elif approach == 'flood-risk':
+            vis_image = s2_indices.select('MNDWI').clip(roi)
+            vis_params = {'min': -0.5, 'max': 0.5, 'palette': ['#f8fafc', '#38bdf8', '#1d4ed8']}
+        elif approach == 'water-management':
+            vis_image = s2_indices.select('NDWI').clip(roi)
+            vis_params = {'min': -0.5, 'max': 0.5, 'palette': ['#ffffff', '#0284c7', '#0369a1', '#0c4a6e']}
+        elif approach == 'environmental':
+            vis_image = s2_indices.select('EVI').clip(roi)
+            vis_params = {'min': -0.2, 'max': 0.8, 'palette': ['#a16207', '#eab308', '#22c55e', '#14532d']}
+        elif approach == 'land-planning':
+            vis_image = s2_indices.select('NDBI').clip(roi)
+            vis_params = {'min': -0.5, 'max': 0.5, 'palette': ['#16a34a', '#eab308', '#9333ea']}
         else:
             vis_image = s2_indices.select('NDVI').clip(roi)
             vis_params = {'min': 0, 'max': 1, 'palette': ['white', 'green']}
@@ -295,62 +334,56 @@ def process_gee_analysis(
 
         timings['gee_parallel_wall_s'] = round(time.monotonic() - t_parallel, 2)
 
-        # Mapear resultados según el enfoque
+        # Mapear resultados según el enfoque e índices correspondientes
         if approach == 'mining':
             results = {
                 "Vegetación Circundante (NDVI)": f"{stats.get('NDVI', 0):.2f}",
                 "Índice de Agua (NDWI)": f"{stats.get('NDWI', 0):.2f}",
+                "Exposición Suelo Desnudo (BSI)": f"{stats.get('BSI', 0):.2f}",
+                "Huella Suelo Construido (NDBI)": f"{stats.get('NDBI', 0):.2f}",
                 "Pendiente Promedio (°)": f"{stats.get('slope', 0):.1f}"
             }
         elif approach == 'agriculture':
             results = {
                 "Vigor Vegetal (NDVI)": f"{stats.get('NDVI', 0):.2f}",
-                "Humedad Vegetación (NDMI)": f"{stats.get('NDMI', 0):.2f}",
-                "Estado": "Saludable" if stats.get('NDVI', 0) > 0.4 else "Atención Requerida"
+                "Humedad Canopia (NDMI)": f"{stats.get('NDMI', 0):.2f}",
+                "Ajuste Suelo (SAVI)": f"{stats.get('SAVI', 0):.2f}",
+                "Clorofila / Borde Rojo (NDRE)": f"{stats.get('NDRE', 0):.2f}",
+                "Exposición Suelo (BSI)": f"{stats.get('BSI', 0):.2f}",
+                "Estado Cultivos": "Excelente" if stats.get('NDVI', 0) > 0.6 else "Saludable" if stats.get('NDVI', 0) > 0.35 else "Atención Requerida"
             }
         elif approach == 'energy':
             avg_slope = stats.get('slope', 0)
+            avg_aspect = stats.get('aspect', 0)
             results = {
                 "Elevación Promedio (msnm)": f"{stats.get('elevation', 0):.0f}",
                 "Pendiente Promedio (°)": f"{avg_slope:.1f}",
+                "Orientación Sol/Ladera (°)": f"{avg_aspect:.0f}°",
+                "Huella Superficial (NDBI)": f"{stats.get('NDBI', 0):.2f}",
                 "Aptitud Solar (Topografía)": "Alta" if avg_slope < 10 else "Media" if avg_slope < 20 else "Baja"
             }
         elif approach == 'real-estate':
             avg_slope = stats.get('slope', 0)
             results = {
+                "Huella Construida (NDBI)": f"{stats.get('NDBI', 0):.2f}",
                 "Pendiente Terreno (°)": f"{avg_slope:.1f}",
-                "Índice Agua (NDWI)": f"{stats.get('NDWI', 0):.2f}",
-                "Constructibilidad (Topo)": "Óptima" if avg_slope < 5 else "Buena" if avg_slope < 15 else "Compleja"
-            }
-        elif approach == 'flood-risk':
-            results = {
-                "NDWI Promedio": f"{stats.get('NDWI', 0):.2f}", 
-                "Elevación Media": f"{stats.get('elevation', 0):.0f} m"
-            }
-        elif approach == 'water-management':
-            results = {
-                "Cuerpos de Agua (NDWI)": f"{stats.get('NDWI', 0):.2f}", 
-                "Humedad Suelo/Veg (NDMI)": f"{stats.get('NDMI', 0):.2f}"
-            }
-        elif approach == 'environmental':
-            results = {
-                "Cobertura Vegetal (NDVI)": f"{stats.get('NDVI', 0):.2f}"
-            }
-        elif approach == 'land-planning':
-            results = {
-                "Pendiente Promedio": f"{stats.get('slope', 0):.1f}°"
+                "Elevación Media (msnm)": f"{stats.get('elevation', 0):.0f}",
+                "Índice Agua Urbano (MNDWI)": f"{stats.get('MNDWI', 0):.2f}",
+                "Constructibilidad": "Óptima" if avg_slope < 5 else "Buena" if avg_slope < 15 else "Compleja"
             }
         elif approach == 'fire-risk':
-            ndvi = stats.get('NDVI', 0)
+            nbr = stats.get('NBR', 0)
             ndmi = stats.get('NDMI', 0)
+            ndvi = stats.get('NDVI', 0)
             avg_slope = stats.get('slope', 0)
             
-            # Cálculo de índice de riesgo (0-100)
-            risk_vegetation = max(0, (0.6 - ndvi) / 0.6 * 40)
-            risk_moisture = max(0, (0.4 - ndmi) / 0.4 * 40)
-            risk_slope = min(avg_slope / 45 * 20, 20)
+            # Cálculo de índice de riesgo compuesto de incendio (0-100)
+            risk_vegetation = max(0, (0.6 - ndvi) / 0.6 * 30)
+            risk_moisture = max(0, (0.5 - ndmi) / 0.5 * 40)
+            risk_burn = max(0, (0.4 - nbr) / 0.4 * 20)
+            risk_slope = min(avg_slope / 45 * 10, 10)
             
-            risk_index = min(int(risk_vegetation + risk_moisture + risk_slope), 100)
+            risk_index = min(int(risk_vegetation + risk_moisture + risk_burn + risk_slope), 100)
             
             if risk_index < 20:
                 risk_level = "Bajo"
@@ -364,11 +397,42 @@ def process_gee_analysis(
                 risk_level = "Extremo"
             
             results = {
-                "Índice de Riesgo": f"{risk_index}/100",
+                "Índice de Riesgo Incendio": f"{risk_index}/100",
                 "Nivel de Riesgo": risk_level,
+                "Severidad/Quema (NBR)": f"{nbr:.2f}",
+                "Humedad Vegetal (NDMI)": f"{ndmi:.2f}",
                 "Vegetación (NDVI)": f"{ndvi:.2f}",
-                "Humedad (NDMI)": f"{ndmi:.2f}",
                 "Pendiente (°)": f"{avg_slope:.1f}"
+            }
+        elif approach == 'flood-risk':
+            results = {
+                "Agua Modificado Urbano (MNDWI)": f"{stats.get('MNDWI', 0):.2f}",
+                "Cuerpos de Agua (NDWI)": f"{stats.get('NDWI', 0):.2f}",
+                "Huella Suelo Construido (NDBI)": f"{stats.get('NDBI', 0):.2f}",
+                "Elevación Media (msnm)": f"{stats.get('elevation', 0):.0f}",
+                "Pendiente Terreno (°)": f"{stats.get('slope', 0):.1f}"
+            }
+        elif approach == 'water-management':
+            results = {
+                "Agua Superficial (NDWI)": f"{stats.get('NDWI', 0):.2f}",
+                "Agua Urbano/Modificado (MNDWI)": f"{stats.get('MNDWI', 0):.2f}",
+                "Humedad Suelo/Veg (NDMI)": f"{stats.get('NDMI', 0):.2f}",
+                "Cobertura Vegetal (NDVI)": f"{stats.get('NDVI', 0):.2f}"
+            }
+        elif approach == 'environmental':
+            results = {
+                "Índice Vegetación Mejorado (EVI)": f"{stats.get('EVI', 0):.2f}",
+                "Cobertura Vegetal (NDVI)": f"{stats.get('NDVI', 0):.2f}",
+                "Estrés Hídrico (NDMI)": f"{stats.get('NDMI', 0):.2f}",
+                "Exposición Suelo (BSI)": f"{stats.get('BSI', 0):.2f}"
+            }
+        elif approach == 'land-planning':
+            results = {
+                "Pendiente Promedio (°)": f"{stats.get('slope', 0):.1f}",
+                "Suelo Construido (NDBI)": f"{stats.get('NDBI', 0):.2f}",
+                "Suelo Desnudo (BSI)": f"{stats.get('BSI', 0):.2f}",
+                "Cobertura Vegetal (NDVI)": f"{stats.get('NDVI', 0):.2f}",
+                "Elevación Media (msnm)": f"{stats.get('elevation', 0):.0f}"
             }
 
         area_m2 = int(math.pi * radius * radius)
