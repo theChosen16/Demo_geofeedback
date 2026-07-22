@@ -13,7 +13,7 @@ from pathlib import Path
 
 REPORTS_DIR = Path(".agents/ui_reports")
 OBSERVER_OUTPUT = REPORTS_DIR / "gemini_qa_observer_notes.md"
-MODEL_NAME = os.environ.get("GEMINI_MODEL_NAME", "gemini-3.6-flash")
+MODEL_NAME = os.environ.get("GEMINI_MODEL_NAME", "gemini-2.5-flash")
 
 def collect_qa_telemetry() -> str:
     """Recopila la telemetría de todos los niveles del sistema QA."""

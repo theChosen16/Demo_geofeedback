@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 # Intentar inicializar cliente de Gemini
 gemini_client = None
 gemini_available = False
-gemini_model_name = getattr(settings, 'GEMINI_MODEL_NAME', 'gemini-3.6-flash')
+gemini_model_name = getattr(settings, 'GEMINI_MODEL_NAME', 'gemini-2.5-flash')
 
 try:
     from google import genai
