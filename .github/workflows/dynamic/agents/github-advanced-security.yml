@@ -21,5 +21,5 @@ jobs:
       - name: Run GitHub Advanced Security Agent
         uses: github/codeql-action/analyze@v3
         with:
-          model: "claude-opus-4"
+          model: "claude-opus-4.6"
           client-name: "github/code-scanning"
