@@ -2,7 +2,7 @@
 
 Modulo backend del sistema **GeoFeedback Chile**. Construido con **FastAPI**, **Celery**, **Google Earth Engine Enterprise API**, **Redis** y **PostGIS 3.7**.
 
-> 📚 **Documentación Técnica Completa:** Para acceder a la arquitectura completa, modelos de datos PostGIS, fórmulas de los 15 índices espectrales e integración con GeoBot AI, consulte el documento principal [DOCS.md](../DOCS.md).
+> 📚 **Documentación Técnica Completa:** Para acceder a la arquitectura completa, modelos de datos PostGIS, fórmulas de los 15 índices espectrales e integración con GeoBot AI, consulte el documento principal [DOCS.md](../docs/DOCS.md).
 
 ---
 

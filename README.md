@@ -46,7 +46,7 @@
 
 ## 📚 Documentación Técnica
 
-Consulte **[DOCS.md](./DOCS.md)** para la documentación técnica completa:
+Consulte **[DOCS.md](./docs/DOCS.md)** para la documentación técnica completa:
 - Arquitectura del Backend FastAPI y Celery Worker
 - Integración con Google Earth Engine Enterprise API y fórmulas espectrales
 - Estructura de esquemas y tablas PostGIS en Railway
