@@ -4,7 +4,7 @@
 
 [![Demo](https://img.shields.io/badge/Demo-geofeedback.cl-blue)](https://geofeedback.cl)
 [![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red)](#)
-[![Security](https://img.shields.io/badge/Security-0%20alertas%20activas-brightgreen)](./SECURITY.md)
+[![Security](https://img.shields.io/badge/Security-0%20alertas%20activas-brightgreen)](#)
 [![CI](https://github.com/theChosen16/Demo_geofeedback/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/theChosen16/Demo_geofeedback/actions/workflows/ci.yml)
 
 ---
@@ -44,14 +44,12 @@
 
 ---
 
-## 📚 Documentación Técnica
+## 📚 Arquitectura del Sistema
 
-Consulte **[DOCS.md](./docs/DOCS.md)** para la documentación técnica completa:
-- Arquitectura del Backend FastAPI y Celery Worker
-- Integración con Google Earth Engine Enterprise API y fórmulas espectrales
-- Estructura de esquemas y tablas PostGIS en Railway
-- Marco Multi-Capa de QA, Regresión Visual y Accesibilidad
-- Protocolo de seguridad y despliegue en Railway
+- **Backend FastAPI & Celery Worker**: Procesamiento de análisis satelital asíncrono e integración con Google Earth Engine.
+- **Frontend React 19 + Vite + TypeScript**: Interfaz interactiva y accesible (WCAG 2.1 AA) para visualización de capas cartográficas.
+- **Base de Datos PostGIS en Railway**: Esquema relacional optimizado para metadatos, autenticación y análisis territorial.
+- **Marco Multi-Capa de QA**: Suite automatizada con Pytest (Backend) y Playwright Container (Frontend E2E).
 
 ---
 
