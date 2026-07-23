@@ -2,7 +2,7 @@
 
 Módulo frontend del sistema **GeoFeedback Chile**. Construido con **React 19**, **TypeScript**, **Vite**, **Tailwind CSS / DaisyUI**, **Google Maps JavaScript API** y **Playwright**.
 
-> 📚 **Documentación Técnica Completa:** Para acceder a la arquitectura completa, guía del marco multi-capa de QA (Playwright, WCAG 2.1 AA, Lighthouse CI), componentes e integración con GeoBot, consulte el documento principal [DOCS.md](../DOCS.md).
+> 📚 **Documentación Técnica Completa:** Para acceder a la arquitectura completa, guía del marco multi-capa de QA (Playwright, WCAG 2.1 AA, Lighthouse CI), componentes e integración con GeoBot, consulte el documento principal [DOCS.md](../docs/DOCS.md).
 
 ---
 
