@@ -64,18 +64,37 @@ Thumbs.db
 *.log
 *.tmp
 *.temp
+*.bak
+*.swp
 
-# Credentials & Secrets
+# Credentials & Secrets (Sensitive Development Info)
 .env
-.env.local
+.env.*
+!.env.example
+!backend/.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.p8
+*.keystore
 service-account-key.json
-api/service-account-key.json
+*service-account*.json
+*.credentials
+*.db
+*.sqlite
+*.sqlite3
 
 # Git backup bundles (local backups, never commit)
 backup_full_*.bundle
 *.bundle
 
-# Generated reports, PDF exports & reference documents
+# Documentation & Internal Reports (Only README.md remains public)
+docs/
+SECURITY.md
+SECURITY_AUDIT.md
+DOCS.md
 *.pdf
 *.docx
 *.doc
