@@ -54,7 +54,6 @@ data/processed/*.tif
 !data/processed/*.json
 !data/processed/*.geojson
 !data/processed/*.png
-!data/processed/*.pdf
 !data/infrastructure/
 
 # OS Junk
@@ -76,6 +75,9 @@ api/service-account-key.json
 backup_full_*.bundle
 *.bundle
 
-# Generated reports & PDF exports
+# Generated reports, PDF exports & reference documents
 *.pdf
-!docs/references/*.pdf
+*.docx
+*.doc
+*.pptx
+*.xlsx
