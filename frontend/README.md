@@ -1,32 +1,40 @@
-# React + TypeScript + Vite
+# GeoFeedback Frontend (React 19 + TypeScript + Vite)
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Módulo frontend del sistema **GeoFeedback Chile**. Construido con **React 19**, **TypeScript**, **Vite**, **Tailwind CSS / DaisyUI**, **Google Maps JavaScript API** y **Playwright**.
 
-Currently, two official plugins are available:
+> 📚 **Documentación Técnica Completa:** Para acceder a la arquitectura completa, guía del marco multi-capa de QA (Playwright, WCAG 2.1 AA, Lighthouse CI), componentes e integración con GeoBot, consulte el documento principal [DOCS.md](../DOCS.md).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## 🚀 Inicio Rápido Local
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+### 1. Instalación
+```bash
+cd frontend
+npm install
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+### 2. Servidor de Desarrollo
+```bash
+npm run dev
+```
+
+### 3. Build de Producción
+```bash
+npm run build
+```
+
+---
+
+## 🧪 Pruebas E2E y QA
+```bash
+# Ejecutar suite completa de pruebas Playwright (Visual Regression, Layout, Accessibility)
+npm run test:e2e
+
+# Actualizar capturas de referencia (Snapshots)
+npm run test:e2e:update-snapshots
+```
+
+---
+
+_Última actualización: Julio de 2026_
