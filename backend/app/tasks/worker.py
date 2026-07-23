@@ -26,7 +26,7 @@ ANALYSIS_CACHE_TTL_SECONDS = 12 * 60 * 60# Incluida en la cache key (ver build_a
 # versión cuando cambie la lógica de negocio que produce el resultado cacheado (fórmulas,
 # umbrales, paleta de cada enfoque más abajo) para invalidar de inmediato lo ya cacheado en
 # vez de esperar hasta 12h a que expire por TTL y quedar sirviendo resultados con lógica vieja.
-ANALYSIS_LOGIC_VERSION = "v2"
+ANALYSIS_LOGIC_VERSION = "v3"
 
 # Misma idea que ANALYSIS_LOGIC_VERSION pero para la cache de process_timeseries (ver
 # build_timeseries_cache_key en analyze.py).
@@ -116,11 +116,11 @@ def get_sentinel2_image(roi, start_date_str=None, end_date_str=None):
     """Obtiene la imagen Sentinel-2 más reciente y libre de nubes para la ROI."""
     if end_date_str:
         try:
-            end_date = datetime.datetime.strptime(end_date_str, "%Y-%m-%d")
+            end_date = datetime.datetime.strptime(end_date_str, "%Y-%m-%d") + datetime.timedelta(days=1)
         except ValueError:
-            end_date = datetime.datetime.now()
+            end_date = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1)
     else:
-        end_date = datetime.datetime.now()
+        end_date = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1)
         
     if start_date_str:
         try:
@@ -133,7 +133,7 @@ def get_sentinel2_image(roi, start_date_str=None, end_date_str=None):
     col = (ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
             .filterBounds(roi)
             .filterDate(start_date, end_date)
-            .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 30))
+            .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 50))
             .sort('system:time_start', False))
             
     return col.first()
@@ -325,7 +325,7 @@ def process_gee_analysis(
             image_date = resolve_with_timeout(date_future, timeout=15, op_name="image date")
         except Exception as e:
             logger.error(f"Error getting image date from GEE: {e}")
-            image_date = datetime.datetime.now().strftime("%Y-%m-%d")
+            image_date = "Fecha de captura no disponible"
 
         # Resolver capa de mapa
         map_id_dict = resolve_with_timeout(map_future, timeout=30, op_name="getMapId")
@@ -524,8 +524,8 @@ def process_timeseries(self, lat: float, lng: float, radius: int, cache_key: str
         point = ee.Geometry.Point([lng, lat])
         roi = point.buffer(radius)
 
-        end_date = datetime.datetime.now()
-        start_date = end_date - datetime.timedelta(days=35)
+        end_date = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=1)
+        start_date = end_date - datetime.timedelta(days=60)
 
         col = (ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
                 .filterBounds(roi)

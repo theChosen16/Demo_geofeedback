@@ -58,7 +58,11 @@ export const Chatbot: React.FC = () => {
           radius: activeAnalysis.radius,
           approach: activeAnalysis.approach,
           indices: activeAnalysis.indices,
-          meta_date: activeAnalysis.chart_data?.[0]?.date || 'Desconocida'
+          meta_date: (activeAnalysis.meta_date && activeAnalysis.meta_date !== 'Desconocida')
+            ? activeAnalysis.meta_date
+            : (activeAnalysis.chart_data && activeAnalysis.chart_data.length > 0
+                ? activeAnalysis.chart_data[activeAnalysis.chart_data.length - 1].date
+                : 'Desconocida')
         }
       }
 
