@@ -78,3 +78,4 @@ backup_full_*.bundle
 
 # Generated reports & PDF exports
 *.pdf
+!docs/references/*.pdf

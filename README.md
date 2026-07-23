@@ -1,8 +1,8 @@
 # GeoFeedback Chile 🌎
 
-**Plataforma de Inteligencia Territorial con IA**
+**Plataforma de Inteligencia Territorial e Teledetección Satelital con IA**
 
-[![Demo](https://img.shields.io/badge/Demo-geofeedback.cl-blue)](https://demogeofeedback-production.up.railway.app)
+[![Demo](https://img.shields.io/badge/Demo-geofeedback.cl-blue)](https://geofeedback.cl)
 [![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red)](#)
 [![Security](https://img.shields.io/badge/Security-0%20alertas%20activas-brightgreen)](./SECURITY_AUDIT.md)
 [![CI](https://github.com/theChosen16/Demo_geofeedback/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/theChosen16/Demo_geofeedback/actions/workflows/ci.yml)
@@ -15,78 +15,79 @@
 
 ---
 
-## ✨ Características
+## ✨ Características Principales
 
-- 🛰️ **Análisis Satelital** - Índices NDVI, NDWI, NDMI con Sentinel-2
-- 🤖 **IA Integrada** - Interpretación automática con Google Gemini
-- 🗺️ **13 APIs de Google** - Maps, Elevation, Air Quality, Solar, Pollen
-- 🏢 **Google Earth Engine™ Enterprise** - Potencia de cómputo comercial sin barreras
-- 📱 **100% Mobile Optimized** - Diseño responsivo full-width y controles táctiles
-- 💬 **Chat Asistente** - Pregunta sobre tus análisis en tiempo real
-- 🛡️ **Resiliente** - Retry automático y manejo de errores de red
-- 📊 **8 Enfoques de Análisis** - Minería, Agricultura, Energía, y más
-
----
-
-## ✅ Cambios Abril 2026
-
-- Contador público de métricas reforzado: ahora renderiza `0` explícitamente cuando no hay datos.
-- Fetch de `/api/v1/stats` endurecido con validación de respuesta HTTP y fallback seguro.
-- `api/database.py` ahora autocrea las tablas de analytics en caliente si Railway responde con `undefined_table`, y reintenta la operación una vez.
-- Nuevo endpoint `GET /api/v1/observability` con checks críticos de BD, analytics, GEE y Maps; devuelve `503` cuando el estado está degradado.
-- Nuevo `GET /robots.txt` para eliminar ruido de `404` en logs de Railway.
-- `scripts/monitor_deploy.py` ya no depende de `requests`: usa librería estándar, URL configurable y modo `--once` para smoke checks.
-- UX de rutas mejorada: `/api` redirige a `/api/docs` y `/contact` redirige a `/#contacto`.
-- Bootstrap de base de datos en Railway actualizado para crear tablas de analytics (`06_create_analytics_tables.sql`).
-- Pipeline de CI reforzado con regresión dedicada de observability, validación de la CLI de monitoreo y smoke check contra el deployment productivo en `.github/workflows/ci.yml`.
-
----
-
-## 📚 Documentación
-
-Ver [DOCS.md](./DOCS.md) para documentación técnica completa:
-
-- Arquitectura del sistema
-- APIs integradas y su uso
-- Índices satelitales y fórmulas
-- Configuración de Railway
-- Operación del contador público y analytics
-- Endpoint de observability y monitor operativo
-- Pipeline CI (`.github/workflows/ci.yml`) y pruebas de regresión
-- Mantenimiento del workspace, reglas de `.gitignore` y gestión de caché en Railway
+- 🛰️ **Motor Geoespacial Comercial**: Integración nativa con **Google Earth Engine™ Enterprise** y constelación **Sentinel-2 MSI (Level-2A)** y **Copernicus DEM GLO-30**.
+- 🎯 **Rediseño "Enfoques Primero"**: Interfaz optimizada centrada en 9 enfoques territoriales con selección y conmutación automática de capas satelitales.
+- 📊 **Catálogo de 15 Capas e Índices Satelitales/Topográficos**:
+  1. **NDVI**: Índice de Vegetación
+  2. **NDWI**: Agua Superficial
+  3. **MNDWI**: Agua Modificada Urbana
+  4. **NDMI**: Humedad Canopia
+  5. **NBR**: Severidad de Incendio Forestal
+  6. **NDBI**: Huella de Suelo Construido/Urbano
+  7. **SAVI**: Vegetación Ajustada para Zonas Áridas
+  8. **EVI**: Vegetación de Dosel Denso
+  9. **BSI**: Suelo Desnudo / Exposición y Erosión
+  10. **NDRE**: Clorofila / Agricultura de Precisión
+  11. **DEM GLO-30**: Elevación Topográfica
+  12. **Slope**: Pendiente del Terreno (°)
+  13. **Aspect**: Orientación de Ladera (Aspect °)
+  14. **AQI**: Calidad del Aire (Google Air Quality API)
+  15. **LST**: Temperatura Superficial Terrestre
+- 🤖 **GeoBot AI Assistant 2.0**: Asistente con diagnósticos estructurados en 4 secciones (Ficha Resumen, Matriz Técnica con badges 🟢🟡🔴, Explicación Limpia Territorial y Recomendaciones Tácticas).
+- 🗄️ **Base de Datos PostGIS en Railway**: Almacenamiento geoespacial relacional (`metadata` schema, `user_analyses`, `users`, `user_alerts`, `api_usage_logs`).
+- 📱 **100% Mobile & Touch Optimized**: UI ultra-moderna con glassmorphism, modo oscuro y animaciones fluidas.
+- 🛡️ **Seguridad & Calidad Auditada**: 0 alertas activas en Dependabot (Playwright v1.56.0), suite de tests E2E y presupuesto de rendimiento en Lighthouse CI.
 
 ---
 
-## 🛠️ Despliegue Rápido en Railway
+## 🏛️ Enfoques de Análisis
 
-El proyecto está configurado para un despliegue de "cero-configuración" en Railway.
+| Enfoque | Descripción | Capas e Índices Auto-seleccionados |
+| :--- | :--- | :--- |
+| 🌾 **Agroindustria** | Monitoreo de vigor, nitrógeno y estrés hídrico en cultivos. | `NDVI`, `NDMI`, `SAVI`, `NDRE`, `BSI` |
+| ⛏️ **Minería Sostenible** | Control de expansión de faenas, polvo y huella hídrica. | `NDVI`, `NDWI`, `BSI`, `NDBI`, `DEM` |
+| ⚡ **Energías Renovables** | Factibilidad de parques solares y gradientes topográficos. | `SOLAR`, `DEM`, `ASPECT`, `NDBI` |
+| 🏢 **Desarrollo Inmobiliario** | Análisis de uso de suelo, islas de calor y expansión urbana. | `NDBI`, `DEM`, `LST`, `MNDWI` |
+| 🔥 **Riesgo de Incendio** | Evaluación de severidad de fuego y estrés de vegetación. | `NBR`, `NDMI`, `NDVI`, `DEM`, `LST` |
+| 🌊 **Riesgo de Inundación** | Identificación de cuerpos de agua y zonas bajas de acumulación. | `MNDWI`, `NDWI`, `DEM`, `NDBI` |
+| 💧 **Gestión Hídrica** | Monitoreo de reservorios, embalses y humedad en suelos. | `NDWI`, `MNDWI`, `NDMI`, `NDVI` |
+| 🌿 **Calidad Ambiental** | Auditoría ambiental, calidad del aire y cobertura foliar. | `EVI`, `NDVI`, `NDMI`, `AQI`, `BSI` |
+| 🗺️ **Planificación Territorial** | Catastro topográfico, pendientes y aptitud de suelos. | `DEM`, `NDBI`, `BSI`, `NDVI` |
 
-1. **Configurar el Servicio:** Conecta el repositorio de GitHub al servicio `Demo_geofeedback` en tu panel de Railway. La plataforma detectará automáticamente el `Dockerfile` y el `railway.toml` de la raíz del repositorio.
-2. **Agregar Base de Datos y Caché:** Añade los servicios oficiales de **PostGIS** y **Redis** en tu proyecto de Railway y conéctalos al servicio principal. Railway inyectará de forma automática las variables `DATABASE_URL` y `REDIS_URL`.
-3. **Inicializar la Base de Datos (PostGIS):**
-   Ejecuta el bootstrap del esquema espacial de forma segura desde tu terminal local de Windows usando la CLI de Railway:
+---
+
+## 📚 Documentación Técnica
+
+Consulte [DOCS.md](./DOCS.md) para acceder a la documentación técnica detallada:
+- Arquitectura del Backend y Worker Asíncrono
+- Integración con Google Earth Engine Enterprise API
+- Fórmulas matemáticas de los 15 índices espectrales
+- Estructura de esquemas y tablas PostGIS en Railway
+- Protocolo de seguridad y automatización CI/CD
+
+---
+
+## 🛠️ Despliegue en Railway
+
+El proyecto está listo para despliegue de cero-configuración en Railway:
+
+1. **Servicio Principal**: Vincula el repositorio a Railway. El proyecto detectará automáticamente el `Dockerfile` y `railway.toml`.
+2. **Bases de Datos**: Conecta los servicios oficiales de **PostGIS** (`POSTGRES_URL`) y **Redis** (`REDIS_URL`).
+3. **Verificación de Base de Datos**:
    ```powershell
    railway run python scripts/init_railway_db.py
    ```
-4. **Listo:** La plataforma se desplegará con observabilidad JSON integrada para el Grafana Stack.
-
----
-
-## 🔒 Licencia
-
-**© 2025 Alejandro Hernández Aguirre - Todos los derechos reservados**
-
-Este proyecto es una demo técnica. Ver [LICENSE](./LICENSE) para detalles.
 
 ---
 
 ## 👤 Autor
 
 **Alejandro Hernández Aguirre**
-
 - [LinkedIn](https://www.linkedin.com/in/alejandro-hern%C3%A1ndez-aguirre-bb8967246/)
 - [GitHub](https://github.com/theChosen16)
 
 ---
 
-_Última actualización: 24 de Abril de 2026_
+_Última actualización: Julio de 2026_
