@@ -34,7 +34,7 @@ jobs:
       - name: Ejecutar Agente Observador de IA con Gemini API
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GEMINI_MODEL_NAME: 'gemini-3.6-flash'
+          GEMINI_MODEL_NAME: 'gemini-2.5-flash'
         run: |
           python scripts/qa/gemini_qa_observer.py
 

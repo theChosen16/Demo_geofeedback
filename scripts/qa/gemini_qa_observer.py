@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Agente Observador de IA con Google Gemini (gemini-3.6-flash)
+Agente Observador de IA con Google Gemini (gemini-2.5-flash)
 Analiza y toma notas continuas de los resultados del sistema QA de 4 niveles
 (Auditoría Heurística, Regresión Visual, Accesibilidad Axe-core y Rendimiento Lighthouse).
 """

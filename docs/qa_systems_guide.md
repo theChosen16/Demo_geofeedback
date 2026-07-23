@@ -8,7 +8,7 @@ Esta guía documenta la infraestructura de Aseguramiento de Calidad (QA) integra
 
 El marco de calidad opera en 4 niveles complementarios:
 
-1. **Agente IA de Auditoría Heurística & Observador Gemini (gemini-3.6-flash):**
+1. **Agente IA de Auditoría Heurística & Observador Gemini (gemini-2.5-flash):**
    - **Herramientas:** `scripts/qa/ui_ux_design_review_agent.py`, `scripts/qa/uisentinel_check.js` & `scripts/qa/gemini_qa_observer.py`
    - **Objetivo:** Inspeccionar el código frontend (TSX/CSS) en busca de jerarquía visual, atributos ARIA, contrastes y zonas táctiles responsivas. El **Observador Gemini** toma notas continuas de la telemetría de todos los niveles.
    - **Entregables:** Informes en `.agents/ui_reports/` (`ui_analysis_report.md`, `color_palettes_report.md`, `animations_report.md`, `gemini_qa_observer_notes.md`).
