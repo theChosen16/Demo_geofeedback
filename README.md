@@ -4,14 +4,14 @@
 
 [![Demo](https://img.shields.io/badge/Demo-geofeedback.cl-blue)](https://geofeedback.cl)
 [![License](https://img.shields.io/badge/License-All%20Rights%20Reserved-red)](#)
-[![Security](https://img.shields.io/badge/Security-0%20alertas%20activas-brightgreen)](./SECURITY_AUDIT.md)
+[![Security](https://img.shields.io/badge/Security-0%20alertas%20activas-brightgreen)](./SECURITY.md)
 [![CI](https://github.com/theChosen16/Demo_geofeedback/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/theChosen16/Demo_geofeedback/actions/workflows/ci.yml)
 
 ---
 
 ## 🚀 Demo en Vivo
 
-**https://geofeedback.cl**
+👉 **[https://geofeedback.cl](https://geofeedback.cl)**
 
 ---
 
@@ -19,26 +19,12 @@
 
 - 🛰️ **Motor Geoespacial Comercial**: Integración nativa con **Google Earth Engine™ Enterprise** y constelación **Sentinel-2 MSI (Level-2A)** y **Copernicus DEM GLO-30**.
 - 🎯 **Rediseño "Enfoques Primero"**: Interfaz optimizada centrada en 9 enfoques territoriales con selección y conmutación automática de capas satelitales.
-- 📊 **Catálogo de 15 Capas e Índices Satelitales/Topográficos**:
-  1. **NDVI**: Índice de Vegetación
-  2. **NDWI**: Agua Superficial
-  3. **MNDWI**: Agua Modificada Urbana
-  4. **NDMI**: Humedad Canopia
-  5. **NBR**: Severidad de Incendio Forestal
-  6. **NDBI**: Huella de Suelo Construido/Urbano
-  7. **SAVI**: Vegetación Ajustada para Zonas Áridas
-  8. **EVI**: Vegetación de Dosel Denso
-  9. **BSI**: Suelo Desnudo / Exposición y Erosión
-  10. **NDRE**: Clorofila / Agricultura de Precisión
-  11. **DEM GLO-30**: Elevación Topográfica
-  12. **Slope**: Pendiente del Terreno (°)
-  13. **Aspect**: Orientación de Ladera (Aspect °)
-  14. **AQI**: Calidad del Aire (Google Air Quality API)
-  15. **LST**: Temperatura Superficial Terrestre
-- 🤖 **GeoBot AI Assistant 2.0**: Asistente con diagnósticos estructurados en 4 secciones (Ficha Resumen, Matriz Técnica con badges 🟢🟡🔴, Explicación Limpia Territorial y Recomendaciones Tácticas).
-- 🗄️ **Base de Datos PostGIS en Railway**: Almacenamiento geoespacial relacional (`metadata` schema, `user_analyses`, `users`, `user_alerts`, `api_usage_logs`).
-- 📱 **100% Mobile & Touch Optimized**: UI ultra-moderna con glassmorphism, modo oscuro y animaciones fluidas.
-- 🛡️ **Seguridad & Calidad Auditada**: 0 alertas activas en Dependabot (Playwright v1.56.0), suite de tests E2E y presupuesto de rendimiento en Lighthouse CI.
+- 📊 **Catálogo de 15 Capas e Índices Satelitales/Topográficos**: `NDVI`, `NDWI`, `MNDWI`, `NDMI`, `NBR`, `NDBI`, `SAVI`, `EVI`, `BSI`, `NDRE`, `DEM GLO-30`, `Slope`, `Aspect`, `AQI`, `LST`.
+- 🤖 **GeoBot AI Assistant 2.0**: Diagnósticos estructurados en 4 secciones impulsados por **Google Gemini 2.5 Flash**.
+- 📈 **Pulso Territorial**: Evolución histórica mensual de índices espectrales (NDVI, NDWI, NDMI).
+- 🗄️ **Base de Datos Geoespacial PostGIS en Railway**: Almacenamiento relacional (`metadata` schema) con PostGIS 3.7.
+- 📱 **100% Mobile & Touch Optimized**: UI con glassmorphism, modo oscuro y micro-animaciones fluidas.
+- 🛡️ **Seguridad & Calidad Auditada**: 0 alertas activas en Dependabot, pruebas E2E en Playwright y presupuestos de rendimiento en Lighthouse CI.
 
 ---
 
@@ -60,25 +46,12 @@
 
 ## 📚 Documentación Técnica
 
-Consulte [DOCS.md](./DOCS.md) para acceder a la documentación técnica detallada:
-- Arquitectura del Backend y Worker Asíncrono
-- Integración con Google Earth Engine Enterprise API
-- Fórmulas matemáticas de los 15 índices espectrales
+Consulte **[DOCS.md](./DOCS.md)** para la documentación técnica completa:
+- Arquitectura del Backend FastAPI y Celery Worker
+- Integración con Google Earth Engine Enterprise API y fórmulas espectrales
 - Estructura de esquemas y tablas PostGIS en Railway
-- Protocolo de seguridad y automatización CI/CD
-
----
-
-## 🛠️ Despliegue en Railway
-
-El proyecto está listo para despliegue de cero-configuración en Railway:
-
-1. **Servicio Principal**: Vincula el repositorio a Railway. El proyecto detectará automáticamente el `Dockerfile` y `railway.toml`.
-2. **Bases de Datos**: Conecta los servicios oficiales de **PostGIS** (`POSTGRES_URL`) y **Redis** (`REDIS_URL`).
-3. **Verificación de Base de Datos**:
-   ```powershell
-   railway run python scripts/init_railway_db.py
-   ```
+- Marco Multi-Capa de QA, Regresión Visual y Accesibilidad
+- Protocolo de seguridad y despliegue en Railway
 
 ---
 
